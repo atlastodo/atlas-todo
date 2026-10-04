@@ -1,0 +1,16 @@
+# Prettier also skips everything in .gitignore (node_modules, dist*, build outputs, .claude, ...).
+
+# Lockfiles and generated files
+bun.lock
+Cargo.lock
+RELEASE_NOTES.md
+
+# Applied migrations are checksummed: reformatting one breaks every existing database.
+migrations/
+
+# Fixtures that the Rust and TypeScript tests both read.
+test-vectors/
+
+# Rust sources and build output
+crates/
+target/

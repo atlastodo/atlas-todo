@@ -1,0 +1,45 @@
+name: Feature request
+description: Suggest an idea or an improvement for Atlas Todo.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation and what makes it hard today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      description: The behaviour you have in mind. Sketches or examples from other apps help.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Which parts of Atlas Todo does it affect?
+      multiple: true
+      options:
+        - Android app
+        - iOS app
+        - Web app (browser)
+        - Desktop app (Electron)
+        - Server / self-hosting (Docker)
+        - Not sure
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and this hasn't been requested yet.
+          required: true

@@ -1,0 +1,321 @@
+# Lint + test for every push to main and every PR, or on demand. A push or PR only runs the jobs
+# whose files changed (see `changes`); the audits and MSRV run when dependencies change and once a
+# week. release.yml calls this same workflow on a v* tag, so a release is gated on the full suite.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  # Literal "ci-" prefix: when release.yml calls this workflow, github.workflow is the caller's
+  # name, and a group shared with the caller would make this run wait on its own parent.
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  # A newer push supersedes the run still going for the previous one.
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # Same stable as devenv's lock (rust-overlay). The MSRV job reads its version from Cargo.toml.
+  RUST_TOOLCHAIN: "1.98.1"
+  # Bun is pinned in lockstep with devenv and docker/Dockerfile -- bump them together.
+  BUN_VERSION: "1.4.2"
+  NODE_VERSION: "26"
+  CARGO_TERM_COLOR: always
+  # Incremental artifacts are useless in near-clean CI builds and bloat the cache.
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+  # Decides which jobs run. A tag, a manual run or a call from release.yml runs everything; the
+  # weekly schedule runs only the audits and MSRV. The branch push of a release commit
+  # (`chore(release): vX.Y.Z`) runs nothing: its tag is pushed in the same breath and release.yml
+  # runs the full suite for that commit.
+  changes:
+    name: Changes
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      rust: ${{ steps.filter.outputs.rust }}
+      lint_ts: ${{ steps.filter.outputs.lint_ts }}
+      test_ts: ${{ steps.filter.outputs.test_ts }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      deps: ${{ steps.filter.outputs.deps }}
+    steps:
+      - id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set_all() { for k in rust lint_ts test_ts mobile deps; do echo "$k=$1" >>"$GITHUB_OUTPUT"; done; }
+          case "$EVENT" in
+            schedule)
+              set_all false
+              echo "deps=true" >>"$GITHUB_OUTPUT"
+              exit 0
+              ;;
+            push)
+              if [ "$REF_TYPE" = tag ] || [[ "$BEFORE" =~ ^0*$ ]]; then set_all true; exit 0; fi
+              if [[ "$HEAD_MESSAGE" == "chore(release):"* ]]; then set_all false; exit 0; fi
+              files="$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq '.files[].filename')"
+              ;;
+            pull_request)
+              files="$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename')"
+              ;;
+            *)
+              set_all true
+              exit 0
+              ;;
+          esac
+          # The compare API lists at most 300 files; past that, assume everything changed.
+          if [ "$(grep -c . <<<"$files")" -ge 300 ]; then set_all true; exit 0; fi
+          ci='^\.github/workflows/ci\.yml$'
+          rust="^(crates/|migrations/|Cargo\.(toml|lock)$|\.config/nextest\.toml$|deny\.toml$)|$ci"
+          shared="^(packages/|package\.json$|bun\.lock$|bunfig\.toml$|test-vectors/)|$ci"
+          deps="^(Cargo\.(toml|lock)|deny\.toml|bun\.lock|package\.json|crates/[^/]+/Cargo\.toml|(apps|packages)/[^/]+/package\.json)$|$ci"
+          has() { if grep -qE "$1" <<<"$files"; then echo true; else echo false; fi; }
+          # Prettier checks Markdown, YAML and JSON too, so anything outside the Rust tree lints.
+          lints() { if grep -vE "$rust" <<<"$files" | grep -q .; then echo true; else has "$ci"; fi; }
+          {
+            echo "rust=$(has "$rust")"
+            echo "lint_ts=$(lints)"
+            echo "test_ts=$(has "$shared|^apps/electron/")"
+            echo "mobile=$(has "$shared|^apps/mobile/")"
+            echo "deps=$(has "$deps")"
+          } >>"$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+  lint-rust:
+    name: Lint (Rust)
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component rustfmt,clippy --no-self-update
+          rustup default "$RUST_TOOLCHAIN"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          # PR caches are only visible to that PR; main's are visible to every run.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --workspace --all-targets --locked --no-deps -- -D warnings
+
+  lint-ts:
+    name: Lint (TypeScript)
+    needs: changes
+    if: ${{ needs.changes.outputs.lint_ts == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      # Every workspace that defines `typecheck`: shared, client-core, mobile and electron.
+      - run: bun run --parallel --filter '*' typecheck
+      - run: bunx eslint .
+      - run: bunx prettier --check .
+
+  msrv:
+    name: MSRV
+    needs: changes
+    if: ${{ needs.changes.outputs.deps == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the workspace rust-version
+        # Read from Cargo.toml so raising the MSRV is a one-line manifest change.
+        run: |
+          msrv="$(sed -n 's/^rust-version = "\(.*\)"$/\1/p' Cargo.toml)"
+          test -n "$msrv" || { echo "::error::No rust-version in Cargo.toml"; exit 1; }
+          rustup toolchain install "$msrv" --profile minimal --no-self-update
+          rustup default "$msrv"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo check --workspace --all-targets --locked
+
+  test-rust:
+    name: Test (Rust)
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: atlas_test
+          POSTGRES_USER: atlas
+          POSTGRES_PASSWORD: atlas
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U atlas -d atlas_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      # The atlas-server integration tests migrate this database themselves.
+      TEST_DATABASE_URL: postgres://atlas:atlas@localhost:5432/atlas_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --no-self-update
+          rustup default "$RUST_TOOLCHAIN"
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      # Prebuilt, checksum-verified binary; version matches devenv's.
+      - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
+        with:
+          tool: cargo-nextest@0.9.143
+          fallback: none
+      # .config/nextest.toml serializes the tests that share the instance_settings row.
+      - run: cargo nextest run --workspace --locked
+
+  test-ts:
+    name: Test (TypeScript)
+    needs: changes
+    if: ${{ needs.changes.outputs.test_ts == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      # `--bun` runs vitest itself under Bun's runtime; these suites are runtime-agnostic pure TS.
+      - name: client-core
+        working-directory: packages/client-core
+        run: bunx --bun vitest run
+      - name: shared
+        working-directory: packages/shared
+        run: bunx --bun vitest run
+      - name: electron
+        working-directory: apps/electron
+        run: bunx --bun vitest run
+
+  test-mobile:
+    name: Test (mobile)
+    needs: changes
+    if: ${{ needs.changes.outputs.mobile == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # jest-expo must run under real Node: under Bun's runtime every suite dies at load
+      # ("Attempted to assign to readonly property"). Bun only installs the deps.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # Babel transforms of node_modules dominate jest-expo's cold start.
+          path: .jest-cache
+          key: jest-${{ runner.os }}-${{ hashFiles('bun.lock') }}-${{ github.sha }}
+          restore-keys: jest-${{ runner.os }}-${{ hashFiles('bun.lock') }}-
+      - run: bun install --frozen-lockfile
+      - run: node --version
+      - working-directory: apps/mobile
+        run: bun run test -- --ci --maxWorkers=4 --cacheDirectory="$GITHUB_WORKSPACE/.jest-cache"
+
+  # The audits surface advisories without blocking: they often sit in un-updatable transitive
+  # deps. Fixable ones go in `overrides` (JS) or a dependency bump, never an ignore list.
+  audit-rust:
+    name: Audit (Rust)
+    needs: changes
+    if: ${{ needs.changes.outputs.deps == 'true' }}
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust ${{ env.RUST_TOOLCHAIN }}
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --no-self-update
+          rustup default "$RUST_TOOLCHAIN"
+      - uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
+        with:
+          tool: cargo-deny@0.20.2
+          fallback: none
+      # Advisories, licences, bans and sources, per deny.toml.
+      - run: cargo deny check
+
+  audit-js:
+    name: Audit (JS)
+    needs: changes
+    if: ${{ needs.changes.outputs.deps == 'true' }}
+    runs-on: ubuntu-24.04
+    # Stays red on the braces and node-forge advisories that have no fix yet: see `//audit-known`
+    # in the root package.json before chasing them.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      # Reads bun.lock only; no install needed.
+      - run: bun audit

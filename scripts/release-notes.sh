@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+#
+# Generate RELEASE_NOTES.md for a version from the commit log: every commit since the previous
+# vX.Y.Z tag, grouped by conventional-commit type (Features / Fixes / Changes), one line per
+# commit. `chore(release):` commits are excluded -- they are the releases themselves.
+#
+# Called by bump-version.sh, so the notes live in the chore(release) commit and are reviewed in
+# the diff before anything ships; the release workflow (.github/workflows/release.yml) then publishes
+# this version's section as the GitHub Release notes. Also runnable standalone to preview the notes for
+# an upcoming version.
+#
+# Usage:
+#   scripts/release-notes.sh <x.y.z|vX.Y.Z>   # default: the root package.json version
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+VERSION="$(node -p 'require("./package.json").version')"
+if [[ $# -gt 0 ]]; then
+  VERSION="${1#v}"
+fi
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "error: version must be x.y.z, got '$VERSION'"; exit 1; }
+
+# The previous release tag: the newest existing vX.Y.Z tag that is not this version itself --
+# a re-run after v$VERSION was already cut must not zero out the range. Newest-first by
+# creatordate, so old-style tags (v0.9.0 sorting before v0.25.x alphabetically) stay correct.
+PREV="$(git tag -l 'v[0-9]*' --sort=-creatordate | grep -v -- "^v$VERSION\$" | head -1 || true)"
+
+if [[ -n "$PREV" ]]; then
+  RANGE="$PREV..HEAD"
+else
+  # No prior release tag at all: everything back to the root commit is this release's history.
+  RANGE="$(git rev-list --max-parents=0 HEAD)..HEAD"
+fi
+
+# Grouping in node (bash + node are all this script needs, like bump-version.sh).
+node - "$VERSION" "$PREV" "$RANGE" <<'JS'
+const { execFileSync } = require("child_process");
+const fs = require("fs");
+const [version, prev, range] = process.argv.slice(2);
+
+// chore(release) commits ARE the releases; everything else is a change they carry.
+const subjects = execFileSync("git", ["log", "--no-merges", "--format=%s", range], { encoding: "utf8" })
+  .split("\n")
+  .filter((s) => s && !s.startsWith("chore(release):"));
+
+// Conventional-commit type or type(scope), with the optional breaking `!` -- anything else is a
+// plain subject that must not be mangled by prefix-stripping.
+const CONVENTIONAL = /^([a-z]+)(\([^)]*\))?!?:(.*)$/s;
+
+const sections = { Features: [], Fixes: [], Changes: [] };
+for (const s of subjects) {
+  const m = s.match(CONVENTIONAL);
+  const kind = m ? m[1] : "";
+  let text = m ? m[3].trim() : s;
+  text = text.slice(0, 1).toUpperCase() + text.slice(1); // sentence case
+  if (kind === "feat") sections.Features.push(text);
+  else if (kind === "fix") sections.Fixes.push(text);
+  else sections.Changes.push(text);
+}
+
+const lines = [`## v${version}`, ""];
+for (const [title, entries] of Object.entries(sections)) {
+  if (!entries.length) continue;
+  lines.push(`### ${title}`, ...entries.map((e) => `- ${e}`), "");
+}
+if (lines.length === 2) {
+  // Nothing but the heading -- e.g. a manifest-only re-release.
+  lines.push("Maintenance release.", "");
+}
+
+fs.writeFileSync("RELEASE_NOTES.md", lines.join("\n"));
+console.log(`>> Release notes for v${version} (${subjects.length} commit(s) since ${prev || "the first commit"}):`);
+console.log(lines.join("\n"));
+JS

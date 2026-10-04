@@ -1,0 +1,410 @@
+# Release on a v* tag (pushed after `version:bump` + the `chore(release): vX.Y.Z` commit):
+# full CI, then the Docker image, the signed Android APK + AAB and the desktop tarball, then a
+# GitHub Release carrying the tag's RELEASE_NOTES.md section and every artifact.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  BUN_VERSION: "1.4.2"
+  NODE_VERSION: "26"
+  # OCI labels and annotations for the server image; GHCR shows the description and licence.
+  IMAGE_METADATA: |
+    org.opencontainers.image.title=Atlas Todo server
+    org.opencontainers.image.description=Self-hosted Atlas Todo: the sync server and the web app (Rust, PostgreSQL)
+    org.opencontainers.image.licenses=AGPL-3.0-only
+    org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+    org.opencontainers.image.documentation=${{ github.server_url }}/${{ github.repository }}/blob/main/docs/self-hosting.md
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      # ci.yml's `changes` job reads PR file lists; a tag run never uses it, but the grant must cover it.
+      pull-requests: read
+
+  # Fails fast, before anything is published, on a tag that doesn't match the manifests, missing
+  # release notes, or a missing signing key (never ship a debug-signed APK).
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the tag matches the manifests
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          manifest="$(jq -r .version package.json)"
+          if [ "$version" != "$manifest" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($manifest). Run version:bump before tagging."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Extract the release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        # The tag's section of RELEASE_NOTES.md (written by scripts/release-notes.sh during
+        # version:bump), without its "## vX.Y.Z" heading.
+        run: |
+          awk -v heading="## v$VERSION" '
+            { line = $0; sub(/[ \t\r]+$/, "", line) }
+            line == heading { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+            END { if (!found) exit 1 }
+          ' RELEASE_NOTES.md > release-notes.md || {
+            echo "::error::RELEASE_NOTES.md has no '## v$VERSION' section. Regenerate it with scripts/release-notes.sh."
+            exit 1
+          }
+          cat release-notes.md
+      - name: Require the Android upload keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=()
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            [ -n "${!name}" ] || missing+=("$name")
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Missing secrets: ${missing[*]}. A release needs the upload keystore to sign the APK and AAB."
+            exit 1
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-notes
+          path: release-notes.md
+          retention-days: 7
+
+  # One image per architecture, pushed by digest; docker-merge tags the multi-arch index. arm64
+  # hosted runners are free only for public repositories, so a private repo builds amd64 alone.
+  docker:
+    name: Docker image (${{ matrix.arch }})
+    needs: [ci, prepare]
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include: ${{ fromJSON(github.event.repository.private && '[{"arch":"amd64","runner":"ubuntu-24.04"}]' || '[{"arch":"amd64","runner":"ubuntu-24.04"},{"arch":"arm64","runner":"ubuntu-24.04-arm"}]') }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Image name
+        id: image
+        # GHCR names must be lowercase (Owner/Repo -> ghcr.io/owner/repo); a fork
+        # publishes under its own owner automatically.
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest
+        with:
+          images: ${{ steps.image.outputs.name }}
+          labels: ${{ env.IMAGE_METADATA }}
+          annotations: ${{ env.IMAGE_METADATA }}
+      - id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          # Its build-record artifact would otherwise be swept into the release assets.
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          outputs: type=image,name=${{ steps.image.outputs.name }},push-by-digest=true,name-canonical=true,push=true
+          # The web app's About screen links to the source it was built from.
+          build-args: |
+            REPO_URL=${{ github.server_url }}/${{ github.repository }}
+          # Registry cache, not type=gha: Actions caches written on a tag ref are invisible to the
+          # next tag, so only a registry cache carries the cargo/bun layers between releases.
+          cache-from: type=registry,ref=${{ steps.image.outputs.name }}:buildcache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ steps.image.outputs.name }}:buildcache-${{ matrix.arch }},mode=max,ignore-error=true
+      - name: Record the digest
+        run: mkdir -p digests && touch "digests/${DIGEST#sha256:}"
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docker-digest-${{ matrix.arch }}
+          path: digests/*
+          retention-days: 1
+
+  docker-merge:
+    name: Docker image
+    needs: [prepare, docker]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    env:
+      # Optional Docker Hub mirror: the DOCKERHUB_IMAGE variable (e.g. `atlastodo/server`) plus the
+      # DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets. Skipped while the repository is private,
+      # because Docker Hub creates a new repository as public.
+      DOCKERHUB_IMAGE: ${{ !github.event.repository.private && vars.DOCKERHUB_IMAGE || '' }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: docker-digest-*
+          path: digests
+          merge-multiple: true
+      - name: Image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - if: env.DOCKERHUB_IMAGE != ''
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
+        with:
+          images: |
+            ${{ steps.image.outputs.name }}
+            ${{ env.DOCKERHUB_IMAGE && format('docker.io/{0}', env.DOCKERHUB_IMAGE) || '' }}
+          # X.Y.Z and X.Y; `latest` only for non-prerelease tags (latest=auto).
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          flavor: latest=auto
+          annotations: ${{ env.IMAGE_METADATA }}
+      - name: Tag the multi-arch image
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: |
+          args=()
+          while IFS= read -r tag; do args+=(-t "$tag"); done < <(jq -r '.tags[]' <<<"$DOCKER_METADATA_OUTPUT_JSON")
+          while IFS= read -r a; do args+=(--annotation "$a"); done < <(jq -r '.annotations[]' <<<"$DOCKER_METADATA_OUTPUT_JSON")
+          for digest in digests/*; do args+=("$IMAGE@sha256:${digest#digests/}"); done
+          docker buildx imagetools create "${args[@]}"
+          docker buildx imagetools inspect "$IMAGE:$(jq -r '.labels["org.opencontainers.image.version"]' <<<"$DOCKER_METADATA_OUTPUT_JSON")"
+
+  android:
+    name: Android APK + AAB
+    needs: [ci, prepare]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      # Fork overrides read by apps/mobile/app.config.ts. An unset variable arrives empty,
+      # which means the maintainer's defaults.
+      ATLAS_APP_ID: ${{ vars.ATLAS_APP_ID }}
+      ATLAS_EAS_PROJECT_ID: ${{ vars.ATLAS_EAS_PROJECT_ID }}
+      # The About screen links to the source the app was built from.
+      EXPO_PUBLIC_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+      CI: "1"
+      EXPO_NO_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "17"
+      # Pinned cmdline-tools + accepted licences, so AGP can fetch the exact NDK/CMake/platform
+      # React Native asks for.
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - name: Decode the upload keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        # Tolerates line-wrapped or unpadded base64 as pasted into the secret.
+        run: |
+          python3 -c 'import base64, os, re, sys; s = re.sub(r"[^A-Za-z0-9+/=]", "", os.environ["ANDROID_KEYSTORE_BASE64"]); s += "=" * (-len(s) % 4); open(sys.argv[1], "wb").write(base64.b64decode(s))' \
+            "$RUNNER_TEMP/upload.keystore"
+          echo "KEYSTORE=$RUNNER_TEMP/upload.keystore" >> "$GITHUB_ENV"
+      - name: Generate the native project
+        working-directory: apps/mobile
+        run: bunx expo prebuild --platform android --clean
+      - name: Build the signed APK and AAB
+        working-directory: apps/mobile/android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        # AGP's injected signing config (what Android Studio's "Generate Signed Bundle / APK" uses)
+        # signs both outputs with the upload key; the prebuilt project's own release config is the
+        # debug key. arm64-v8a only, as before.
+        run: |
+          ./gradlew assembleRelease bundleRelease --no-daemon \
+            -Dorg.gradle.jvmargs="-Xmx6g -XX:MaxMetaspaceSize=2g" \
+            -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease \
+            -PreactNativeArchitectures=arm64-v8a \
+            -Pandroid.injected.signing.store.file="$KEYSTORE" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+      - name: Verify both are signed with the upload key
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          outputs=apps/mobile/android/app/build/outputs
+          apk="$outputs/apk/release/app-release.apk"
+          aab="$outputs/bundle/release/app-release.aab"
+          build_tools="$(find -L "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          fp() { tr -d ':' | tr '[:upper:]' '[:lower:]'; }
+          expected="$(keytool -list -v -keystore "$KEYSTORE" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" | awk '/SHA256:/ { print $2; exit }' | fp)"
+          # build-tools <=36 prints "Signer #1 certificate SHA-256 digest: <hex>", 37 rewrote the
+          # labels to "V3.0 Signer: certificate SHA-256 digest: <hex>" -- match both and take the
+          # digest as the last whitespace-separated field.
+          apk_fp="$("$build_tools/apksigner" verify --print-certs "$apk" | awk '/certificate SHA-256 digest/ { print $NF; exit }' | fp)"
+          aab_fp="$(keytool -printcert -jarfile "$aab" | awk '/SHA256:/ { print $2; exit }' | fp)"
+          echo "upload key: $expected"; echo "APK:        $apk_fp"; echo "AAB:        $aab_fp"
+          if [ -z "$expected" ] || [ "$apk_fp" != "$expected" ] || [ "$aab_fp" != "$expected" ]; then
+            echo "::error::The APK or AAB is not signed with the upload keystore."
+            exit 1
+          fi
+          package="$("$build_tools/aapt2" dump packagename "$apk")"
+          echo "ANDROID_PACKAGE_NAME=$package" >> "$GITHUB_ENV"
+          mkdir -p dist
+          cp "$apk" "dist/atlas-todo-$VERSION.apk"
+          cp "$aab" "dist/atlas-todo-$VERSION.aab"
+          echo "Built $package $VERSION, signed with $expected" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: android
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload to Google Play
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          PLAY_STORE_TRACK: ${{ vars.PLAY_STORE_TRACK || 'internal' }}
+        # Only where the service-account secret exists, so forks skip it.
+        run: |
+          if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is not set; skipping the Play upload."
+            exit 0
+          fi
+          node apps/mobile/scripts/upload-play-store.mjs "dist/atlas-todo-$VERSION.aab" "$PLAY_STORE_TRACK"
+      - name: Remove the keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.keystore"
+
+  desktop:
+    name: Desktop tarball
+    needs: [ci, prepare]
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - name: Package
+        env:
+          # Unset: users pick a server on the sign-in screen. Set the repo variable to ship
+          # builds that default to a hosted instance (e.g. https://todo.example.com/api).
+          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+          # The About screen links to the source the app was built from.
+          EXPO_PUBLIC_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: bash scripts/package-desktop.sh "$VERSION"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: desktop
+          # The -latest copy backs the stable
+          # /releases/latest/download/atlas-desktop-latest.tar.gz URL (the Nix flake input).
+          path: |
+            atlas-desktop-${{ env.VERSION }}.tar.gz
+            atlas-desktop-latest.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: GitHub Release
+    needs: [prepare, docker-merge, android, desktop]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          # Not the docker-digest-* artifacts: those only carry digests between the image jobs.
+          pattern: "{release-notes,android,desktop}"
+          path: dist
+          merge-multiple: true
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        # Re-running a tag's workflow updates its release instead of failing on it.
+        run: |
+          cd dist
+          mv release-notes.md ../release-notes.md
+          sha256sum -- * > SHA256SUMS.txt
+          tag="$GITHUB_REF_NAME"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --title "Atlas Todo $tag" --notes-file ../release-notes.md
+            gh release upload "$tag" --clobber -- *
+          else
+            flags=()
+            if [[ "$tag" == *-* ]]; then flags+=(--prerelease); fi
+            gh release create "$tag" --verify-tag --title "Atlas Todo $tag" \
+              --notes-file ../release-notes.md "${flags[@]}" -- *
+          fi

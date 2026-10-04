@@ -1,0 +1,6 @@
+# Lets `docker compose ...` run from the repo root, where the .env lives. The stack itself is
+# defined in docker/docker-compose.yml.
+name: atlas-todo
+
+include:
+  - docker/docker-compose.yml

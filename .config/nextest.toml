@@ -1,0 +1,46 @@
+# Tests that write the deployment-wide `instance_settings` row, and the tests that run a closed
+# instance and so would see such a row (it overrides SIGNUP_ENABLED). They share one database with
+# every other test, so they run one at a time; everything else stays parallel. Under `cargo test`
+# each test binary runs on its own and the admin tests already serialize on an advisory lock.
+[test-groups]
+instance-settings = { max-threads = 1 }
+database-sweeps = { max-threads = 1 }
+
+[[profile.default.overrides]]
+filter = """
+package(atlas-server) & (
+    (binary(=admin) & (
+        test(=the_settings_override_beats_the_env_default)
+        | test(=admin_actions_land_in_the_audit_trail)
+        | test(=an_invite_admits_one_person_to_a_closed_instance)
+        | test(=a_bad_invite_code_does_not_reveal_whether_an_email_has_an_account)
+        | test(=a_listed_email_gets_no_signup_privileges)
+    ))
+    | (binary(=auth) & test(=signup_closed_by_flag_returns_typed_error_while_login_still_works))
+)
+"""
+test-group = "instance-settings"
+
+# Tests that run a database-wide sweep (op retention, blob GC, account purge) and assert on what it
+# removed or kept: one test's sweep deletes another's old rows, so they run one at a time.
+[[profile.default.overrides]]
+filter = """
+package(atlas-server) & (
+    binary(=retention)
+    | binary(=account_purge)
+    | (binary(=attachments) & (
+        test(=blob_gc_respects_all_partitions_and_tombstones)
+        | test(=malformed_links_do_not_break_downloads_or_gc)
+        | test(=attachment_ops_purge_ordinarily_with_retention)
+        | test(=an_account_purge_deletes_the_accounts_blob_files)
+        | test(=the_object_store_backend_keeps_the_blob_store_guarantees)
+        | test(=deleting_a_task_revokes_and_frees_its_attachments)
+        | test(=a_forged_reference_grants_neither_access_nor_gc_protection)
+    ))
+    | (binary(=sync_share) & (
+        test(=a_task_moved_out_stays_gone_once_retention_purged_its_tombstone)
+        | test(=the_sweep_revokes_what_earlier_leavers_kept)
+    ))
+)
+"""
+test-group = "database-sweeps"

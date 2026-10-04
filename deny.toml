@@ -1,0 +1,45 @@
+# cargo-deny policy for the Rust workspace. Run in CI by the `Audit (Rust)` job, which is
+# continue-on-error: a failing check marks that job red without failing the workflow.
+#
+# Philosophy: disallowed licences, untrusted sources, and security advisories all fail the check,
+# except a small, explicitly-justified ignore list for known transitive advisories with no practical
+# impact and no upstream fix. Add to `ignore` only with a written rationale — never disable a whole
+# check.
+
+[advisories]
+# Security advisories fail the audit by default. Exempt a known transitive advisory here ONLY with a
+# written rationale (crate, why it doesn't apply, upstream status) — never by disabling the check.
+ignore = []
+
+[licenses]
+# The permissive licences the dependency tree actually uses (keep it to those: cargo-deny warns about
+# unused entries). A dependency introducing a licence outside this list will fail the audit for a human
+# to review (that is the intended signal).
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    # Community Data License Agreement – Permissive 2.0 (webpki-roots, transitive via rustls TLS).
+    "CDLA-Permissive-2.0",
+]
+confidence-threshold = 0.8
+
+# Our own workspace crates are licensed AGPL-3.0-only (the project licence). Allow it for those
+# crates specifically rather than globally, so a *third-party* AGPL dependency would still be flagged.
+exceptions = [
+    { name = "atlas-core", allow = ["AGPL-3.0-only"] },
+    { name = "atlas-server", allow = ["AGPL-3.0-only"] },
+]
+
+[bans]
+# Duplicate versions are common and low-risk; warn rather than block.
+multiple-versions = "warn"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

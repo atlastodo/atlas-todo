@@ -1,0 +1,166 @@
+//! Authentication: password hashing, tokens, HTTP handlers, and the `AuthUser` extractor.
+
+pub mod account_purge;
+mod handlers;
+pub(crate) mod identity;
+pub mod kdf;
+pub mod password;
+mod recovery;
+pub mod token;
+
+use axum::extract::FromRequestParts;
+use axum::http::header::AUTHORIZATION;
+use axum::http::request::Parts;
+use axum::routing::{delete, get, patch, post, put};
+use axum::Router;
+use uuid::Uuid;
+
+use crate::error::AppError;
+use crate::state::AppState;
+
+/// Routes under `/auth`.
+pub fn routes() -> Router<AppState> {
+    Router::new()
+        .route("/auth/salt", get(handlers::get_salt))
+        .route("/auth/signup", post(handlers::signup))
+        .route("/auth/login", post(handlers::login))
+        .route("/auth/refresh", post(handlers::refresh))
+        .route("/auth/logout", post(handlers::logout))
+        .route("/auth/me", get(handlers::me))
+        .route("/auth/change-password", post(handlers::change_password))
+        .route("/auth/recovery-keys", get(handlers::get_recovery_keys))
+        .route("/auth/recover", post(handlers::recover_account))
+        .route("/auth/recovery-key", put(handlers::register_recovery_key))
+        .route(
+            "/auth/recovery-key/replace",
+            post(handlers::replace_recovery_key),
+        )
+        .route(
+            "/auth/signing-key",
+            get(identity::get_signing_key).put(identity::put_signing_key),
+        )
+        .route("/auth/account", delete(handlers::delete_account))
+        .route(
+            "/auth/account/cancel-deletion",
+            post(handlers::cancel_account_deletion),
+        )
+        .route("/auth/export", get(handlers::export))
+        .route("/auth/sessions", get(handlers::list_sessions))
+        .route(
+            "/auth/sessions/revoke-others",
+            post(handlers::revoke_other_devices),
+        )
+        .route(
+            "/auth/sessions/{device_id}",
+            patch(handlers::rename_session).delete(handlers::revoke_session),
+        )
+        .route("/users/public-key", get(handlers::get_public_key))
+}
+
+/// Extractor that authenticates a request via `Authorization: Bearer <access-token>`. Rejects
+/// with 401 when the header is missing/malformed, the token invalid/expired, or the account gone.
+///
+/// The token is stateless, so a disabled or deletion-scheduled account is caught here by
+/// re-checking both columns on every request (one primary-key lookup), taking effect on the next
+/// call rather than at access-token expiry. [`AuthUserAllowScheduled`] is the exception.
+pub struct AuthUser {
+    pub user_id: Uuid,
+    /// The device the token was issued to (`did` claim), which lets the session endpoints spare
+    /// the caller's own family. `None` for a token minted before the claim: the conservative
+    /// "unknown device" reading.
+    pub device_id: Option<Uuid>,
+    /// When the access token expires (unix seconds); a sync socket opened on it closes then.
+    pub token_expires_at: i64,
+}
+
+impl FromRequestParts<AppState> for AuthUser {
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let (user, deletion_scheduled_at) = authenticate_bearer(parts, state).await?;
+        if let Some(scheduled_at) = deletion_scheduled_at {
+            return Err(handlers::scheduled_deletion_error(scheduled_at));
+        }
+        Ok(user)
+    }
+}
+
+/// [`AuthUser`] that also admits an account in its deletion grace period, for the data export.
+pub struct AuthUserAllowScheduled(pub AuthUser);
+
+impl FromRequestParts<AppState> for AuthUserAllowScheduled {
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        Ok(AuthUserAllowScheduled(
+            authenticate_bearer(parts, state).await?.0,
+        ))
+    }
+}
+
+/// Verify the bearer token and that its account exists and is not disabled; also returns when a
+/// deletion was scheduled, which the caller decides about.
+async fn authenticate_bearer(
+    parts: &Parts,
+    state: &AppState,
+) -> Result<(AuthUser, Option<time::OffsetDateTime>), AppError> {
+    let header = parts
+        .headers
+        .get(AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .ok_or(AppError::Unauthorized)?;
+    let token = header
+        .strip_prefix("Bearer ")
+        .ok_or(AppError::Unauthorized)?;
+    let claims = token::verify_access_token(token, &state.config.jwt_secret)
+        .map_err(|_| AppError::Unauthorized)?;
+    let (disabled, deletion_scheduled_at): (bool, Option<time::OffsetDateTime>) = sqlx::query_as(
+        "SELECT disabled_at IS NOT NULL, deletion_scheduled_at FROM users WHERE id = $1",
+    )
+    .bind(claims.sub)
+    .fetch_optional(&state.pool)
+    .await?
+    .ok_or(AppError::Unauthorized)?;
+    // Typed 403s, not 401: the credentials are fine, and the client must not enter the
+    // refresh-and-retry loop over a rejection refresh cannot fix.
+    if disabled {
+        return Err(AppError::AccountDisabled);
+    }
+    Ok((
+        AuthUser {
+            user_id: claims.sub,
+            device_id: claims.did,
+            token_expires_at: claims.exp,
+        },
+        deletion_scheduled_at,
+    ))
+}
+
+/// Extractor for an endpoint reachable without a session that still attributes the caller when
+/// one is present. Never rejects: a missing, malformed, invalid or expired token yields `None`.
+/// `POST /reports` uses it, since crashes before sign-in have no token.
+pub struct OptionalAuthUser(pub Option<Uuid>);
+
+impl FromRequestParts<AppState> for OptionalAuthUser {
+    type Rejection = std::convert::Infallible;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let user_id = parts
+            .headers
+            .get(AUTHORIZATION)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|h| h.strip_prefix("Bearer "))
+            .and_then(|token| token::verify_access_token(token, &state.config.jwt_secret).ok())
+            .map(|claims| claims.sub);
+        Ok(OptionalAuthUser(user_id))
+    }
+}

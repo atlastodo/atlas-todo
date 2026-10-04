@@ -1,0 +1,51 @@
+[package]
+name = "atlas-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+description = "Atlas Todo backend: Axum HTTP + WebSocket API over PostgreSQL."
+
+[dependencies]
+atlas-core = { path = "../atlas-core" }
+axum = { version = "0.8", features = ["ws"] }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tower = "0.5"
+tower-http = { version = "0.7", features = ["trace", "cors", "fs"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }
+time = { workspace = true }
+thiserror = { workspace = true }
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio",
+    "tls-rustls-ring",
+    "postgres",
+    "macros",
+    "uuid",
+    "time",
+    "json",
+    "migrate",
+] }
+argon2 = "0.5"
+jsonwebtoken = "9"
+rand = "0.8"
+sha2 = "0.10"
+hex = "0.4"
+hmac = "0.12"
+hkdf = "0.12"
+aes-gcm = "0.10"
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+base64 = "0.22"
+futures-util = { version = "0.3", default-features = false, features = ["sink"] }
+object_store = { version = "0.14.2", default-features = false, features = ["aws"] }
+
+[dev-dependencies]
+http-body-util = "0.1"
+tower = { version = "0.5", features = ["util"] }
+tokio-tungstenite = "0.29"
+futures-util = "0.3"

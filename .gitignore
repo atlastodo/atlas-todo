@@ -1,0 +1,60 @@
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml
+
+# Rust
+/target
+**/*.rs.bk
+
+# The jest cache CI keeps inside the checkout; Prettier skips it via this file, ESLint via its own
+# ignores.
+/.jest-cache/
+
+# Node / Bun / frontend
+node_modules/
+dist/
+dist-desktop/
+atlas-desktop-*.tar.gz
+# nix build outputs
+result
+result-*
+.vite/
+*.tsbuildinfo
+bun.lockb.tmp
+
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Android (signing keystores never belong in the repo)
+.android/
+*.jks
+*.keystore
+local.properties
+*.apk
+*.aab
+apps/mobile/android/
+apps/mobile/ios/
+# A local native Android project, never tracked.
+apps/android/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+.claude/
+.opencode/
+
+# Local agent tooling state
+/.agents/

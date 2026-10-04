@@ -1,0 +1,33 @@
+{
+  "name": "@atlas/client-core",
+  "version": "0.1.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atlastodo/atlas-todo.git",
+    "directory": "packages/client-core"
+  },
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "fake-indexeddb": "^6.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.4.0",
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
+    "@scure/bip39": "^2.4.0"
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "_doc": "Golden field-level LWW conflict scenarios for the client-core merge. Each scenario's ops, applied in any order, must produce the expected resolved state. HLC order is (wall_ms, counter, node); node ids are chosen so node1 < node2 lexicographically. Resolve rule: per field keep the value with the greatest HLC; a field is visible iff its HLC > the entity's delete-tombstone HLC (or there is no delete); the entity is 'deleted' iff a delete exists and no field is visible.",
+  "nodes": {
+    "n1": "00000000-0000-0000-0000-0000000000a1",
+    "n2": "00000000-0000-0000-0000-0000000000a2"
+  },
+  "scenarios": [
+    {
+      "name": "later_set_wins",
+      "ops": [
+        {
+          "field": "title",
+          "value": "a",
+          "ts": { "wall_ms": 1, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "field": "title",
+          "value": "b",
+          "ts": { "wall_ms": 2, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        }
+      ],
+      "expected": { "deleted": false, "fields": { "title": "b" } }
+    },
+    {
+      "name": "node_breaks_tie_higher_node_wins",
+      "ops": [
+        {
+          "field": "title",
+          "value": "x",
+          "ts": { "wall_ms": 5, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "field": "title",
+          "value": "y",
+          "ts": { "wall_ms": 5, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a2" }
+        }
+      ],
+      "expected": { "deleted": false, "fields": { "title": "y" } }
+    },
+    {
+      "name": "counter_breaks_tie",
+      "ops": [
+        {
+          "field": "title",
+          "value": "p",
+          "ts": { "wall_ms": 5, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "field": "title",
+          "value": "q",
+          "ts": { "wall_ms": 5, "counter": 1, "node": "00000000-0000-0000-0000-0000000000a1" }
+        }
+      ],
+      "expected": { "deleted": false, "fields": { "title": "q" } }
+    },
+    {
+      "name": "delete_beats_earlier_set",
+      "ops": [
+        {
+          "field": "title",
+          "value": "doomed",
+          "ts": { "wall_ms": 1, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "delete": true,
+          "ts": { "wall_ms": 2, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        }
+      ],
+      "expected": { "deleted": true, "fields": {} }
+    },
+    {
+      "name": "set_after_delete_resurrects_field",
+      "ops": [
+        {
+          "delete": true,
+          "ts": { "wall_ms": 1, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "field": "title",
+          "value": "reborn",
+          "ts": { "wall_ms": 2, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        }
+      ],
+      "expected": { "deleted": false, "fields": { "title": "reborn" } }
+    },
+    {
+      "name": "multiple_fields_independent",
+      "ops": [
+        {
+          "field": "title",
+          "value": "Buy milk",
+          "ts": { "wall_ms": 1, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "field": "notes",
+          "value": "2%",
+          "ts": { "wall_ms": 2, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "field": "priority",
+          "value": 2,
+          "ts": { "wall_ms": 3, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        }
+      ],
+      "expected": {
+        "deleted": false,
+        "fields": { "title": "Buy milk", "notes": "2%", "priority": 2 }
+      }
+    },
+    {
+      "name": "idempotent_and_order_independent",
+      "ops": [
+        {
+          "field": "title",
+          "value": "b",
+          "ts": { "wall_ms": 2, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "field": "title",
+          "value": "a",
+          "ts": { "wall_ms": 1, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "field": "title",
+          "value": "b",
+          "ts": { "wall_ms": 2, "counter": 0, "node": "00000000-0000-0000-0000-0000000000a1" }
+        }
+      ],
+      "expected": { "deleted": false, "fields": { "title": "b" } }
+    },
+    {
+      "name": "repair_successor_beats_its_predecessor",
+      "_doc": "A repair re-writes a field at successorHlc(ts) = the same wall_ms and counter with node + 1 (the uuid as a 128-bit integer): the smallest HLC above ts. Here ...00af + 1 = ...00b0.",
+      "ops": [
+        {
+          "field": "title",
+          "value": "wrongly keyed",
+          "ts": { "wall_ms": 10, "counter": 0, "node": "00000000-0000-0000-0000-0000000000af" }
+        },
+        {
+          "field": "title",
+          "value": "repaired",
+          "ts": { "wall_ms": 10, "counter": 0, "node": "00000000-0000-0000-0000-0000000000b0" }
+        }
+      ],
+      "expected": { "deleted": false, "fields": { "title": "repaired" } }
+    },
+    {
+      "name": "repair_successor_loses_to_a_later_edit",
+      "ops": [
+        {
+          "field": "title",
+          "value": "wrongly keyed",
+          "ts": { "wall_ms": 10, "counter": 0, "node": "00000000-0000-0000-0000-0000000000af" }
+        },
+        {
+          "field": "title",
+          "value": "repaired",
+          "ts": { "wall_ms": 10, "counter": 0, "node": "00000000-0000-0000-0000-0000000000b0" }
+        },
+        {
+          "field": "title",
+          "value": "edited",
+          "ts": { "wall_ms": 10, "counter": 1, "node": "00000000-0000-0000-0000-0000000000a1" }
+        },
+        {
+          "field": "notes",
+          "value": "edited too",
+          "ts": { "wall_ms": 10, "counter": 0, "node": "00000000-0000-0000-0000-0000000000b1" }
+        },
+        {
+          "field": "notes",
+          "value": "repaired",
+          "ts": { "wall_ms": 10, "counter": 0, "node": "00000000-0000-0000-0000-0000000000b0" }
+        }
+      ],
+      "expected": { "deleted": false, "fields": { "title": "edited", "notes": "edited too" } }
+    }
+  ]
+}

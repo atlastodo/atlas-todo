@@ -1,0 +1,35 @@
+{
+  "_doc": "Recovery-challenge sealing shared by the server (crates/atlas-server/src/auth/recovery.rs) and the client's unsealKey (packages/client-core/src/crypto/asym.ts). GET /auth/recovery-keys seals a 32-byte nonce to the account's X25519 public key: shared = X25519(ephemeral_secret_key, recipient_public_key); aes_key = HKDF-SHA256(ikm = shared, no salt, info = 'atlas-seal-v1', 32 bytes); encryptedKey = AES-256-GCM(aes_key, iv, nonce, no AAD). Hex fields are lowercase; iv/ct in 'sealed' are standard padded base64 (ct = ciphertext || 16-byte tag). The client answers POST /auth/recover with challenge_response = lowercase hex of the unsealed nonce. Vector 1 uses the RFC 7748 section 6.1 key pairs (recipient = Alice, ephemeral = Bob).",
+  "vectors": [
+    {
+      "name": "rfc7748-keypairs",
+      "recipient_secret_key": "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a",
+      "recipient_public_key": "8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a",
+      "ephemeral_secret_key": "5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb",
+      "iv": "000102030405060708090a0b",
+      "nonce": "a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+      "sealed": {
+        "ephemeralPublicKey": "de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f",
+        "encryptedKey": {
+          "iv": "AAECAwQFBgcICQoL",
+          "ct": "t5VaZHVVLsVXSvH07SjHgMez+8xB1UkeIYr7yGRPQn8rU5DZqTR9pIAv9KRkw5Vz"
+        }
+      }
+    },
+    {
+      "name": "unclamped-secrets",
+      "recipient_secret_key": "a546e36bf0527c9d3b16154b82465edd62144c0ac1fc5a18506a2244ba449ac4",
+      "recipient_public_key": "1c9fd88f45606d932a80c71824ae151d15d73e77de38e8e000852e614fae7019",
+      "ephemeral_secret_key": "4b66e9d4d1b4673c5ad22691957d6af5c11b6421e0ea01d42ca4169e7918ba0d",
+      "iv": "f0e1d2c3b4a5968778695a4b",
+      "nonce": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+      "sealed": {
+        "ephemeralPublicKey": "ff63fe57bfbf43fa3f563628b149af704d3db625369c49983650347a6a71e00e",
+        "encryptedKey": {
+          "iv": "8OHSw7Sllod4aVpL",
+          "ct": "s8/Y2ArNMqm+46zIRv1xbNsQASLgx3HsuQY5lrR/R4I2fCHz+tSbuQtP1IEpQEiq"
+        }
+      }
+    }
+  ]
+}

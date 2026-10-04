@@ -1,0 +1,72 @@
+name: Bug report
+description: Something in Atlas Todo doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. For a security vulnerability, don't open an issue: follow [SECURITY.md](https://github.com/atlastodo/atlas-todo/blob/main/SECURITY.md) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you saw, including any error message.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Tap …
+        3. See …
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Where does it happen?
+      multiple: true
+      options:
+        - Android app
+        - iOS app
+        - Web app (browser)
+        - Desktop app (Electron)
+        - Server / self-hosting (Docker)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The app version and, if you know it, the server version.
+      placeholder: e.g. 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Device, OS and browser
+      placeholder: e.g. Pixel 8, Android 16 / Firefox 142 on Fedora 43
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Server logs, browser console output or screenshots. Remove tokens, emails and task contents you don't want to share.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and this isn't a duplicate.
+          required: true
+        - label: This isn't a security vulnerability (those go through SECURITY.md).
+          required: true
