@@ -60,17 +60,26 @@ read them.
 
 ## Architecture
 
-```
- apps/mobile (React Native + Expo)     apps/electron
-   Android app   web app (RN-web) ───► desktop shell around the web export
-        │              │
-        └── packages/client-core ──── local store (SQLite / IndexedDB), sync client, E2EE
-            packages/shared ────────── pure TS logic: recurrence, filters, quick add, habits, …
-                       │
-                HTTPS + WebSocket (ciphertext ops)
-                       │
- crates/atlas-server (Axum) ─── PostgreSQL: op log, per-user state, accounts, wrapped keys
- crates/atlas-core ──────────── pure Rust: HLC and op types
+```mermaid
+flowchart TB
+  subgraph clients["apps/mobile (Expo)"]
+    android["Android app"]
+    web["Web app (react-native-web)"]
+  end
+  electron["apps/electron<br/>desktop shell"]
+  core["packages/client-core<br/>local store (SQLite / IndexedDB), sync client, E2EE"]
+  shared["packages/shared<br/>pure TS: recurrence, filters, quick add, habits"]
+  server["crates/atlas-server (Axum)"]
+  atlascore["crates/atlas-core<br/>pure Rust: HLC and op types"]
+  db[("PostgreSQL<br/>op log, per-user state, accounts, wrapped keys")]
+
+  electron -.->|wraps| web
+  android --> core
+  web --> core
+  core --> shared
+  core <-->|"HTTPS + WebSocket<br/>(ciphertext ops)"| server
+  server --> atlascore
+  server --> db
 ```
 
 Clients record each edit as an operation on one field, stamped with a hybrid logical clock. The
