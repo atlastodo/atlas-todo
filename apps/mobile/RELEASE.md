@@ -183,7 +183,7 @@ All are optional. An unset or empty variable means the default.
 | `ATLAS_EAS_PROJECT_ID` | the maintainer's project | EAS project id; the update URL follows it. `none` turns over-the-air updates off   |
 | `PLAY_STORE_TRACK`     | `internal`               | the Play track the AAB goes to                                                     |
 | `EXPO_PUBLIC_API_URL`  | unset                    | a server URL baked into the desktop tarball; unset means users pick one at sign-in |
-| `DOCKERHUB_IMAGE`      | unset                    | also push the server image to Docker Hub as this name, e.g. `atlastodo/server`     |
+| `DOCKERHUB_IMAGE`      | unset                    | also push the server image to Docker Hub as this name, e.g. `atlastodo/atlas-todo` |
 
 ### Releasing from a fork
 

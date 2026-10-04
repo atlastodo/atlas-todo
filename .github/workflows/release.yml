@@ -169,7 +169,7 @@ jobs:
       contents: read
       packages: write
     env:
-      # Optional Docker Hub mirror: the DOCKERHUB_IMAGE variable (e.g. `atlastodo/server`) plus the
+      # Optional Docker Hub mirror: the DOCKERHUB_IMAGE variable (e.g. `atlastodo/atlas-todo`) plus the
       # DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets. Skipped while the repository is private,
       # because Docker Hub creates a new repository as public.
       DOCKERHUB_IMAGE: ${{ !github.event.repository.private && vars.DOCKERHUB_IMAGE || '' }}

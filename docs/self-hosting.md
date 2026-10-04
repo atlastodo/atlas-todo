@@ -43,8 +43,9 @@ Run all `docker compose` commands from the repository root. The root `compose.ya
 every variable in it. A `docker/.env` is read too, if it exists, for tools that run
 `docker compose -f docker/docker-compose.yml` and write their env file there.
 
-In production, pin a version: `ATLAS_IMAGE=ghcr.io/atlastodo/atlas-todo:X.Y.Z`. The image is built
-for linux/amd64 and linux/arm64 (a 64-bit OS on a Raspberry Pi works; 32-bit ARM does not).
+In production, pin a version: `ATLAS_IMAGE=ghcr.io/atlastodo/atlas-todo:X.Y.Z`. The same image is
+on Docker Hub as `atlastodo/atlas-todo`. It is built for linux/amd64 and linux/arm64 (a 64-bit OS
+on a Raspberry Pi works; 32-bit ARM does not).
 
 ## NixOS
 
