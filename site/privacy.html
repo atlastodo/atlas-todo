@@ -4,14 +4,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Privacy notice · Atlas Todo</title>
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Atlas Todo" />
+    <meta property="og:title" content="Privacy notice · Atlas Todo" />
+    <meta property="og:url" content="https://atlastodo.dev/privacy.html" />
+    <meta property="og:image" content="https://atlastodo.dev/icon.png" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <main>
       <nav>
-        <a href="./">Atlas Todo</a>
+        <a class="brand" href="./"><img src="favicon.svg" alt="" />Atlas Todo</a>
         <a href="privacy.html">Privacy</a>
         <a href="https://github.com/atlastodo/atlas-todo">GitHub</a>
+        <a href="https://app.atlastodo.dev">Open app</a>
       </nav>
 
       <h1>Privacy notice</h1>
@@ -24,18 +34,34 @@
         there, and this notice applies only to the apps themselves.
       </p>
 
-      <h2>The short version</h2>
-      <ul>
-        <li>
-          Your tasks and everything in them are end-to-end encrypted on your device. We store them
-          but cannot read them.
-        </li>
-        <li>We need your email address to run your account. We never sell or share it.</li>
-        <li>No ads, no analytics, no tracking, no third-party SDKs that collect data.</li>
-        <li>You can delete your account and all its data from the app at any time.</li>
-      </ul>
+      <section class="callout">
+        <h2>The short version</h2>
+        <ul>
+          <li>
+            Your tasks and everything in them are end-to-end encrypted on your device. We store them
+            but cannot read them.
+          </li>
+          <li>We need your email address to run your account. We never sell or share it.</li>
+          <li>No ads, no analytics, no tracking, no third-party SDKs that collect data.</li>
+          <li>You can delete your account and all its data from the app at any time.</li>
+        </ul>
+      </section>
 
-      <h2>What we store</h2>
+      <div class="toc" role="navigation" aria-label="Contents">
+        <strong>Contents</strong>
+        <ul>
+          <li><a href="#store">What we store</a></li>
+          <li><a href="#why">Why we process it</a></li>
+          <li><a href="#sharing">Sharing</a></li>
+          <li><a href="#retention">How long we keep it</a></li>
+          <li><a href="#rights">Your rights</a></li>
+          <li><a href="#children">Children</a></li>
+          <li><a href="#changes">Changes</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+
+      <h2 id="store">What we store</h2>
       <h3>Account data</h3>
       <ul>
         <li>Your email address and optional display name.</li>
@@ -97,7 +123,7 @@
         operating system provides.
       </p>
 
-      <h2>Why we process it</h2>
+      <h2 id="why">Why we process it</h2>
       <p>
         We process this data only to provide the service you signed up for: to run your account,
         sync your data between your devices and the people you share with, and keep the service
@@ -105,7 +131,7 @@
         Art. 6(1)(b) and (f)).
       </p>
 
-      <h2>Sharing</h2>
+      <h2 id="sharing">Sharing</h2>
       <p>
         We do not sell, rent or share your data with anyone, and we do not use it for advertising.
         The only other party involved is Cloudflare, which carries the network traffic. The server
@@ -113,7 +139,7 @@
         that project's content, as you would expect.
       </p>
 
-      <h2>How long we keep it</h2>
+      <h2 id="retention">How long we keep it</h2>
       <ul>
         <li>Your data is kept while your account exists.</li>
         <li>
@@ -124,7 +150,7 @@
         <li>Old sync history is pruned automatically.</li>
       </ul>
 
-      <h2>Your rights</h2>
+      <h2 id="rights">Your rights</h2>
       <p>
         You can export your data from the app's settings and delete your account (<a
           href="delete-account.html"
@@ -134,10 +160,10 @@
         <a href="https://www.datatilsynet.dk">Datatilsynet</a>).
       </p>
 
-      <h2>Children</h2>
+      <h2 id="children">Children</h2>
       <p>Atlas Todo is not directed at children under 13.</p>
 
-      <h2>Changes</h2>
+      <h2 id="changes">Changes</h2>
       <p>
         We will update this page when the way we handle data changes. The history of this page is
         public in the
@@ -146,11 +172,19 @@
         >.
       </p>
 
-      <h2>Contact</h2>
+      <h2 id="contact">Contact</h2>
       <p>
         Questions or requests about your data:
         <a href="mailto:privacy@atlastodo.dev">privacy@atlastodo.dev</a>.
       </p>
     </main>
+    <footer>
+      <ul>
+        <li><a href="privacy.html">Privacy</a></li>
+        <li><a href="delete-account.html">Delete account</a></li>
+        <li><a href="https://github.com/atlastodo/atlas-todo/issues">Report a bug</a></li>
+        <li><a href="https://github.com/atlastodo/atlas-todo">GitHub</a></li>
+      </ul>
+    </footer>
   </body>
 </html>
