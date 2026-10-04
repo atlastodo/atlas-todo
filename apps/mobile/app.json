@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Atlas Todo",
+    "slug": "atlas-todo",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "atlastodo",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff",
+      "dark": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#09090b"
+      }
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.sejder.atlastodo",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": true
+      }
+    },
+    "android": {
+      "package": "dev.sejder.atlastodo",
+      "versionCode": 78,
+      "adaptiveIcon": {
+        "backgroundColor": "#4F46E5",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-router",
+      "expo-localization",
+      "expo-notifications",
+      "expo-audio",
+      "react-native-quick-crypto"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a1ae13e9-8e40-4624-bed9-5550cfe4ac1a"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/a1ae13e9-8e40-4624-bed9-5550cfe4ac1a"
+    }
+  }
+}

@@ -1,0 +1,299 @@
+import { useEffect, useState, type ReactNode } from "react";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { LocalStore } from "@atlas/client-core";
+import { PREFERENCES_ID } from "@atlas/shared";
+import { fakeAuth, withApp } from "../testutil";
+import { StoreContext } from "../data/StoreProvider";
+import { OnboardingProvider, useOnboarding } from "../data/OnboardingContext";
+import { OnboardingModal } from "./OnboardingModal";
+
+async function mount(seed: Record<string, unknown> = {}, onFinish?: () => void) {
+  const store = new LocalStore("test");
+  for (const [field, value] of Object.entries(seed)) {
+    store.set("preference", PREFERENCES_ID, field, value);
+  }
+  const auth = fakeAuth();
+  const BaseWrapper = withApp(store, auth);
+
+  await render(
+    <BaseWrapper>
+      <OnboardingProvider>
+        <OnboardingModal onFinish={onFinish} />
+      </OnboardingProvider>
+    </BaseWrapper>,
+  );
+  return store;
+}
+
+const readPref = (store: LocalStore, field: string) =>
+  (store.get("preference", PREFERENCES_ID) ?? {})[field];
+
+describe("OnboardingModal", () => {
+  it("does not render when onboarding is already completed", async () => {
+    await mount({ onboarding_completed: true });
+    expect(screen.queryByText("Welcome to Atlas Todo")).toBeNull();
+  });
+
+  it("can step through all 5 screens and customize settings", async () => {
+    const finishMock = jest.fn();
+    const store = await mount({}, finishMock);
+
+    // Step 1: Welcome
+    expect(screen.getByText("Welcome to Atlas Todo")).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText("Continue"));
+
+    // Step 2: Appearance
+    expect(screen.getByText("Make it yours")).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText("Dark"));
+    expect(readPref(store, "theme")).toBe("dark");
+
+    await fireEvent.press(screen.getByLabelText("Emerald"));
+    expect(readPref(store, "accent")).toBe("emerald");
+
+    await fireEvent.press(screen.getByLabelText("Continue"));
+
+    // Step 3: Preferences
+    expect(screen.getByText("Time & Default View")).toBeTruthy();
+    expect(screen.getByText("Timezone")).toBeTruthy();
+    expect(screen.getByText("Region format")).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText("Inbox"));
+    expect(readPref(store, "default_view")).toBe("inbox");
+
+    await fireEvent.press(screen.getByLabelText("Continue"));
+
+    // Step 4: Features
+    expect(screen.getByText("Customize your tools")).toBeTruthy();
+    await fireEvent(screen.getByLabelText("Habits & Streaks"), "valueChange", false);
+    expect(readPref(store, "habits_enabled")).toBe(false);
+
+    await fireEvent.press(screen.getByLabelText("Continue"));
+
+    // Step 5: Ready -- the summary names the choices, never their raw ids.
+    expect(screen.getByText("You're all set!")).toBeTruthy();
+    expect(screen.getByText(/with Dark theme, Emerald accent, and Inbox/)).toBeTruthy();
+
+    const taskInput = screen.getByLabelText("Add your first task (optional)");
+    await fireEvent.changeText(taskInput, "My initial task");
+
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText("Start using Atlas Todo"));
+    });
+
+    expect(readPref(store, "onboarding_completed")).toBe(true);
+    expect(finishMock).toHaveBeenCalled();
+
+    const tasks = store.list("task");
+    expect(tasks.length).toBe(1);
+    expect(tasks[0]!.fields.title).toBe("My initial task");
+  });
+
+  it("allows user to navigate back and forth using Back button", async () => {
+    await mount();
+    expect(screen.getByText("Welcome to Atlas Todo")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("Continue"));
+    expect(screen.getByText("Make it yours")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("Back"));
+    expect(screen.getByText("Welcome to Atlas Todo")).toBeTruthy();
+  });
+
+  it("completes onboarding immediately when user clicks Skip setup", async () => {
+    const finishMock = jest.fn();
+    const store = await mount({}, finishMock);
+
+    const skipButton = screen.getByLabelText("Skip setup");
+    await act(async () => {
+      await fireEvent.press(skipButton);
+    });
+
+    expect(readPref(store, "onboarding_completed")).toBe(true);
+    expect(finishMock).toHaveBeenCalled();
+  });
+
+  it("resets to step 1 when replayed", async () => {
+    let openFn: () => void = () => {};
+    function Harness() {
+      const { openOnboarding } = useOnboarding();
+      openFn = openOnboarding;
+      return <OnboardingModal />;
+    }
+    const store = new LocalStore("test");
+    const auth = fakeAuth();
+    const BaseWrapper = withApp(store, auth);
+    await render(
+      <BaseWrapper>
+        <OnboardingProvider>
+          <Harness />
+        </OnboardingProvider>
+      </BaseWrapper>,
+    );
+
+    // Initial step 1
+    expect(screen.getByText("Welcome to Atlas Todo")).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText("Continue"));
+    expect(screen.getByText("Make it yours")).toBeTruthy();
+
+    // User closes onboarding
+    await fireEvent.press(screen.getByLabelText("Skip setup"));
+
+    // User triggers replay
+    await act(async () => {
+      openFn();
+    });
+
+    // Must be back at step 1 from the beginning
+    expect(screen.getByText("Welcome to Atlas Todo")).toBeTruthy();
+  });
+
+  it("does not render when store has existing tasks, and marks onboarding as completed", async () => {
+    const store = new LocalStore("test");
+    store.set("task", "task-1", "title", "Existing Task");
+    const auth = fakeAuth();
+    const BaseWrapper = withApp(store, auth);
+
+    await render(
+      <BaseWrapper>
+        <OnboardingProvider>
+          <OnboardingModal />
+        </OnboardingProvider>
+      </BaseWrapper>,
+    );
+
+    expect(screen.queryByText("Welcome to Atlas Todo")).toBeNull();
+    expect(readPref(store, "onboarding_completed")).toBe(true);
+  });
+
+  it("does not open when initialSyncDone is false", async () => {
+    const store = new LocalStore("test");
+
+    await render(
+      <StoreContext.Provider
+        value={{
+          store,
+          status: "idle",
+          version: 0,
+          kick: () => {},
+          resync: async () => {},
+          diagnostics: { lastError: null, lastSyncAt: null, quarantined: [], pending: 0 },
+          attachments: null,
+          initialSyncDone: false,
+        }}
+      >
+        <OnboardingProvider>
+          <OnboardingModal />
+        </OnboardingProvider>
+      </StoreContext.Provider>,
+    );
+
+    expect(screen.queryByText("Welcome to Atlas Todo")).toBeNull();
+  });
+
+  describe("first run on a device", () => {
+    /** A store context whose first successful sync the test flips, as `StoreProvider` would. */
+    function SyncedStore({
+      store,
+      synced,
+      children,
+    }: {
+      store: LocalStore;
+      synced: boolean;
+      children: ReactNode;
+    }) {
+      const [version, bump] = useState(0);
+      useEffect(() => store.onChange(() => bump((v) => v + 1)), [store]);
+      return (
+        <StoreContext.Provider
+          value={{
+            store,
+            status: "idle",
+            version,
+            kick: () => {},
+            resync: async () => {},
+            diagnostics: {
+              lastError: null,
+              lastSyncAt: synced ? 1 : null,
+              quarantined: [],
+              pending: 0,
+            },
+            attachments: null,
+            // The 4 s fallback has fired: settled, but nothing has synced.
+            initialSyncDone: true,
+          }}
+        >
+          <OnboardingProvider>{children}</OnboardingProvider>
+        </StoreContext.Provider>
+      );
+    }
+
+    it("waits for a sync to succeed, not for the fallback timer", async () => {
+      const store = new LocalStore("test");
+      const { rerender } = await render(
+        <SyncedStore store={store} synced={false}>
+          <OnboardingModal />
+        </SyncedStore>,
+      );
+      expect(screen.queryByText("Welcome to Atlas Todo")).toBeNull();
+
+      await rerender(
+        <SyncedStore store={store} synced>
+          <OnboardingModal />
+        </SyncedStore>,
+      );
+      expect(screen.getByText("Welcome to Atlas Todo")).toBeTruthy();
+    });
+
+    it("never opens for an existing account whose data arrives with the first sync", async () => {
+      const store = new LocalStore("test");
+      const { rerender } = await render(
+        <SyncedStore store={store} synced={false}>
+          <OnboardingModal />
+        </SyncedStore>,
+      );
+      await act(() => {
+        store.set("preference", PREFERENCES_ID, "theme", "dark");
+        store.set("task", "t1", "title", "From another device");
+      });
+      await rerender(
+        <SyncedStore store={store} synced>
+          <OnboardingModal />
+        </SyncedStore>,
+      );
+      expect(screen.queryByText("Welcome to Atlas Todo")).toBeNull();
+      // The synced choice survives: nothing was re-onboarded over it.
+      expect(readPref(store, "theme")).toBe("dark");
+    });
+
+    it("closes by itself once synced data shows the account is already onboarded", async () => {
+      const store = new LocalStore("test");
+      await render(
+        <SyncedStore store={store} synced>
+          <OnboardingModal />
+        </SyncedStore>,
+      );
+      expect(screen.getByText("Welcome to Atlas Todo")).toBeTruthy();
+
+      await act(() => {
+        store.set("preference", PREFERENCES_ID, "onboarding_completed", true);
+      });
+      expect(screen.queryByText("Welcome to Atlas Todo")).toBeNull();
+    });
+
+    it("keeps a replay open even though onboarding was completed long ago", async () => {
+      const store = new LocalStore("test");
+      store.set("preference", PREFERENCES_ID, "onboarding_completed", true);
+      let open: () => void = () => {};
+      function Replay() {
+        open = useOnboarding().openOnboarding;
+        return <OnboardingModal />;
+      }
+      await render(
+        <SyncedStore store={store} synced>
+          <Replay />
+        </SyncedStore>,
+      );
+      await act(() => open());
+      expect(screen.getByText("Welcome to Atlas Todo")).toBeTruthy();
+    });
+  });
+});

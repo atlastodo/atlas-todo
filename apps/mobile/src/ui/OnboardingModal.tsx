@@ -1,0 +1,945 @@
+import { useEffect, useState } from "react";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
+import { vars } from "nativewind";
+import {
+  ACCENTS,
+  ACCENT_LABEL_KEYS,
+  ACCENT_NAMES,
+  REGION_OPTIONS,
+  accentVars,
+  createTask,
+  resolveTimeZone,
+  timeZoneOptions,
+  type AccentName,
+  type DateFormatPref,
+  type SmartView,
+  type ThemePref,
+  type TimeFormatPref,
+} from "@atlas/shared";
+import { useStore } from "../data/StoreProvider";
+import { usePreferences } from "../hooks/usePreferences";
+import { useOnboarding } from "../data/OnboardingContext";
+import { deviceLanguage } from "../i18n";
+import { ThemeScope } from "../theme/ThemeProvider";
+import { ensureNotifyPermission } from "../lib/notify";
+import { haptics } from "../lib/haptics";
+import { ListPicker, type PickerOption } from "./ListPicker";
+import { NotifyPermissionHint } from "./NotifyPermissionHint";
+import { Segmented } from "./Segmented";
+import {
+  Bell,
+  Calendar,
+  CalendarClock,
+  ChartColumn,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheckBig,
+  Clock,
+  Database,
+  Flame,
+  Inbox,
+  ListTodo,
+  ShieldCheck,
+  Sparkles,
+  Sun,
+  type LucideIcon,
+} from "./icons";
+
+const THEME_OPTIONS: { value: ThemePref; labelKey: string }[] = [
+  { value: "system", labelKey: "settings.themeSystem" },
+  { value: "light", labelKey: "settings.themeLight" },
+  { value: "dark", labelKey: "settings.themeDark" },
+];
+
+const TIME_OPTIONS: { value: TimeFormatPref; labelKey: string }[] = [
+  { value: "auto", labelKey: "settings.auto" },
+  { value: "12h", labelKey: "settings.time12h" },
+  { value: "24h", labelKey: "settings.time24h" },
+];
+
+const DATE_OPTIONS: { value: DateFormatPref; labelKey: string }[] = [
+  { value: "auto", labelKey: "settings.auto" },
+  { value: "short", labelKey: "settings.short" },
+  { value: "medium", labelKey: "settings.medium" },
+  { value: "long", labelKey: "settings.long" },
+];
+
+const VIEW_CHOICES: { view: SmartView; icon: LucideIcon }[] = [
+  { view: "today", icon: Sun },
+  { view: "inbox", icon: Inbox },
+  { view: "upcoming", icon: CalendarClock },
+  { view: "all", icon: ListTodo },
+];
+
+function OnboardingToggleItem({
+  icon: Icon,
+  label,
+  description,
+  value,
+  onValueChange,
+  accentHex,
+}: {
+  icon: LucideIcon;
+  label: string;
+  description: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+  accentHex: string;
+}) {
+  const isWeb = Platform.OS === "web";
+  return (
+    <View className="flex-row items-center justify-between gap-4 p-4 sm:p-5">
+      <View className="h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800">
+        <Icon
+          size={20}
+          color={value ? accentHex : undefined}
+          className={value ? "" : "text-neutral-500 dark:text-neutral-400"}
+        />
+      </View>
+      <View className="flex-1 gap-0.5">
+        <Text className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+          {label}
+        </Text>
+        <Text className="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+          {description}
+        </Text>
+      </View>
+      {isWeb ? (
+        <Pressable
+          accessibilityRole="switch"
+          accessibilityState={{ checked: value }}
+          accessibilityLabel={label}
+          onPress={() => onValueChange(!value)}
+          style={value ? { backgroundColor: accentHex } : undefined}
+          className={
+            "relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 web:cursor-pointer " +
+            (value ? "bg-accent-600" : "bg-neutral-300 dark:bg-neutral-700")
+          }
+        >
+          <View
+            style={{ left: value ? 22 : 2 }}
+            className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-200"
+          />
+        </Pressable>
+      ) : (
+        <Switch accessibilityLabel={label} value={value} onValueChange={onValueChange} />
+      )}
+    </View>
+  );
+}
+
+export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
+  const { t, i18n } = useTranslation();
+  const insets = useSafeAreaInsets();
+  const { store, kick } = useStore();
+  const { isOpen, closeOnboarding } = useOnboarding();
+  const {
+    theme,
+    setTheme,
+    accent,
+    setAccent,
+    language,
+    setLanguage,
+    timezone,
+    setTimezone,
+    region,
+    setRegion,
+    defaultView,
+    setDefaultView,
+    weekStartsOn,
+    setWeekStartsOn,
+    timeFormat,
+    setTimeFormat,
+    dateFormat,
+    setDateFormat,
+    focusEnabled,
+    setFocusEnabled,
+    habitsEnabled,
+    setHabitsEnabled,
+    countdownsEnabled,
+    setCountdownsEnabled,
+    statsEnabled,
+    setStatsEnabled,
+    smartDatesEnabled,
+    setSmartDatesEnabled,
+    remindersEnabled,
+    setRemindersEnabled,
+    setOnboardingCompleted,
+  } = usePreferences();
+
+  const [step, setStep] = useState<number>(1);
+  const [firstTaskTitle, setFirstTaskTitle] = useState("");
+
+  // Always reset to step 1 when the onboarding wizard is opened or replayed
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1);
+      setFirstTaskTitle("");
+    }
+  }, [isOpen]);
+
+  const TOTAL_STEPS = 5;
+  const FEATURES_STEP = 4;
+  const currentAccentHex = ACCENTS[accent]?.[600] ?? "#4f46e5";
+
+  // Resolve browser/device defaults for timezone and region display
+  const deviceZone = resolveTimeZone("");
+  const deviceLangCode = deviceLanguage();
+  const deviceRegionLabel =
+    typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().locale || deviceLangCode
+      : deviceLangCode;
+
+  const timezoneChoices: PickerOption<string>[] = [
+    { value: "", label: t("settings.deviceDefault"), hint: deviceZone },
+    ...timeZoneOptions().map((z) => ({ value: z, label: z })),
+  ];
+  const regionChoices: PickerOption<string>[] = [
+    { value: "", label: t("settings.deviceDefault"), hint: deviceRegionLabel },
+    ...REGION_OPTIONS.map((r) => ({ value: r.tag, label: r.label })),
+  ];
+
+  const sampleTime = new Date(2026, 8, 3, 14, 30);
+  const deviceZoneTimeSample =
+    typeof Intl !== "undefined"
+      ? new Intl.DateTimeFormat(region || undefined, {
+          hour: "numeric",
+          minute: "2-digit",
+          timeZone: timezone || undefined,
+        }).format(sampleTime)
+      : "14:30";
+
+  const sampleDateMap = {
+    auto:
+      typeof Intl !== "undefined"
+        ? new Intl.DateTimeFormat(region || undefined, {
+            dateStyle: "medium",
+            timeZone: timezone || undefined,
+          }).format(sampleTime)
+        : "3 Sep 2026",
+    short:
+      typeof Intl !== "undefined"
+        ? new Intl.DateTimeFormat(region || undefined, {
+            dateStyle: "short",
+            timeZone: timezone || undefined,
+          }).format(sampleTime)
+        : "03/09/2026",
+    medium:
+      typeof Intl !== "undefined"
+        ? new Intl.DateTimeFormat(region || undefined, {
+            dateStyle: "medium",
+            timeZone: timezone || undefined,
+          }).format(sampleTime)
+        : "3 Sep 2026",
+    long:
+      typeof Intl !== "undefined"
+        ? new Intl.DateTimeFormat(region || undefined, {
+            dateStyle: "long",
+            timeZone: timezone || undefined,
+          }).format(sampleTime)
+        : "3 September 2026",
+  };
+
+  const handleFinish = (skipped = false) => {
+    setOnboardingCompleted(true);
+    if (!skipped && firstTaskTitle.trim()) {
+      createTask(store, { title: firstTaskTitle.trim() });
+      kick();
+    }
+    haptics.success();
+    closeOnboarding();
+    if (onFinish) onFinish();
+  };
+
+  const handleNext = () => {
+    haptics.selection();
+    // Reminders are on by default, so the toggle's own prompt never runs for most people: leaving
+    // the step that presents them is the gesture that asks. A no-op once answered.
+    if (step === FEATURES_STEP && remindersEnabled) void ensureNotifyPermission();
+    if (step < TOTAL_STEPS) {
+      setStep(step + 1);
+    } else {
+      handleFinish(false);
+    }
+  };
+
+  const handleBack = () => {
+    haptics.selection();
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+
+  const tr = <T extends string | number>(opts: { value: T; labelKey: string }[]) =>
+    opts.map((o) => ({ value: o.value, label: t(o.labelKey) }));
+
+  const isEn = language === "en" || (!language && i18n.language?.startsWith("en"));
+  const isDa = language === "da" || (!language && i18n.language?.startsWith("da"));
+
+  if (!isOpen) return null;
+
+  return (
+    <Modal visible={isOpen} animationType="fade" transparent={false}>
+      <ThemeScope
+        style={[vars(accentVars(accent)), { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+        className="flex-1 bg-white dark:bg-zinc-950"
+      >
+        {/* Top App Header with Centered Progress Bar and Skip */}
+        <View className="relative flex-row items-center justify-between border-b border-neutral-100 px-5 py-3 dark:border-neutral-800">
+          <View className="flex-row items-center gap-2">
+            <View
+              className="h-7 w-7 items-center justify-center rounded-lg"
+              style={{ backgroundColor: currentAccentHex }}
+            >
+              <ListTodo size={16} className="text-white" />
+            </View>
+            <Text className="font-semibold text-neutral-900 dark:text-neutral-100">
+              {t("app.title")}
+            </Text>
+          </View>
+
+          {/* Step Progress Dots: Positioned in dead horizontal center */}
+          <View
+            className="absolute left-0 right-0 items-center justify-center"
+            style={{ pointerEvents: "none" }}
+          >
+            <View className="flex-row items-center gap-1.5">
+              {Array.from({ length: TOTAL_STEPS }).map((_, idx) => {
+                const isCurrent = idx + 1 === step;
+                const isPast = idx + 1 < step;
+                return (
+                  <View
+                    key={idx}
+                    style={isCurrent || isPast ? { backgroundColor: currentAccentHex } : undefined}
+                    className={
+                      "h-2 rounded-full transition-all " +
+                      (isCurrent
+                        ? "w-6"
+                        : isPast
+                          ? "w-2 opacity-80"
+                          : "w-2 bg-neutral-200 dark:bg-neutral-800")
+                    }
+                  />
+                );
+              })}
+            </View>
+          </View>
+
+          {step < TOTAL_STEPS ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("onboarding.skip")}
+              onPress={() => handleFinish(true)}
+              hitSlop={8}
+              className="px-2 py-1 active:opacity-70"
+            >
+              <Text className="text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">
+                {t("onboarding.skip")}
+              </Text>
+            </Pressable>
+          ) : (
+            <View className="w-16" />
+          )}
+        </View>
+
+        {/* Step Body */}
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="px-6 py-6 web:mx-auto web:w-full web:max-w-xl"
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Step 1: Welcome & Value Prop */}
+          {step === 1 && (
+            <View className="gap-6">
+              <View className="items-center py-4">
+                <View className="mb-4 h-20 w-20 items-center justify-center rounded-3xl border border-accent-300 bg-accent-50 shadow-sm dark:border-accent-700 dark:bg-accent-950">
+                  <Sparkles size={40} color={currentAccentHex} />
+                </View>
+                <Text className="text-center text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+                  {t("onboarding.welcomeTitle")}
+                </Text>
+                <Text className="mt-2 text-center text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  {t("onboarding.welcomeSubtitle")}
+                </Text>
+              </View>
+
+              <View className="gap-3">
+                <View className="flex-row items-start gap-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-900/60">
+                  <View
+                    className="mt-0.5 rounded-lg p-2"
+                    style={{ backgroundColor: currentAccentHex + "20" }}
+                  >
+                    <Database size={18} color={currentAccentHex} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      {t("onboarding.valSpeedTitle")}
+                    </Text>
+                    <Text className="mt-0.5 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                      {t("onboarding.valSpeedDesc")}
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="flex-row items-start gap-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-900/60">
+                  <View className="mt-0.5 rounded-lg bg-emerald-100 p-2 dark:bg-emerald-950/40">
+                    <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      {t("onboarding.valPrivacyTitle")}
+                    </Text>
+                    <Text className="mt-0.5 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                      {t("onboarding.valPrivacyDesc")}
+                    </Text>
+                  </View>
+                </View>
+
+                <View className="flex-row items-start gap-3.5 rounded-xl border border-neutral-200 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-900/60">
+                  <View className="mt-0.5 rounded-lg bg-blue-100 p-2 dark:bg-blue-950/40">
+                    <CalendarClock size={18} className="text-blue-600 dark:text-blue-400" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      {t("onboarding.valSyncTitle")}
+                    </Text>
+                    <Text className="mt-0.5 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                      {t("onboarding.valSyncDesc")}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Step 2: Appearance & Theme */}
+          {step === 2 && (
+            <View className="gap-6">
+              <View>
+                <Text className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
+                  {t("onboarding.appearanceTitle")}
+                </Text>
+                <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.appearanceDesc")}
+                </Text>
+              </View>
+
+              {/* Theme Selector */}
+              <View className="gap-2">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.themeLabel")}
+                </Text>
+                <Segmented
+                  value={theme}
+                  options={tr(THEME_OPTIONS)}
+                  onChange={setTheme}
+                  label={t("onboarding.themeLabel")}
+                  accentColor={currentAccentHex}
+                />
+              </View>
+
+              {/* Accent Color Palette */}
+              <View className="gap-2">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.accentLabel")}
+                </Text>
+                <View accessibilityRole="radiogroup" className="flex-row flex-wrap gap-3 py-1">
+                  {ACCENT_NAMES.map((name) => {
+                    const isSelected = accent === name;
+                    return (
+                      <Pressable
+                        key={name}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: isSelected }}
+                        accessibilityLabel={t(ACCENT_LABEL_KEYS[name])}
+                        onPress={() => {
+                          haptics.selection();
+                          setAccent(name as AccentName);
+                        }}
+                        style={{ backgroundColor: ACCENTS[name][600] }}
+                        className={
+                          "h-10 w-10 items-center justify-center rounded-full shadow-sm " +
+                          (isSelected
+                            ? "border-2 border-neutral-900 dark:border-white scale-110"
+                            : "border border-black/10 opacity-90")
+                        }
+                      >
+                        {isSelected && <Check size={18} className="text-white" />}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Language Selection */}
+              <View className="gap-2">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.languageLabel")}
+                </Text>
+                <View className="flex-row gap-3">
+                  <Pressable
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isEn }}
+                    accessibilityLabel="English"
+                    onPress={() => {
+                      haptics.selection();
+                      setLanguage("en");
+                    }}
+                    style={isEn ? { borderColor: currentAccentHex } : undefined}
+                    className={
+                      "flex-1 flex-row items-center justify-between rounded-xl border p-3.5 transition-all " +
+                      (isEn
+                        ? "border-2 bg-accent-50 dark:bg-accent-950"
+                        : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60")
+                    }
+                  >
+                    <View>
+                      <Text
+                        className={
+                          "text-sm font-semibold " +
+                          (isEn
+                            ? "text-neutral-900 dark:text-neutral-50"
+                            : "text-neutral-700 dark:text-neutral-300")
+                        }
+                      >
+                        English
+                      </Text>
+                      <Text className="text-xs text-neutral-400">English</Text>
+                    </View>
+                    {isEn ? (
+                      <View
+                        className="h-5 w-5 items-center justify-center rounded-full"
+                        style={{ backgroundColor: currentAccentHex }}
+                      >
+                        <Check size={12} className="text-white" />
+                      </View>
+                    ) : (
+                      <View className="h-5 w-5 rounded-full border border-neutral-300 dark:border-neutral-750" />
+                    )}
+                  </Pressable>
+
+                  <Pressable
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isDa }}
+                    accessibilityLabel="Dansk"
+                    onPress={() => {
+                      haptics.selection();
+                      setLanguage("da");
+                    }}
+                    style={isDa ? { borderColor: currentAccentHex } : undefined}
+                    className={
+                      "flex-1 flex-row items-center justify-between rounded-xl border p-3.5 transition-all " +
+                      (isDa
+                        ? "border-2 bg-accent-50 dark:bg-accent-950"
+                        : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60")
+                    }
+                  >
+                    <View>
+                      <Text
+                        className={
+                          "text-sm font-semibold " +
+                          (isDa
+                            ? "text-neutral-900 dark:text-neutral-50"
+                            : "text-neutral-700 dark:text-neutral-300")
+                        }
+                      >
+                        Dansk
+                      </Text>
+                      <Text className="text-xs text-neutral-400">Dansk</Text>
+                    </View>
+                    {isDa ? (
+                      <View
+                        className="h-5 w-5 items-center justify-center rounded-full"
+                        style={{ backgroundColor: currentAccentHex }}
+                      >
+                        <Check size={12} className="text-white" />
+                      </View>
+                    ) : (
+                      <View className="h-5 w-5 rounded-full border border-neutral-300 dark:border-neutral-750" />
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Live Preview Card */}
+              <View className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/50">
+                <Text className="mb-2 text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  {t("onboarding.previewCard")}
+                </Text>
+                <View className="flex-row items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-800 dark:bg-zinc-900">
+                  <View
+                    className="h-5 w-5 items-center justify-center rounded-full border-2"
+                    style={{ borderColor: currentAccentHex }}
+                  >
+                    <View
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: currentAccentHex }}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-medium text-neutral-900 dark:text-neutral-100">
+                      {t("onboarding.previewTaskTitle")}
+                    </Text>
+                    <View className="mt-1 flex-row items-center gap-2">
+                      <View
+                        className="rounded px-1.5 py-0.5"
+                        style={{ backgroundColor: currentAccentHex + "22" }}
+                      >
+                        <Text className="text-xs font-semibold" style={{ color: currentAccentHex }}>
+                          {t("onboarding.previewTaskProject")}
+                        </Text>
+                      </View>
+                      <Text className="text-xs text-neutral-400">{t("nav.today")}</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Step 3: Calendar & Routine Defaults */}
+          {step === 3 && (
+            <View className="gap-6">
+              <View>
+                <Text className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
+                  {t("onboarding.defaultsTitle")}
+                </Text>
+                <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.defaultsDesc")}
+                </Text>
+              </View>
+
+              {/* Default View 2x2 Grid with Icons */}
+              <View className="gap-2">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.defaultViewLabel")}
+                </Text>
+                <View className="flex-row flex-wrap gap-2.5">
+                  {VIEW_CHOICES.map(({ view: v, icon: ViewIcon }) => {
+                    const isSelected = defaultView === v;
+                    return (
+                      <Pressable
+                        key={v}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: isSelected }}
+                        accessibilityLabel={t(`nav.${v}`)}
+                        onPress={() => {
+                          haptics.selection();
+                          setDefaultView(v);
+                        }}
+                        style={isSelected ? { borderColor: currentAccentHex } : undefined}
+                        className={
+                          "flex-1 min-w-[140px] flex-row items-center justify-between rounded-xl border p-3.5 transition-all " +
+                          (isSelected
+                            ? "border-2 bg-accent-50 dark:bg-accent-950"
+                            : "border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/60")
+                        }
+                      >
+                        <View className="flex-row items-center gap-3">
+                          <View className="rounded-lg p-2 bg-neutral-100 dark:bg-neutral-800">
+                            <ViewIcon
+                              size={18}
+                              color={isSelected ? currentAccentHex : undefined}
+                              className={isSelected ? "" : "text-neutral-500 dark:text-neutral-400"}
+                            />
+                          </View>
+                          <Text
+                            className={
+                              "text-sm font-semibold capitalize " +
+                              (isSelected
+                                ? "text-neutral-900 dark:text-neutral-50"
+                                : "text-neutral-700 dark:text-neutral-300")
+                            }
+                          >
+                            {t(`nav.${v}`)}
+                          </Text>
+                        </View>
+                        {isSelected ? (
+                          <View
+                            className="h-5 w-5 items-center justify-center rounded-full"
+                            style={{ backgroundColor: currentAccentHex }}
+                          >
+                            <Check size={12} className="text-white" />
+                          </View>
+                        ) : (
+                          <View className="h-5 w-5 rounded-full border border-neutral-300 dark:border-neutral-750" />
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+
+              {/* Timezone & Region Settings */}
+              <View className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+                <View className="p-4 sm:p-5">
+                  <ListPicker
+                    label={t("settings.timezone")}
+                    description={t("settings.timezoneDesc")}
+                    value={timezone}
+                    options={timezoneChoices}
+                    onChange={setTimezone}
+                    className="border-none py-0"
+                  />
+                </View>
+                <View className="mx-5 border-t border-neutral-100 dark:border-neutral-800/80" />
+                <View className="p-4 sm:p-5">
+                  <ListPicker
+                    label={t("settings.region")}
+                    description={t("settings.regionDesc")}
+                    value={region}
+                    options={regionChoices}
+                    onChange={setRegion}
+                    className="border-none py-0"
+                  />
+                </View>
+              </View>
+
+              {/* Week Starts On */}
+              <View className="gap-2">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.weekStartLabel")}
+                </Text>
+                <Segmented
+                  value={weekStartsOn}
+                  options={[
+                    { value: 1, label: t("settings.mon") },
+                    { value: 0, label: t("settings.sun") },
+                  ]}
+                  onChange={setWeekStartsOn}
+                  label={t("onboarding.weekStartLabel")}
+                  accentColor={currentAccentHex}
+                />
+              </View>
+
+              {/* Time Format */}
+              <View className="gap-2">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.timeFormatLabel")}
+                </Text>
+                <Segmented
+                  value={timeFormat}
+                  options={tr(TIME_OPTIONS)}
+                  onChange={setTimeFormat}
+                  label={t("onboarding.timeFormatLabel")}
+                  accentColor={currentAccentHex}
+                />
+                <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {timeFormat === "auto"
+                    ? t("settings.timeFormatAutoDesc", { sample: deviceZoneTimeSample })
+                    : timeFormat === "12h"
+                      ? t("settings.timeFormat12hDesc")
+                      : t("settings.timeFormat24hDesc")}
+                </Text>
+              </View>
+
+              {/* Date Format */}
+              <View className="gap-2">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.dateFormatLabel", t("settings.dateFormat"))}
+                </Text>
+                <Segmented
+                  value={dateFormat}
+                  options={tr(DATE_OPTIONS)}
+                  onChange={setDateFormat}
+                  label={t("settings.dateFormat")}
+                  accentColor={currentAccentHex}
+                />
+                <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {dateFormat === "auto"
+                    ? t("settings.dateFormatAutoDesc", { sample: sampleDateMap.auto })
+                    : dateFormat === "short"
+                      ? t("settings.dateFormatShortDesc", { sample: sampleDateMap.short })
+                      : dateFormat === "medium"
+                        ? t("settings.dateFormatMediumDesc", { sample: sampleDateMap.medium })
+                        : t("settings.dateFormatLongDesc", { sample: sampleDateMap.long })}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Step 4: Feature Modules */}
+          {step === FEATURES_STEP && (
+            <View className="gap-6">
+              <View>
+                <Text className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
+                  {t("onboarding.featuresTitle")}
+                </Text>
+                <Text className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.featuresDesc")}
+                </Text>
+              </View>
+
+              <View className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
+                <OnboardingToggleItem
+                  icon={Clock}
+                  label={t("onboarding.featureFocus")}
+                  description={t("onboarding.featureFocusDesc")}
+                  value={focusEnabled}
+                  onValueChange={setFocusEnabled}
+                  accentHex={currentAccentHex}
+                />
+                <View className="mx-5 border-t border-neutral-100 dark:border-neutral-800/80" />
+                <OnboardingToggleItem
+                  icon={Flame}
+                  label={t("onboarding.featureHabits")}
+                  description={t("onboarding.featureHabitsDesc")}
+                  value={habitsEnabled}
+                  onValueChange={setHabitsEnabled}
+                  accentHex={currentAccentHex}
+                />
+                <View className="mx-5 border-t border-neutral-100 dark:border-neutral-800/80" />
+                <OnboardingToggleItem
+                  icon={CalendarClock}
+                  label={t("onboarding.featureCountdowns")}
+                  description={t("onboarding.featureCountdownsDesc")}
+                  value={countdownsEnabled}
+                  onValueChange={setCountdownsEnabled}
+                  accentHex={currentAccentHex}
+                />
+                <View className="mx-5 border-t border-neutral-100 dark:border-neutral-800/80" />
+                <OnboardingToggleItem
+                  icon={ChartColumn}
+                  label={t("onboarding.featureStats")}
+                  description={t("onboarding.featureStatsDesc")}
+                  value={statsEnabled}
+                  onValueChange={setStatsEnabled}
+                  accentHex={currentAccentHex}
+                />
+                <View className="mx-5 border-t border-neutral-100 dark:border-neutral-800/80" />
+                <OnboardingToggleItem
+                  icon={Calendar}
+                  label={t("onboarding.featureSmartDates")}
+                  description={t("onboarding.featureSmartDatesDesc")}
+                  value={smartDatesEnabled}
+                  onValueChange={setSmartDatesEnabled}
+                  accentHex={currentAccentHex}
+                />
+                <View className="mx-5 border-t border-neutral-100 dark:border-neutral-800/80" />
+                <OnboardingToggleItem
+                  icon={Bell}
+                  label={t("onboarding.featureReminders")}
+                  description={t("onboarding.featureRemindersDesc")}
+                  value={remindersEnabled}
+                  onValueChange={(on) => {
+                    if (on) void ensureNotifyPermission();
+                    setRemindersEnabled(on);
+                  }}
+                  accentHex={currentAccentHex}
+                />
+                {remindersEnabled && (
+                  <View className="px-4 pb-4 sm:px-5">
+                    <NotifyPermissionHint />
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Step 5: Ready to Go & Optional First Task */}
+          {step === 5 && (
+            <View className="gap-6">
+              <View className="items-center py-4">
+                <View className="mb-4 h-20 w-20 items-center justify-center rounded-3xl bg-emerald-500/10">
+                  <CircleCheckBig size={44} className="text-emerald-600 dark:text-emerald-400" />
+                </View>
+                <Text className="text-center text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+                  {t("onboarding.readyTitle")}
+                </Text>
+                <Text className="mt-2 text-center text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  {t("onboarding.readyDesc")}
+                </Text>
+              </View>
+
+              {/* Summary of choices */}
+              <View className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4 dark:border-neutral-800 dark:bg-neutral-900/60">
+                <Text className="text-center text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  {t("onboarding.readySummary", {
+                    theme: t(
+                      THEME_OPTIONS.find((o) => o.value === theme)?.labelKey ??
+                        "settings.themeSystem",
+                    ),
+                    accent: t(ACCENT_LABEL_KEYS[accent]),
+                    view: t(`nav.${defaultView}`),
+                  })}
+                </Text>
+              </View>
+
+              {/* Optional First Task */}
+              <View className="gap-2">
+                <Text className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  {t("onboarding.firstTaskLabel")}
+                </Text>
+                <TextInput
+                  accessibilityLabel={t("onboarding.firstTaskLabel")}
+                  placeholder={t("onboarding.firstTaskPlaceholder")}
+                  value={firstTaskTitle}
+                  onChangeText={setFirstTaskTitle}
+                  returnKeyType="done"
+                  onSubmitEditing={() => handleFinish(false)}
+                  className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                  placeholderTextColor="#a1a1aa"
+                />
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Bottom Actions Bar */}
+        <View className="flex-row items-center justify-between border-t border-neutral-100 bg-white px-6 py-4 dark:border-neutral-800 dark:bg-zinc-950 web:mx-auto web:w-full web:max-w-xl">
+          {step > 1 ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("onboarding.back")}
+              onPress={handleBack}
+              className="flex-row items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-4 py-2.5 active:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:active:bg-neutral-800"
+            >
+              <ChevronLeft size={16} className="text-neutral-600 dark:text-neutral-300" />
+              <Text className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                {t("onboarding.back")}
+              </Text>
+            </Pressable>
+          ) : (
+            <View className="w-16" />
+          )}
+
+          {step < TOTAL_STEPS ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("onboarding.next")}
+              onPress={handleNext}
+              style={{ backgroundColor: currentAccentHex }}
+              className="flex-row items-center gap-1.5 rounded-lg px-5 py-2.5 shadow-sm active:opacity-90"
+            >
+              <Text className="text-sm font-semibold text-white">{t("onboarding.next")}</Text>
+              <ChevronRight size={16} className="text-white" />
+            </Pressable>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("onboarding.finish")}
+              onPress={() => handleFinish(false)}
+              style={{ backgroundColor: currentAccentHex }}
+              className="flex-row items-center gap-1.5 rounded-lg px-6 py-2.5 shadow-md active:opacity-90"
+            >
+              <Text className="text-sm font-semibold text-white">{t("onboarding.finish")}</Text>
+              <Sparkles size={16} className="text-white" />
+            </Pressable>
+          )}
+        </View>
+      </ThemeScope>
+    </Modal>
+  );
+}
