@@ -7,6 +7,7 @@ import { useTrash } from "../hooks/useTrash";
 import { useFormat } from "../hooks/useFormat";
 import { useToast } from "../data/ToastProvider";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { EmptyState } from "../ui/EmptyState";
 import { RotateCcw, Trash2, X } from "../ui/icons";
 
 /**
@@ -36,12 +37,7 @@ export function TrashScreen() {
   const [purging, setPurging] = useState<TrashItem | null>(null);
 
   if (items.length === 0) {
-    return (
-      <View className="flex-1 items-center justify-center gap-3 bg-white p-8 dark:bg-zinc-950">
-        <Trash2 size={32} className="text-neutral-400" />
-        <Text className="text-sm text-neutral-400">{t("trash.empty")}</Text>
-      </View>
-    );
+    return <EmptyState icon={Trash2} title={t("trash.empty")} description={t("trash.emptyHint")} />;
   }
 
   return (

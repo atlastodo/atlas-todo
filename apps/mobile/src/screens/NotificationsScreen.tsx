@@ -8,6 +8,7 @@ import { useToast } from "../data/ToastProvider";
 import { Bell, Check, Lock, X } from "../ui/icons";
 import { projectIconFor } from "../ui/projectIcons";
 import { SkeletonRows } from "../ui/Skeleton";
+import { EmptyState } from "../ui/EmptyState";
 import { haptics } from "../lib/haptics";
 import { relativeLabel } from "./SettingsScreen";
 
@@ -35,10 +36,11 @@ export function NotificationsScreen() {
 
   if (!loading && notifications.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center gap-2 bg-white dark:bg-zinc-950">
-        <Bell size={32} className="text-neutral-400" />
-        <Text className="text-sm text-neutral-400">{t("notifications.empty")}</Text>
-      </View>
+      <EmptyState
+        icon={Bell}
+        title={t("notifications.empty")}
+        description={t("notifications.emptyHint")}
+      />
     );
   }
 

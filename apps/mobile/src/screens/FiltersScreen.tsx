@@ -4,6 +4,7 @@ import { useSavedFilters, type SavedFilter } from "../hooks/useSavedFilters";
 import { usePreferences } from "../hooks/usePreferences";
 import { useToast } from "../data/ToastProvider";
 import { ListFilter, Plus, Star, Trash2 } from "../ui/icons";
+import { EmptyState } from "../ui/EmptyState";
 
 /** Lists every saved filter. Each row opens, favorites or deletes the filter; a header button composes a new one. Navigation is injected (`onOpen`, `onNew`). */
 export interface FiltersScreenProps {
@@ -23,7 +24,7 @@ export function FiltersScreen({ onOpen, onNew }: FiltersScreenProps) {
       accessibilityRole="button"
       accessibilityLabel={t("filter.newFilter")}
       onPress={onNew}
-      className="mx-3 mb-2 mt-3 flex-row items-center gap-2 rounded-md bg-accent-600 px-3 py-2.5"
+      className="mx-3 mb-2 mt-3 flex-row items-center gap-2 self-start rounded-md bg-accent-600 px-3 py-2.5 active:bg-accent-700 web:cursor-pointer"
     >
       <Plus size={isWeb ? 16 : 18} className="text-white" />
       <Text className={"font-medium text-white " + (isWeb ? "text-sm" : "text-base")}>
@@ -32,15 +33,15 @@ export function FiltersScreen({ onOpen, onNew }: FiltersScreenProps) {
     </Pressable>
   );
 
+  // The empty state carries the create action itself, next to the explanation it belongs to.
   if (filters.length === 0) {
     return (
-      <View className="flex-1 bg-white dark:bg-zinc-950">
-        {header}
-        <View className="flex-1 items-center justify-center gap-2">
-          <ListFilter size={32} className="text-neutral-400" />
-          <Text className="text-sm text-neutral-400">{t("filters.empty")}</Text>
-        </View>
-      </View>
+      <EmptyState
+        icon={ListFilter}
+        title={t("filters.empty")}
+        description={t("filters.emptyHint")}
+        actions={onNew ? [{ label: t("filter.newFilter"), onPress: onNew, primary: true }] : []}
+      />
     );
   }
 

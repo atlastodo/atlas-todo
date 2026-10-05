@@ -38,4 +38,12 @@ describe("FiltersScreen", () => {
     await fireEvent.press(screen.getAllByLabelText("Delete filter")[0]!);
     expect(isTrashed(store.get("saved_filter", hot)!)).toBe(true);
   });
+
+  it("offers New filter inside the empty state", async () => {
+    const onNew = jest.fn();
+    await render(<FiltersScreen onNew={onNew} />, { wrapper: withApp(new LocalStore("test")) });
+    expect(screen.getByText("No saved filters yet")).toBeTruthy();
+    await fireEvent.press(screen.getByText("New filter"));
+    expect(onNew).toHaveBeenCalledTimes(1);
+  });
 });

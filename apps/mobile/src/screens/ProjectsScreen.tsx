@@ -20,11 +20,13 @@ import { StyleEditor, StyleAction } from "../ui/StyleEditor";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { FolderPicker } from "../ui/FolderPicker";
 import { projectIconFor } from "../ui/projectIcons";
+import { EmptyState } from "../ui/EmptyState";
 import {
   Archive,
   ChevronDown,
   ChevronRight,
   CopyPlus,
+  Folder,
   FolderInput,
   FolderPlus,
   Hash,
@@ -235,10 +237,20 @@ export function ProjectsScreen({ onOpenProject, rootId = null }: ProjectsScreenP
       <FlatList
         data={rows}
         keyExtractor={(row) => row.project.id}
+        // The action focuses the create field above rather than opening a second way to name one.
         ListEmptyComponent={
-          <Text className="p-6 text-center text-sm text-neutral-400">
-            {rootId === null ? t("workspace.noProjects") : t("projects.emptyFolder")}
-          </Text>
+          <EmptyState
+            icon={rootId === null ? Hash : Folder}
+            title={rootId === null ? t("workspace.noProjects") : t("projects.emptyFolder")}
+            description={rootId === null ? t("projects.emptyHint") : undefined}
+            actions={[
+              {
+                label: t("workspace.newProject"),
+                onPress: () => escapeDraft.ref.current?.focus(),
+                primary: true,
+              },
+            ]}
+          />
         }
         renderItem={({ item }) => (
           <ProjectRow

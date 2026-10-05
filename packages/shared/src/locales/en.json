@@ -65,7 +65,8 @@
   },
   "notifications": {
     "empty": "No notifications",
-    "error": "Couldn't load notifications."
+    "error": "Couldn't load notifications.",
+    "emptyHint": "Invitations to shared projects show up here, ready to accept or decline."
   },
   "workspace": {
     "shareProject": "Share project",
@@ -127,12 +128,13 @@
     "projects": "Archived projects",
     "tasks": "Archived tasks",
     "restore": "Restore",
-    "empty": "Nothing archived.",
+    "empty": "Nothing archived",
     "habits": "Habits",
-    "routines": "Routines"
+    "routines": "Routines",
+    "emptyHint": "Archive a project, task or habit to hide it from your lists without deleting it. It stays here until you restore it."
   },
   "trash": {
-    "empty": "Recently deleted is empty.",
+    "empty": "Recently deleted is empty",
     "retentionNote": "Deleted items are kept for 30 days, then permanently removed.",
     "daysLeft_one": "{{count}} day left",
     "daysLeft_other": "{{count}} days left",
@@ -155,7 +157,8 @@
       "comment": "Comment",
       "reminder": "Reminder",
       "attachment": "Attachment"
-    }
+    },
+    "emptyHint": "Deleted items stay here for 30 days so you can restore them, then they are removed for good."
   },
   "toast": {
     "completed": "Task completed",
@@ -439,7 +442,7 @@
     "moveHint": "Moving \"{{title}}\" — tap a day to reschedule"
   },
   "countdown": {
-    "empty": "No countdowns yet. Enable one above to count down to it.",
+    "empty": "No countdowns yet",
     "dueNow": "Due now",
     "overdueBy": "Overdue by {{magnitude}}",
     "presets": "Presets",
@@ -448,7 +451,8 @@
       "weekend": "The weekend",
       "month_end": "End of month",
       "year_end": "End of year"
-    }
+    },
+    "emptyHint": "Tap a preset, such as The weekend, to see how much time is left until it."
   },
   "task": {
     "actions": "Task actions",
@@ -861,7 +865,8 @@
     "editStyle": "Icon & colour"
   },
   "filters": {
-    "empty": "No saved filters yet. Create one with New filter."
+    "empty": "No saved filters yet",
+    "emptyHint": "A filter saves a search, such as high-priority tasks due this week, so it is one tap away."
   },
   "label": {
     "heading": "Labels",
@@ -1047,7 +1052,8 @@
     "becomeOwner": "Become owner",
     "becomeOwnerSuccess": "You are now the owner of this project",
     "becomeOwnerConfirm": "Are you sure you want to take over ownership of this project?",
-    "becomeOwnerFailed": "Failed to claim ownership"
+    "becomeOwnerFailed": "Failed to claim ownership",
+    "emptyHint": "Projects group related tasks, with their own sections, board and sharing."
   },
   "crash": {
     "title": "Something went wrong",
@@ -1063,8 +1069,9 @@
   },
   "notFound": {
     "title": "Page not found",
-    "body": "There is nothing at {{path}}.",
-    "goHome": "Go to {{view}}"
+    "body": "Nothing exists at {{path}}. The link may be old or mistyped.",
+    "goHome": "Go to {{view}}",
+    "search": "Search"
   },
   "report": {
     "title": "Report a problem",
@@ -1363,5 +1370,23 @@
     "managed": "Updates are managed by your system package manager ({{manager}}). Use 'nix flake update' to update.",
     "managedGeneric": "Updates are managed by your system package manager.",
     "error": "Update error: {{error}}"
+  },
+  "empty": {
+    "inbox": {
+      "title": "Your inbox is empty",
+      "hint": "Capture anything here as it comes to mind, and sort it into projects later."
+    },
+    "today": {
+      "title": "Nothing planned for today",
+      "hint": "Add a task, or plan your day from what is overdue and coming up."
+    },
+    "upcoming": {
+      "title": "Nothing coming up",
+      "hint": "Tasks with a due date after today show up here, grouped by day."
+    },
+    "assigned": {
+      "title": "Nothing is assigned to you.",
+      "hint": "When someone in a shared project assigns you a task, it shows up here."
+    }
   }
 }

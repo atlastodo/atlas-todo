@@ -65,7 +65,8 @@
   },
   "notifications": {
     "empty": "Ingen notifikationer",
-    "error": "Kunne ikke indlæse notifikationer."
+    "error": "Kunne ikke indlæse notifikationer.",
+    "emptyHint": "Invitationer til delte projekter vises her, klar til at blive accepteret eller afvist."
   },
   "workspace": {
     "shareProject": "Del projekt",
@@ -127,12 +128,13 @@
     "projects": "Arkiverede projekter",
     "tasks": "Arkiverede opgaver",
     "restore": "Gendan",
-    "empty": "Intet arkiveret.",
+    "empty": "Intet arkiveret",
     "habits": "Vaner",
-    "routines": "Rutiner"
+    "routines": "Rutiner",
+    "emptyHint": "Arkivér et projekt, en opgave eller en vane for at skjule det fra dine lister uden at slette det. Det bliver her, til du gendanner det."
   },
   "trash": {
-    "empty": "Slettet for nylig er tom.",
+    "empty": "Slettet for nylig er tom",
     "retentionNote": "Slettede elementer gemmes i 30 dage og fjernes derefter permanent.",
     "daysLeft_one": "{{count}} dag tilbage",
     "daysLeft_other": "{{count}} dage tilbage",
@@ -155,7 +157,8 @@
       "comment": "Kommentar",
       "reminder": "Påmindelse",
       "attachment": "Vedhæftet fil"
-    }
+    },
+    "emptyHint": "Slettede elementer bliver her i 30 dage, så du kan gendanne dem, og fjernes derefter for altid."
   },
   "toast": {
     "completed": "Opgave fuldført",
@@ -439,7 +442,7 @@
     "moveHint": "Flytter \"{{title}}\" — tryk på en dag for at omplanlægge"
   },
   "countdown": {
-    "empty": "Ingen nedtællinger endnu. Aktivér en ovenfor for at tælle ned til den.",
+    "empty": "Ingen nedtællinger endnu",
     "dueNow": "Forfalder nu",
     "overdueBy": "Overskredet med {{magnitude}}",
     "presets": "Forudindstillinger",
@@ -448,7 +451,8 @@
       "weekend": "Weekenden",
       "month_end": "Månedens slutning",
       "year_end": "Årets slutning"
-    }
+    },
+    "emptyHint": "Tryk på en forudindstilling, fx Weekenden, for at se, hvor lang tid der er tilbage."
   },
   "task": {
     "actions": "Opgavehandlinger",
@@ -861,7 +865,8 @@
     "editStyle": "Ikon og farve"
   },
   "filters": {
-    "empty": "Ingen gemte filtre endnu. Opret et med Nyt filter."
+    "empty": "Ingen gemte filtre endnu",
+    "emptyHint": "Et filter gemmer en søgning, fx opgaver med høj prioritet, der forfalder i denne uge, så den er ét tryk væk."
   },
   "label": {
     "heading": "Etiketter",
@@ -1047,7 +1052,8 @@
     "becomeOwner": "Bliv ejer",
     "becomeOwnerSuccess": "Du er nu ejer af dette projekt",
     "becomeOwnerConfirm": "Er du sikker på, at du vil overtage ejerskabet af dette projekt?",
-    "becomeOwnerFailed": "Kunne ikke overtage ejerskabet"
+    "becomeOwnerFailed": "Kunne ikke overtage ejerskabet",
+    "emptyHint": "Projekter samler relaterede opgaver med deres egne sektioner, tavle og deling."
   },
   "crash": {
     "title": "Noget gik galt",
@@ -1063,8 +1069,9 @@
   },
   "notFound": {
     "title": "Siden blev ikke fundet",
-    "body": "Der er ingenting på {{path}}.",
-    "goHome": "Gå til {{view}}"
+    "body": "Der findes intet på {{path}}. Linket kan være forældet eller stavet forkert.",
+    "goHome": "Gå til {{view}}",
+    "search": "Søg"
   },
   "report": {
     "title": "Rapporter et problem",
@@ -1363,5 +1370,23 @@
     "managed": "Opdateringer administreres af din pakkehåndtering ({{manager}}). Brug 'nix flake update' for at opdatere.",
     "managedGeneric": "Opdateringer administreres af din pakkehåndtering.",
     "error": "Opdateringsfejl: {{error}}"
+  },
+  "empty": {
+    "inbox": {
+      "title": "Din indbakke er tom",
+      "hint": "Skriv alt herind, når du kommer i tanke om det, og sorter det i projekter senere."
+    },
+    "today": {
+      "title": "Intet planlagt i dag",
+      "hint": "Tilføj en opgave, eller planlæg din dag ud fra det, der er forfaldent og på vej."
+    },
+    "upcoming": {
+      "title": "Intet på vej",
+      "hint": "Opgaver med en forfaldsdato efter i dag vises her, grupperet efter dag."
+    },
+    "assigned": {
+      "title": "Intet er tildelt dig.",
+      "hint": "Når nogen i et delt projekt tildeler dig en opgave, vises den her."
+    }
   }
 }

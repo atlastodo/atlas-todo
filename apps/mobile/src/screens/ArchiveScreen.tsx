@@ -6,6 +6,7 @@ import { useLocalTasks } from "../hooks/useLocalTasks";
 import { useProjects } from "../hooks/useProjects";
 import { useHabits } from "../hooks/useHabits";
 import { projectIconFor } from "../ui/projectIcons";
+import { EmptyState } from "../ui/EmptyState";
 import { Archive, Folder, Hash, RotateCcw } from "../ui/icons";
 import { displayTitle } from "../lib/taskTitle";
 
@@ -33,10 +34,7 @@ export function ArchiveScreen() {
 
   if (archivedTasks.length === 0 && archivedProjects.length === 0 && archivedHabits.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center gap-3 bg-white p-8 dark:bg-zinc-950">
-        <Archive size={32} className="text-neutral-400" />
-        <Text className="text-sm text-neutral-400">{t("archive.empty")}</Text>
-      </View>
+      <EmptyState icon={Archive} title={t("archive.empty")} description={t("archive.emptyHint")} />
     );
   }
 

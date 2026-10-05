@@ -1,8 +1,10 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { Task } from "@atlas/client-core";
 import { assignedToMe } from "@atlas/shared";
 import { useAuth } from "../auth/AuthContext";
 import { useTaskListView } from "../hooks/useTaskListView";
+import { UserRound } from "../ui/icons";
 import { ViewTaskList } from "./ViewTaskList";
 
 /**
@@ -16,11 +18,21 @@ export interface AssignedScreenProps {
 }
 
 export function AssignedScreen({ onOpenTask }: AssignedScreenProps = {}) {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const view = useTaskListView("assigned");
   const myId = session?.user.id;
 
   const tasks = useMemo(() => (myId ? assignedToMe(view.tasks, myId) : []), [view.tasks, myId]);
 
-  return <ViewTaskList view={view} tasks={tasks} onOpenTask={onOpenTask} />;
+  return (
+    <ViewTaskList
+      view={view}
+      tasks={tasks}
+      onOpenTask={onOpenTask}
+      emptyIcon={UserRound}
+      emptyLabel={t("empty.assigned.title")}
+      emptyHint={t("empty.assigned.hint")}
+    />
+  );
 }

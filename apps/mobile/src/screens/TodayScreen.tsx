@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Task } from "@atlas/client-core";
 import {
   endOfDay,
@@ -9,6 +10,7 @@ import {
 } from "@atlas/shared";
 import { useTaskListView } from "../hooks/useTaskListView";
 import { PlanDaySheet } from "../ui/PlanDaySheet";
+import { Sun } from "../ui/icons";
 import { QuickAddTaskList } from "./ViewTaskList";
 
 /**
@@ -23,6 +25,7 @@ export interface TodayScreenProps {
 }
 
 export function TodayScreen({ onOpenTask }: TodayScreenProps = {}) {
+  const { t } = useTranslation();
   const view = useTaskListView("today", { group: "date", sort: "manual" });
   const [planOpen, setPlanOpen] = useState(false);
 
@@ -46,6 +49,9 @@ export function TodayScreen({ onOpenTask }: TodayScreenProps = {}) {
         view={view}
         tasks={tasks}
         onOpenTask={onOpenTask}
+        emptyIcon={Sun}
+        emptyLabel={t("empty.today.title")}
+        emptyHint={t("empty.today.hint")}
         onRescheduleOverdue={(overdue) =>
           view.rescheduleMany(overdue, endOfDay(view.now, view.timeZone))
         }

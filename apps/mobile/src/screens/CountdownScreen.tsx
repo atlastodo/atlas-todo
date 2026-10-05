@@ -8,6 +8,7 @@ import { usePreferences } from "../hooks/usePreferences";
 import { useFormat } from "../hooks/useFormat";
 import { useNow } from "../hooks/useNow";
 import { ScreenFade } from "../ui/ScreenFade";
+import { EmptyState } from "../ui/EmptyState";
 
 /**
  * Countdown-to-deadline widgets: synthetic presets (the weekend, month end, year end) to count
@@ -139,10 +140,11 @@ export function CountdownScreen({ now: nowOverride }: { now?: number }) {
             })}
           </View>
         ) : (
-          <View className="items-center justify-center py-16">
-            <CalendarClock size={32} className="mb-3 text-neutral-400" />
-            <Text className="text-sm text-neutral-400">{t("countdown.empty")}</Text>
-          </View>
+          <EmptyState
+            icon={CalendarClock}
+            title={t("countdown.empty")}
+            description={t("countdown.emptyHint")}
+          />
         )}
       </ScrollView>
     </ScreenFade>
