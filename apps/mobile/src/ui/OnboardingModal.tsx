@@ -49,6 +49,7 @@ import {
   Clock,
   Database,
   Flame,
+  Globe,
   Inbox,
   ListTodo,
   ShieldCheck,
@@ -299,12 +300,8 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
         {/* Top App Header with Centered Progress Bar and Skip */}
         <View className="relative flex-row items-center justify-between border-b border-neutral-100 px-5 py-3 dark:border-neutral-800">
           <View className="flex-row items-center gap-2">
-            <View
-              className="h-7 w-7 items-center justify-center rounded-lg"
-              style={{ backgroundColor: currentAccentHex }}
-            >
-              <ListTodo size={16} className="text-white" />
-            </View>
+            {/* The app icon's globe, as in the sidebar and on sign-in. */}
+            <Globe size={22} color={currentAccentHex} />
             <Text className="font-semibold text-neutral-900 dark:text-neutral-100">
               {t("app.title")}
             </Text>

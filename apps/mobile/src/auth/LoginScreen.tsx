@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { ApiError, RecoveryPhraseError, apiErrorCode } from "@atlas/client-core";
-import { CircleAlert, CircleCheckBig } from "../ui/icons";
+import { CircleAlert, Globe } from "../ui/icons";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { useAuth, type SignOutNotice } from "./AuthContext";
 import { defaultServerUrl, isOnlineWeb, loadServerUrl } from "./serverUrl";
@@ -160,7 +160,8 @@ export function LoginScreen({
       >
         <View className="w-full self-center rounded-xl border border-neutral-200 bg-white p-6 sm:max-w-sm dark:border-neutral-800 dark:bg-neutral-900">
           <View className="mb-6 flex-row items-center gap-2">
-            <CircleCheckBig size={24} className="text-accent-500" />
+            {/* The app icon's globe, as in the sidebar. */}
+            <Globe size={24} className="text-accent-600 dark:text-accent-400" />
             <Text className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               {t("app.title")}
             </Text>
