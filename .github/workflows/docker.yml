@@ -1,0 +1,152 @@
+# Builds and publishes the server image (the sync server plus the web app): one image per
+# architecture pushed by digest, then a multi-arch index tagged with `tags`. Called by release.yml
+# (a v* tag) and dev-image.yml (the moving `dev` tag for the dev branch).
+name: Docker image
+
+on:
+  workflow_call:
+    inputs:
+      tags:
+        description: docker/metadata-action `tags` for the multi-arch image.
+        required: true
+        type: string
+      flavor:
+        description: docker/metadata-action `flavor`.
+        required: false
+        type: string
+        default: latest=false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # OCI labels and annotations for the server image; GHCR shows the description and licence.
+  IMAGE_METADATA: |
+    org.opencontainers.image.title=Atlas Todo server
+    org.opencontainers.image.description=Self-hosted Atlas Todo: the sync server and the web app (Rust, PostgreSQL)
+    org.opencontainers.image.licenses=AGPL-3.0-only
+    org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+    org.opencontainers.image.documentation=${{ github.server_url }}/${{ github.repository }}/blob/main/docs/self-hosting.md
+
+jobs:
+  # One image per architecture, pushed by digest; merge tags the multi-arch index. arm64 hosted
+  # runners are free only for public repositories, so a private repo builds amd64 alone.
+  build:
+    name: Docker image (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include: ${{ fromJSON(github.event.repository.private && '[{"arch":"amd64","runner":"ubuntu-24.04"}]' || '[{"arch":"amd64","runner":"ubuntu-24.04"},{"arch":"arm64","runner":"ubuntu-24.04-arm"}]') }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Image name
+        id: image
+        # GHCR names must be lowercase (Owner/Repo -> ghcr.io/owner/repo); a fork
+        # publishes under its own owner automatically.
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest
+        with:
+          images: ${{ steps.image.outputs.name }}
+          labels: ${{ env.IMAGE_METADATA }}
+          annotations: ${{ env.IMAGE_METADATA }}
+      - id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          # Its build-record artifact would otherwise be swept into the release assets.
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
+        with:
+          context: .
+          file: docker/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          outputs: type=image,name=${{ steps.image.outputs.name }},push-by-digest=true,name-canonical=true,push=true
+          # The web app's About screen links to the source it was built from.
+          build-args: |
+            REPO_URL=${{ github.server_url }}/${{ github.repository }}
+          # Registry cache, not type=gha: Actions caches written on a tag ref are invisible to the
+          # next tag, so only a registry cache carries the cargo/bun layers between builds. Release
+          # and dev builds share it.
+          cache-from: type=registry,ref=${{ steps.image.outputs.name }}:buildcache-${{ matrix.arch }}
+          cache-to: type=registry,ref=${{ steps.image.outputs.name }}:buildcache-${{ matrix.arch }},mode=max,ignore-error=true
+      - name: Record the digest
+        run: mkdir -p digests && touch "digests/${DIGEST#sha256:}"
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: docker-digest-${{ matrix.arch }}
+          path: digests/*
+          retention-days: 1
+
+  merge:
+    name: Docker image
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    env:
+      # Optional Docker Hub mirror: the DOCKERHUB_IMAGE variable (e.g. `atlastodo/atlas-todo`) plus the
+      # DOCKERHUB_USERNAME and DOCKERHUB_TOKEN secrets. Skipped while the repository is private,
+      # because Docker Hub creates a new repository as public.
+      DOCKERHUB_IMAGE: ${{ !github.event.repository.private && vars.DOCKERHUB_IMAGE || '' }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: docker-digest-*
+          path: digests
+          merge-multiple: true
+      - name: Image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - if: env.DOCKERHUB_IMAGE != ''
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: index
+        with:
+          images: |
+            ${{ steps.image.outputs.name }}
+            ${{ env.DOCKERHUB_IMAGE && format('docker.io/{0}', env.DOCKERHUB_IMAGE) || '' }}
+          tags: ${{ inputs.tags }}
+          flavor: ${{ inputs.flavor }}
+          annotations: ${{ env.IMAGE_METADATA }}
+      - name: Tag the multi-arch image
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: |
+          args=()
+          while IFS= read -r tag; do args+=(-t "$tag"); done < <(jq -r '.tags[]' <<<"$DOCKER_METADATA_OUTPUT_JSON")
+          while IFS= read -r a; do args+=(--annotation "$a"); done < <(jq -r '.annotations[]' <<<"$DOCKER_METADATA_OUTPUT_JSON")
+          for digest in digests/*; do args+=("$IMAGE@sha256:${digest#digests/}"); done
+          docker buildx imagetools create "${args[@]}"
+          docker buildx imagetools inspect "$IMAGE:$(jq -r '.labels["org.opencontainers.image.version"]' <<<"$DOCKER_METADATA_OUTPUT_JSON")"

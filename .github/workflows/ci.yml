@@ -1,7 +1,7 @@
 # Lint + test for every push to main and every PR, or on demand. A push or PR only runs the jobs
 # whose files changed (see `changes`); the audits and MSRV run when dependencies change and once a
 # week. release.yml calls this same workflow on a v* tag, so a release is gated on the full suite.
-# Pushes to dev run nothing: an rc tag (or a manual run) tests dev with the full suite.
+# Pushes to dev run it through dev-image.yml, which publishes the `dev` Docker tag when it passes.
 name: CI
 
 on:
