@@ -38,6 +38,7 @@ import type { SyncErrorKind } from "../lib/syncStatus";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { CIPHERTEXT_AS_BLOB, createPersistence } from "./persistence";
 import { deleteLocalData, migrationKeys } from "./localData";
+import { markLocalDataUsed } from "./localUpgrade";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { clearSharedFiles } from "../lib/attachmentFiles";
 import { AppSkeleton } from "../ui/AppSkeleton";
@@ -142,6 +143,11 @@ export interface StoreContextValue {
   initialSyncDone: boolean;
   /** The attachment queue, or null until the store and an unlocked keyring exist (no plaintext path). */
   attachments: AttachmentsContextValue | null;
+  /**
+   * Local-only mode: the store lives only on this device, with no server, sync, sharing or
+   * attachments. Absent (false) for an account's store.
+   */
+  localOnly?: boolean;
 }
 
 function toErrorInfo(err: unknown): SyncErrorInfo {
@@ -167,7 +173,8 @@ export const StoreContext = createContext<StoreContextValue | null>(null);
  * - Sync also runs when the app returns to the foreground; RN has no `online` event.
  *
  * `api` and `deviceId` are injected rather than read from the auth context, keeping the store
- * independent and testable.
+ * independent and testable. Without `api` the store is local-only (see `auth/localMode.tsx`): it
+ * loads and saves on this device and nothing else runs.
  */
 export function StoreProvider({
   api,
@@ -178,13 +185,20 @@ export function StoreProvider({
   openPersistence = createPersistence,
   resetLocalData = deleteLocalData,
 }: {
-  api: ApiClient;
+  /** The session's client, or null in local-only mode (no server at all). */
+  api: ApiClient | null;
   /** The session's device id: the HLC tiebreak, so it must be stable per device. */
   deviceId: string;
-  /** The signed-in user's id; scopes the durable op log so accounts never share one on a device. */
+  /**
+   * The signed-in user's id, or `LOCAL_SCOPE` in local-only mode; scopes the durable op log so
+   * accounts never share one on a device.
+   */
   userId: string;
-  /** The unlocked keyring (the store only mounts unlocked). A prop so the attachment queue follows it. */
-  keyring: Keyring;
+  /**
+   * The unlocked keyring (an account's store only mounts unlocked), or null in local-only mode. A
+   * prop so the attachment queue follows it.
+   */
+  keyring: Keyring | null;
   children: ReactNode;
   /** Opens the user's local database (injectable for tests). */
   openPersistence?: typeof createPersistence;
@@ -214,7 +228,8 @@ export function StoreProvider({
   // are present on first paint.
   const [ready, setReady] = useState<{
     store: LocalStore;
-    sync: SyncClient;
+    /** Null in local-only mode. */
+    sync: SyncClient | null;
     /** The op-log persistence; also owns the attachment upload queue table. */
     persistence: Persistence;
   } | null>(null);
@@ -270,6 +285,26 @@ export function StoreProvider({
       if (cancelled) return;
       setStorage((s) => (s === "blocked" ? null : s));
 
+      if (!api) {
+        // Local-only: nothing is ever pushed, so superseded history can go now (see `compactLocal`).
+        await markLocalDataUsed();
+        await store.compactLocal();
+        if (cancelled) return;
+        const unsubLocal = store.onChange(() => bump((v) => v + 1));
+        setReady({ store, sync: null, persistence });
+        setInitialSyncDone(true);
+        cleanup = () => {
+          unsubLocal();
+          void store
+            .flush()
+            .catch(() => {})
+            .then(() => persistence.close?.())
+            .catch((err) => console.warn("[atlas] could not close the local database:", err));
+        };
+        return;
+      }
+      const client = api;
+
       let savedCursor = await persistence.getCursor();
       if (cancelled) return;
 
@@ -296,7 +331,7 @@ export function StoreProvider({
       const scopeWalkKey = migrationKeys(userId).e2eeWalk;
       let scopeMigrationPending = false;
       try {
-        if (await AsyncStorage.getItem(scopeMigrationKey)) api.setLegacyMigrated(true);
+        if (await AsyncStorage.getItem(scopeMigrationKey)) client.setLegacyMigrated(true);
         else {
           // A full walk from page 1, started once; a later launch continues where it stopped, so a
           // walk longer than one session still ends.
@@ -315,7 +350,7 @@ export function StoreProvider({
 
       // Project keys live only in memory: reload them before the first sync so shared content
       // decrypts and new edits use the project's key. Sync waits for the first attempt.
-      api.setScopeContext(store, userId);
+      client.setScopeContext(store, userId);
       let keysLoaded = false;
       let keysHydrated = false;
       // Keys loaded before the account's key trust state was known (a fresh device, or an account
@@ -335,7 +370,7 @@ export function StoreProvider({
             // loads nothing rather than whatever the server offers.
             if (!trust.initialized && freshStore && !synced) return;
             if (!trust.initialized) loadedUntrusted = true;
-            const result = await hydrateProjectKeys(api, kr, {
+            const result = await hydrateProjectKeys(client, kr, {
               isCreator: (projectId) => isProjectCreator(store, projectId, userId),
               trust,
               userId,
@@ -344,7 +379,7 @@ export function StoreProvider({
             keysHydrated = true;
             if (result.changed && !cancelled) {
               // Values that arrived before their key: open them in place, repair the misfiled.
-              reviveLockedValues(store, kr, userId, !api.isLegacyMigrated());
+              reviveLockedValues(store, kr, userId, !client.isLegacyMigrated());
               setE2ee({ locked: store.lockedCount(), deferred: sync.deferredCount() });
               if (keysLoaded) runSync();
             }
@@ -399,7 +434,7 @@ export function StoreProvider({
       const bootstrap = (await persistence.getBootstrap?.()) ?? null;
       if (cancelled) return;
 
-      const sync = new SyncClient(store, api, {
+      const sync = new SyncClient(store, client, {
         cursor: Number.isFinite(savedCursor) ? savedCursor : 0,
         bootstrap,
         onBootstrapProgress: (progress, page) => {
@@ -458,7 +493,7 @@ export function StoreProvider({
         // The server pushes pull-shaped payloads over `/sync/ws`. The poll below remains the
         // fallback: the hub can drop messages for a lagging device.
         realtime: {
-          url: (since) => api.syncWsUrl(since),
+          url: (since) => client.syncWsUrl(since),
         },
         // Joining, accepting or a role change on a project can bring new keys.
         onRemoteApplied: (ops) => {
@@ -493,7 +528,7 @@ export function StoreProvider({
             if (res.skipped) return;
             if (migrating && scopeMigrationPending) {
               scopeMigrationPending = false;
-              api.setLegacyMigrated(true);
+              client.setLegacyMigrated(true);
               recordLegacyMigrated(store);
               void AsyncStorage.setItem(scopeMigrationKey, "true")
                 .then(() => AsyncStorage.removeItem(scopeWalkKey))
@@ -543,7 +578,7 @@ export function StoreProvider({
       });
       cleanup = () => {
         hydrateKeysRef.current = null;
-        api.setScopeContext(null);
+        client.setScopeContext(null);
         if (fallbackTimer) clearTimeout(fallbackTimer);
         if (pollTimer) clearTimeout(pollTimer);
         reschedulePoll = null;
@@ -587,7 +622,7 @@ export function StoreProvider({
   // Rebuilt with the keyring. The queue's rows are durable in the op-log database, so a fresh
   // instance over the same persistence resumes where the last one left off.
   useEffect(() => {
-    if (!ready || !keyring.hasKeys()) {
+    if (!ready || !api || !keyring?.hasKeys()) {
       setAttachments(null);
       return;
     }
@@ -627,7 +662,7 @@ export function StoreProvider({
   // Ask the server whether it stores attachments (and how large), once it is reachable.
   const online = status === "idle" || status === "live-ws";
   useEffect(() => {
-    if (!ready || !online || attachmentServer) return;
+    if (!ready || !api || !online || attachmentServer) return;
     let cancelled = false;
     api
       .getAttachmentConfig()
@@ -662,13 +697,14 @@ export function StoreProvider({
   }, []);
 
   const kick = useCallback(async () => {
-    if (!ready) return;
+    if (!ready?.sync) return;
+    const sync = ready.sync;
     syncingUntilRef.current = Date.now() + 500;
     setStatus("syncing");
 
     const timerPromise = new Promise((resolve) => setTimeout(resolve, 500));
     try {
-      const res = await ready.sync.sync();
+      const res = await sync.sync();
       if (res.skipped) return;
       if (isMountedRef.current) setInitialSyncDone(true);
       drainAfterSync();
@@ -677,13 +713,13 @@ export function StoreProvider({
     } finally {
       await timerPromise;
       if (isMountedRef.current && Date.now() >= syncingUntilRef.current) {
-        setStatus(ready.sync.currentStatus());
+        setStatus(sync.currentStatus());
       }
     }
   }, [ready, drainAfterSync]);
 
   const resync = useCallback(async () => {
-    if (!ready) return;
+    if (!ready?.sync) return;
     // Failures propagate: the one caller (Sync details) tells the user what happened.
     const res = await ready.sync.resetAndBootstrap();
     if (res.skipped) return "postponed" as const;
@@ -722,6 +758,7 @@ export function StoreProvider({
             },
             initialSyncDone,
             attachments: attachmentsValue,
+            localOnly: ready.sync === null,
           }
         : null,
     [
