@@ -115,13 +115,17 @@ export function Segmented<T extends string | number>({
                 onChange(opt.value);
               }}
               onLayout={(e) => onItemLayout(index, e)}
-              style={
-                !hasMeasured && active
-                  ? { backgroundColor: activeAccent, borderRadius: 8 }
-                  : { borderRadius: 8 }
-              }
+              style={{
+                // Grow into a stretched (full-width) control so the options share it, instead of
+                // bunching at the start; a content-sized control has no free space and is unchanged.
+                flexGrow: 1,
+                borderRadius: 8,
+                // Once measured, only the sliding pill is filled; anything opaque on the selected
+                // option sits above it. Inactive options keep their className press tint.
+                ...(active && { backgroundColor: hasMeasured ? "transparent" : activeAccent }),
+              }}
               className={
-                "z-10 items-center justify-center px-3.5 py-1.5 transition-colors duration-150 web:cursor-pointer " +
+                "z-10 items-center justify-center px-3.5 py-1.5 web:cursor-pointer web:transition-colors web:duration-150 " +
                 (!hasMeasured && active ? "shadow-sm " : "") +
                 (active
                   ? ""
@@ -129,8 +133,11 @@ export function Segmented<T extends string | number>({
               }
             >
               <Text
+                // Web only for the colour transition: on Android NativeWind's animated Text painted
+                // its own background, a lighter rectangle behind the selected label.
+                style={{ backgroundColor: "transparent" }}
                 className={
-                  "text-sm transition-colors duration-150 " +
+                  "text-center text-sm web:transition-colors web:duration-150 " +
                   (active
                     ? "font-semibold text-white"
                     : "font-medium text-neutral-600 dark:text-neutral-400")
