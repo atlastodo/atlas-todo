@@ -101,6 +101,25 @@ On start-up the store replays its persisted log to rebuild the read model. Once 
 is superseded, it rewrites the log in one transaction to what the state needs: the winning
 write of each field, the tombstones, and every change not yet synced.
 
+### Local-only mode
+
+The app also runs without an account. With no session it mounts the same `LocalStore` over a
+database of its own (`atlas-local`, next to the per-account `atlas-<userId>` ones), with a
+device id kept in AsyncStorage as the HLC node, and no `SyncClient`, keys or attachment queue
+(`apps/mobile/src/auth/localMode.tsx`). Nothing reaches a server. Since nothing is ever pushed,
+`LocalStore.compactLocal` drops superseded ops from the outbox too, which `compact` must not do
+for an account.
+
+Ops are encrypted only when pushed, so moving local data into an account is a copy: the outbox
+is copied, still unsynced, into the account's database before its store mounts, and the first
+sync encrypts and pushes it like any offline edit (`apps/mobile/src/auth/LocalUpgradeGate.tsx`).
+A new account takes everything. An existing one is asked whether to merge or discard, and never
+takes this device's preferences. Onboarding asks right after its welcome step whether to create
+an account, sign in, or stay on the device.
+
+Syncing a local-only store through a file in a cloud folder is sketched in
+[local-file-sync.md](local-file-sync.md).
+
 ### Push, pull and live updates
 
 `SyncClient` runs a cycle: push the outbox, then pull what is new.

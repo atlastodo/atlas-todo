@@ -20,6 +20,8 @@ import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { useAuth, type SignOutNotice } from "./AuthContext";
 import { defaultServerUrl, isOnlineWeb, loadServerUrl } from "./serverUrl";
 import { RecoveryPhraseModal } from "./RecoveryPhraseModal";
+import { readInviteFromLink } from "./inviteLink";
+import { useLocalMode } from "./localMode";
 import { isDark } from "../theme/navTheme";
 
 /**
@@ -33,12 +35,24 @@ import { isDark } from "../theme/navTheme";
  *
  * `initialEmail` and `notice` serve the re-login a locked session falls back to when it holds no
  * wrapped keys: the account is known, only the password is needed.
+ *
+ * From local-only mode, `initialMode` opens on sign-in or signup and `onContinueLocal` offers the
+ * way back to the app on this device. Submitting records which one the user chose, which decides
+ * how the local data moves into the account (`LocalUpgradeGate`).
  */
 export function LoginScreen({
   initialEmail,
   notice,
-}: { initialEmail?: string; notice?: string } = {}) {
+  initialMode,
+  onContinueLocal,
+}: {
+  initialEmail?: string;
+  notice?: string;
+  initialMode?: "login" | "signup";
+  onContinueLocal?: () => void;
+} = {}) {
   const { t } = useTranslation();
+  const local = useLocalMode();
   const {
     login,
     signup,
@@ -53,7 +67,7 @@ export function LoginScreen({
   const [inviteFromLink] = useState(readInviteFromLink);
   const [invite, setInvite] = useState(inviteFromLink);
   const [mode, setMode] = useState<"login" | "signup" | "recover">(
-    inviteFromLink ? "signup" : "login",
+    inviteFromLink ? "signup" : (initialMode ?? "login"),
   );
   const [email, setEmail] = useState(initialEmail ?? "");
   const [password, setPassword] = useState("");
@@ -102,6 +116,7 @@ export function LoginScreen({
     }
 
     setBusy(true);
+    local?.setUpgradeIntent(mode === "signup" ? "signup" : "login");
     try {
       if (url !== effectiveUrl) await changeServerUrl(url);
       if (mode === "login") {
@@ -361,6 +376,18 @@ export function LoginScreen({
                 </Text>
               </Pressable>
             )}
+
+            {onContinueLocal && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onContinueLocal}
+                className="mt-2 border-t border-neutral-100 pt-3 dark:border-neutral-800"
+              >
+                <Text className="text-center text-sm text-neutral-600 dark:text-neutral-300">
+                  {t("localMode.continueWithout")}
+                </Text>
+              </Pressable>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -433,14 +460,6 @@ interface FieldProps {
 }
 
 /** The invite code an admin's link carries (`?invite=`), read once. Web only; screens under src/ must not import the router. */
-function readInviteFromLink(): string {
-  if (Platform.OS !== "web" || typeof window === "undefined") return "";
-  try {
-    return new URLSearchParams(window.location.search).get("invite") ?? "";
-  } catch {
-    return "";
-  }
-}
 
 function Field({ label, value, onChange, inputRef, ...input }: FieldProps) {
   return (

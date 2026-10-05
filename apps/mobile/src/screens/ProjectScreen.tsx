@@ -64,7 +64,7 @@ export function ProjectScreen({
   onHeaderActions,
 }: ProjectScreenProps) {
   const { t } = useTranslation();
-  const { store, version, kick } = useStore();
+  const { store, version, kick, localOnly } = useStore();
   const { api, session } = useAuth();
   const view = useTaskListView(`project:${projectId}`);
   const isWide = useIsWide();
@@ -184,7 +184,7 @@ export function ProjectScreen({
           isFavorite={isFav}
           onToggleFavorite={() => latest.current.toggleFav()}
           onEdit={() => setEditing(true)}
-          onShare={() => setSharing(true)}
+          onShare={localOnly ? undefined : () => setSharing(true)}
           canSelect={canSelect}
           listPref={mode === "list" ? { group, sort } : undefined}
           onChangeListPref={(patch) => latest.current.setListPref(patch)}
@@ -192,7 +192,7 @@ export function ProjectScreen({
           layout={headerLayout}
         />
       ) : null,
-    [hasProject, mode, isFav, canSelect, group, sort, accent, headerLayout],
+    [hasProject, mode, isFav, canSelect, group, sort, accent, headerLayout, localOnly],
   );
   useLayoutEffect(() => {
     onHeaderActions?.(headerActions);

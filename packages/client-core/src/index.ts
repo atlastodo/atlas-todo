@@ -13,6 +13,7 @@ export * from "./signingKey";
 export * from "./scope";
 export * from "./trust";
 export * from "./store";
+export * from "./opLogFile";
 export * from "./persistence";
 export * from "./attachments";
 export * from "./indexeddb";
