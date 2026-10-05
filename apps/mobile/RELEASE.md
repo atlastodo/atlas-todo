@@ -115,10 +115,24 @@ version. A release bumps `expo.version` in lockstep across all manifests: `packa
 `Cargo.lock`.
 
 Use `scripts/bump-version.sh` (or `version:bump <version>` in `devenv`). It updates every
-manifest and increments `android.versionCode` in `app.json`.
+manifest and sets `android.versionCode` in `app.json`.
+
+The versionCode is derived from the version by `scripts/version-code.mjs`, not incremented:
+`major*1000000 + minor*10000 + patch*100 + slot`, where slot is `N` for `X.Y.Z-rc.N` (1 to 98)
+and 99 for the stable `X.Y.Z`. Play rejects a code that is equal to or lower than one already
+uploaded, and this keeps rc and stable builds in order: `0.1.4-rc.1` is 10401, `0.1.4-rc.2` is
+10402, `0.1.4` is 10499, `0.1.5-rc.1` is 10501 (minor and patch must stay below 100). v0.1.3 and
+older used +1 codes (81 for v0.1.3), far below the new range. The release workflow's Prepare job
+re-derives the code and fails if `app.json` disagrees.
+
+A pre-release version (`0.1.4-rc.1`) is also the Android `versionName`, which accepts any string.
+iOS has no separate marketing version in Expo, so an iOS build of an rc would carry the rc string
+and App Store Connect wants `X.Y.Z`. No iOS build is published, so cut iOS builds from stable
+versions.
 
 Stores reject duplicate build numbers. To re-submit an already uploaded version without bumping
-the SemVer, bump `ios.buildNumber` or `android.versionCode` in `app.json`.
+the SemVer, bump `ios.buildNumber` or `android.versionCode` in `app.json` by hand (the next
+`version:bump` resets it to the derived value).
 
 ## Releases on GitHub (CI)
 
@@ -128,6 +142,26 @@ The published Android build is made by GitHub Actions, not EAS. Pushing a `vX.Y.
 1. Run `version:bump <x.y.z|patch|minor|major>` in `devenv shell`. Review the diff, including the
    regenerated `RELEASE_NOTES.md`.
 2. Commit as `chore(release): vX.Y.Z`, then `git tag vX.Y.Z` and `git push origin main vX.Y.Z`.
+
+### Pre-releases (the `dev` branch)
+
+Work lands on the long-lived `dev` branch, where CI runs as on `main`. A plain push publishes
+nothing. To cut a pre-release, tag by hand on `dev`:
+
+1. `version:bump 0.1.4-rc.1` (then `0.1.4-rc.2`, and so on). `RELEASE_NOTES.md` lists the commits
+   since the previous tag of any kind.
+2. Commit as `chore(release): v0.1.4-rc.1`, `git tag v0.1.4-rc.1`, `git push origin dev v0.1.4-rc.1`.
+
+The same workflow runs, and the `-` in the tag makes it a prerelease: the GitHub Release is marked
+prerelease and is not "latest"; the Docker image gets `0.1.4-rc.1` and a moving `dev` tag, never
+`latest` (Docker Hub included); the AAB goes to the Play **internal** track, with the APK on the
+GitHub prerelease; the desktop tarball is attached without the `-latest` copy. There is no dev
+server. Hosted instances stay on stable releases.
+
+To ship, merge `dev` into `main`, then `version:bump 0.1.4`, commit `chore(release): v0.1.4`, tag
+and push `main` and the tag as usual. The stable notes list everything since the last stable tag,
+so they include what the rcs carried. Two release runs that overlap race at the Play upload (the
+lower versionCode is refused once the higher one is on the track), so let one finish first.
 
 The workflow then runs these jobs:
 
@@ -149,7 +183,7 @@ The workflow then runs these jobs:
   `SHA256SUMS.txt`.
 
 A tag that contains `-` (for example `v1.0.0-rc.1`) becomes a prerelease and does not move the
-Docker `latest` tag. The first push to GHCR creates the package as private, so `docker pull` needs
+Docker `latest` tag (see above). The first push to GHCR creates the package as private, so `docker pull` needs
 a login until you make it public: Package settings → Danger Zone → Change visibility. That cannot
 be undone, and it publishes every tag, including the `buildcache-*` tags, which hold the source
 tree. To check the package from the CLI, first run
@@ -177,13 +211,14 @@ Set these under Settings → Secrets and variables → Actions.
 
 All are optional. An unset or empty variable means the default.
 
-| Variable               | Default                  | What it does                                                                       |
-| ---------------------- | ------------------------ | ---------------------------------------------------------------------------------- |
-| `ATLAS_APP_ID`         | `dev.sejder.atlastodo`   | Android package and iOS bundle id                                                  |
-| `ATLAS_EAS_PROJECT_ID` | the maintainer's project | EAS project id; the update URL follows it. `none` turns over-the-air updates off   |
-| `PLAY_STORE_TRACK`     | `internal`               | the Play track the AAB goes to                                                     |
-| `EXPO_PUBLIC_API_URL`  | unset                    | a server URL baked into the desktop tarball; unset means users pick one at sign-in |
-| `DOCKERHUB_IMAGE`      | unset                    | also push the server image to Docker Hub as this name, e.g. `atlastodo/atlas-todo` |
+| Variable                      | Default                  | What it does                                                                       |
+| ----------------------------- | ------------------------ | ---------------------------------------------------------------------------------- |
+| `ATLAS_APP_ID`                | `dev.sejder.atlastodo`   | Android package and iOS bundle id                                                  |
+| `ATLAS_EAS_PROJECT_ID`        | the maintainer's project | EAS project id; the update URL follows it. `none` turns over-the-air updates off   |
+| `PLAY_STORE_TRACK`            | `internal`               | the Play track a stable release's AAB goes to                                      |
+| `PLAY_STORE_PRERELEASE_TRACK` | `internal`               | the Play track a pre-release's (`-rc.N` tag) AAB goes to                           |
+| `EXPO_PUBLIC_API_URL`         | unset                    | a server URL baked into the desktop tarball; unset means users pick one at sign-in |
+| `DOCKERHUB_IMAGE`             | unset                    | also push the server image to Docker Hub as this name, e.g. `atlastodo/atlas-todo` |
 
 ### Releasing from a fork
 

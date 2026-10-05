@@ -133,9 +133,17 @@ A new language also needs an entry in `packages/shared/src/i18n.ts`.
   `atlas-desktop-*.tar.gz`).
 - Security problems go through [SECURITY.md](./SECURITY.md), not a public issue or PR.
 
+### Branches and releases
+
+Work lands on the long-lived `dev` branch; open pull requests against `dev`. `main` holds stable
+releases only. A push publishes nothing: the maintainer tags pre-releases (`v0.1.4-rc.1`) on `dev`,
+and when one is good, merges `dev` into `main` and tags the stable `v0.1.4`. Pre-releases go to
+GitHub as prereleases, to Docker as `0.1.4-rc.1` and `dev`, and to the Play internal track. Details
+in [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md).
+
 ### What CI runs
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main`:
+GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main` and `dev`:
 
 | Check             | What it runs                                                                  |
 | ----------------- | ----------------------------------------------------------------------------- |
