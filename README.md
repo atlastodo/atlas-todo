@@ -10,6 +10,18 @@ read them.
 
 > Status: pre-1.0. Releases are tagged `vX.Y.Z`, and only the latest one gets fixes.
 
+**Help test it on Android.** Google Play only opens the app to the public after a closed test, so
+testers are welcome:
+
+1. Join the [atlas-todo-testers](https://groups.google.com/g/atlas-todo-testers) Google Group with
+   the Google account you use on your phone.
+2. Opt in at [play.google.com/apps/testing/dev.sejder.atlastodo](https://play.google.com/apps/testing/dev.sejder.atlastodo)
+   and install Atlas Todo from Google Play.
+3. Report bugs in [Issues](https://github.com/atlastodo/atlas-todo/issues).
+
+The test builds sign in to the test server at [app.atlastodo.dev](https://app.atlastodo.dev),
+which may be reset; see the [privacy notice](https://atlastodo.dev/privacy.html).
+
 <p>
   <img src="docs/screenshots/task-detail.png" alt="The task detail: notes, subtasks, attachments and comments next to a properties panel with due date, priority, labels, repeat and reminders">
 </p>
@@ -120,12 +132,13 @@ examples, backups, upgrades and closing registration.
 
 ## Client apps
 
-The apps have no built-in server. The sign-in screen has a _Server URL_ field, so you point the
-app at your own instance.
+Release builds start out pointed at the test server, app.atlastodo.dev. To use your own instance,
+change the _Server URL_ field on the sign-in screen.
 
 - Web: your server serves the web app at its root URL. There is nothing to configure.
-- Android: download `atlas-todo-X.Y.Z.apk` from
-  [GitHub Releases](https://github.com/atlastodo/atlas-todo/releases) and install it.
+- Android: join the closed test on Google Play (see the top of this page), or download
+  `atlas-todo-X.Y.Z.apk` from [GitHub Releases](https://github.com/atlastodo/atlas-todo/releases)
+  and install it.
 - Desktop (Linux): each release has `atlas-desktop-X.Y.Z.tar.gz`, which contains the app and a
   Nix flake for x86_64 and aarch64 Linux. See [apps/electron/README.md](./apps/electron/README.md)
   for the Nix setup.
