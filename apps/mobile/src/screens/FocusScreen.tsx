@@ -71,10 +71,10 @@ export function FocusScreen() {
   const color = active ? phaseHex(phase, accentHex) : accentHex;
   const trackColor = colorScheme === "dark" ? TRACK_DARK : TRACK_LIGHT;
 
-  // Idle shows the work phase at full length.
+  // Idle shows the work phase at full length, around an empty track: a full ring read as "done".
   const phaseMs = phaseDurationMs(active ? phase : "work", config);
   const shownMs = active ? remainingMs : phaseMs;
-  const progress = phaseMs > 0 ? shownMs / phaseMs : 0;
+  const progress = active && phaseMs > 0 ? shownMs / phaseMs : 0;
 
   const task = taskId === null ? null : tasks.find((x) => x.id === taskId);
   const PhaseIcon = PHASE_ICON[active ? phase : "work"];
@@ -140,7 +140,7 @@ export function FocusScreen() {
           color={color}
           trackColor={trackColor}
           size={size}
-          stroke={Math.round(size / 22)}
+          stroke={Math.max(4, Math.round(size / 40))}
         >
           <View
             className="items-center gap-1 px-4"

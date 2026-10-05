@@ -39,6 +39,10 @@ import { ChevronLeft, ChevronRight, X } from "../ui/icons";
 type CalendarMode = "month" | "week";
 
 const MAX_CHIPS = 3;
+/** Dots a compact (phone) day cell shows before a "+N". */
+const MAX_DOTS = 4;
+/** Window width below which the month grid is compact: dots instead of titled chips, no week numbers. */
+const COMPACT_MAX_WIDTH = 600;
 
 /**
  * Month/Week calendar. Active tasks sit on their due day; overdue ones read red; week numbers head
@@ -57,6 +61,10 @@ export function CalendarScreen({ onOpenTask }: { onOpenTask?: (task: Task) => vo
   const anchorParts = zonedParts(anchor, timezone);
 
   const { width: windowWidth } = useWindowDimensions();
+  // A phone's ~50px cells cut every chip to "Fi…": show dots there and leave the titles to the
+  // agenda below. The week-number column goes too, so the seven days get its width.
+  const compact = windowWidth < COMPACT_MAX_WIDTH;
+  const weekNumbers = showWeekNumbers && !compact;
   const translateX = useSharedValue(0);
   const isTransitioning = useRef(false);
 
@@ -306,7 +314,7 @@ export function CalendarScreen({ onOpenTask }: { onOpenTask?: (task: Task) => vo
               <ScrollView className="flex-1" contentContainerClassName="pb-8">
                 {/* Weekday header: an optional spacer for the week-number column, then the seven day labels. */}
                 <View className="flex-row px-2">
-                  {showWeekNumbers && <View className="w-7" />}
+                  {weekNumbers && <View className="w-7" />}
                   {labels.map((d) => (
                     <Text
                       key={d}
@@ -320,7 +328,7 @@ export function CalendarScreen({ onOpenTask }: { onOpenTask?: (task: Task) => vo
                 <View className="px-2">
                   {rows.map((row) => (
                     <View key={row[0]!.date} className="flex-row">
-                      {showWeekNumbers && (
+                      {weekNumbers && (
                         <View className="w-7 items-center justify-center border border-neutral-100 dark:border-neutral-800">
                           <Text className="text-xs text-neutral-400">{weekOf(row)}</Text>
                         </View>
@@ -332,6 +340,7 @@ export function CalendarScreen({ onOpenTask }: { onOpenTask?: (task: Task) => vo
                           tasks={byDay.get(cell.date) ?? []}
                           now={now}
                           isToday={cell.date === today}
+                          compact={compact}
                           timeZone={timezone}
                           moving={movingId !== null}
                           movingId={movingId}
@@ -720,6 +729,7 @@ function DayCellView({
   tasks,
   now,
   isToday,
+  compact,
   timeZone,
   moving,
   movingId,
@@ -732,6 +742,8 @@ function DayCellView({
   tasks: Task[];
   now: number;
   isToday: boolean;
+  /** A dot per task instead of titled chips (phone widths); the agenda below names them. */
+  compact: boolean;
   timeZone: string;
   moving: boolean;
   movingId: string | null;
@@ -741,7 +753,8 @@ function DayCellView({
   /** Web-only: a task chip dragged onto this day. */
   onDropOnDay: (taskId: string) => void;
 }) {
-  const shown = tasks.slice(0, MAX_CHIPS);
+  const { t } = useTranslation();
+  const shown = tasks.slice(0, compact ? MAX_DOTS : MAX_CHIPS);
   const overflow = tasks.length - shown.length;
   // A web drop target: a chip dropped here reschedules to this day.
   const dayRef = useRef<View>(null);
@@ -752,41 +765,77 @@ function DayCellView({
       // react-native-web renders the button role as `<button>`, and the day's chips are buttons too;
       // nesting is invalid HTML, so the cell is a plain `<div>` on web and keeps the role on native.
       accessibilityRole={Platform.OS === "web" ? undefined : "button"}
-      accessibilityLabel={String(cell.day)}
+      accessibilityLabel={
+        compact && tasks.length > 0
+          ? t("calendar.dayTasks", { day: cell.day, count: tasks.length })
+          : String(cell.day)
+      }
       onPress={onDayPress}
       disabled={!moving}
       className={
-        "min-h-[76px] flex-1 gap-0.5 border border-neutral-100 p-1 dark:border-neutral-800 " +
-        (cell.inMonth ? "" : "bg-neutral-50 dark:bg-neutral-900/40 ") +
+        (compact ? "min-h-[56px] " : "min-h-[76px] ") +
+        "flex-1 gap-0.5 border border-neutral-100 p-1 dark:border-neutral-800 " +
+        (cell.inMonth ? "" : "bg-neutral-50 dark:bg-neutral-900 ") +
         (moving ? "opacity-100" : "")
       }
     >
       <View
         className={
-          "mb-0.5 h-6 w-6 items-center justify-center self-end rounded-full " +
+          "mb-0.5 h-6 w-6 items-center justify-center rounded-full " +
+          (compact ? "self-center " : "self-end ") +
           (isToday ? "bg-accent-600" : "")
         }
       >
         <Text
           className={
             "text-xs " +
-            (isToday ? "text-white" : cell.inMonth ? "text-neutral-500" : "text-neutral-400")
+            (isToday
+              ? "text-white"
+              : cell.inMonth
+                ? "text-neutral-600 dark:text-neutral-300"
+                : "text-neutral-400 dark:text-neutral-600")
           }
         >
           {cell.day}
         </Text>
       </View>
-      {shown.map((task) => (
-        <DayChip
-          key={task.id}
-          task={task}
-          picked={task.id === movingId}
-          overdue={isOverdue(task, now, timeZone)}
-          onPress={() => onChipPress(task)}
-          onLongPress={() => onChipLongPress(task)}
-        />
-      ))}
-      {overflow > 0 && <Text className="px-1 text-xs text-neutral-400">+{overflow}</Text>}
+      {compact ? (
+        // Not buttons: too small to aim at. The cell's label carries the count.
+        <View className="flex-row flex-wrap items-center justify-center gap-1">
+          {shown.map((task) => (
+            <View
+              key={task.id}
+              className={
+                "h-1.5 w-1.5 rounded-full " +
+                (task.id === movingId
+                  ? "bg-accent-700 dark:bg-accent-300"
+                  : isOverdue(task, now, timeZone)
+                    ? "bg-red-500 dark:bg-red-400"
+                    : "bg-accent-500 dark:bg-accent-400")
+              }
+            />
+          ))}
+          {overflow > 0 && (
+            <Text className="text-[10px] text-neutral-500 dark:text-neutral-400">+{overflow}</Text>
+          )}
+        </View>
+      ) : (
+        <>
+          {shown.map((task) => (
+            <DayChip
+              key={task.id}
+              task={task}
+              picked={task.id === movingId}
+              overdue={isOverdue(task, now, timeZone)}
+              onPress={() => onChipPress(task)}
+              onLongPress={() => onChipLongPress(task)}
+            />
+          ))}
+          {overflow > 0 && (
+            <Text className="px-1 text-xs text-neutral-500 dark:text-neutral-400">+{overflow}</Text>
+          )}
+        </>
+      )}
     </Pressable>
   );
 }
