@@ -5,6 +5,7 @@ import type { Task } from "@atlas/client-core";
 import type { UseTaskListView } from "../hooks/useTaskListView";
 import { GroupedTaskList } from "../ui/GroupedTaskList";
 import { QuickAdd } from "../ui/QuickAdd";
+import { useIsWide } from "../hooks/useIsWide";
 
 type ListProps = ComponentProps<typeof GroupedTaskList>;
 
@@ -75,12 +76,16 @@ export function ViewTaskList({ view, onOpenTask, emptyLabel, ...rest }: ViewTask
   );
 }
 
-/** {@link ViewTaskList} plus the list-pref menu and, on web, a quick-add header (`quickAddDefaults` seed new tasks). */
+/**
+ * {@link ViewTaskList} plus the list-pref menu and, on wide web, a quick-add header
+ * (`quickAddDefaults` seed new tasks). A phone, web included, adds through the list's add button.
+ */
 export function QuickAddTaskList({
   view,
   quickAddDefaults,
   ...rest
 }: ViewTaskListProps & { quickAddDefaults?: ListProps["quickAddDefaults"] }) {
+  const isWide = useIsWide();
   return (
     <ViewTaskList
       view={view}
@@ -91,7 +96,7 @@ export function QuickAddTaskList({
       listPref={view.listPref}
       onChangeListPref={view.setListPref}
       header={
-        Platform.OS === "web" ? (
+        Platform.OS === "web" && isWide ? (
           <View className="px-4 py-2">
             <QuickAdd
               onAdd={view.create}

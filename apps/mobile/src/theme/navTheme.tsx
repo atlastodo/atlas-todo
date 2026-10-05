@@ -22,6 +22,30 @@ const LIGHT = {
 
 type Scheme = ColorSchemeName | undefined;
 
+/**
+ * React Navigation's own web font stack starts with `system-ui`, which on Linux resolves to a
+ * different face than the `-apple-system, ..., Roboto` stack react-native-web gives every `Text`.
+ * "System" is react-native-web's name for that same stack, so the navigation chrome (header titles,
+ * back labels) renders in the body's font. Native already uses the platform system font.
+ */
+const WEB_FONTS = {
+  regular: { fontFamily: "System", fontWeight: "400" },
+  medium: { fontFamily: "System", fontWeight: "500" },
+  bold: { fontFamily: "System", fontWeight: "600" },
+  heavy: { fontFamily: "System", fontWeight: "700" },
+} as const;
+
+/**
+ * A page title's type, matching {@link HeaderTitle}'s `text-lg font-semibold`, so a plain title and
+ * an icon title read the same. The family is the body's: on Android the plain "sans-serif" (the
+ * navigator's default title is "sans-serif-medium", a separate face), elsewhere "System".
+ */
+const TITLE_FONT = {
+  fontSize: 18,
+  fontWeight: "600",
+  fontFamily: Platform.OS === "android" ? "sans-serif" : "System",
+} as const;
+
 export function isDark(scheme: Scheme): boolean {
   return scheme === "dark";
 }
@@ -43,6 +67,7 @@ export function withAccent<T extends { colors: object }>(
   const c = dark ? DARK : LIGHT;
   return {
     ...base,
+    ...(Platform.OS === "web" ? { fonts: WEB_FONTS } : null),
     colors: {
       ...base.colors,
       primary: dark ? ACCENTS[accent][400] : ACCENTS[accent][600],
@@ -77,7 +102,7 @@ export function headerThemeOptions(scheme: Scheme) {
   return {
     headerBackground: () => <ThemedHeaderBackground />,
     headerTintColor: c.text,
-    headerTitleStyle: { color: c.text },
+    headerTitleStyle: { color: c.text, ...TITLE_FONT },
     headerShadowVisible: false,
   } as const;
 }
