@@ -309,6 +309,22 @@ describe("HabitsScreen", () => {
     expect(screen.getByLabelText(`${TODAY}: not recorded`)).toBeTruthy();
   });
 
+  it("tells a missed day from today's open one and from days before the habit existed", async () => {
+    // Created three days ago: the two days since are missed, today is still open, and the days
+    // before it existed were never due to anyone.
+    await renderScreen(
+      seedHabit(new LocalStore("test"), { created_at: new Date(2026, 5, 14, 9).getTime() }),
+    );
+
+    expect(screen.getByLabelText(`${YESTERDAY}: missed`)).toBeTruthy();
+    expect(screen.getByLabelText("2026-06-14: missed")).toBeTruthy();
+    expect(screen.getByLabelText(`${TODAY}: not recorded`)).toBeTruthy();
+    expect(screen.getByLabelText("2026-06-13: not recorded")).toBeTruthy();
+    // The legend says what each circle means.
+    expect(screen.getByText("Missed")).toBeTruthy();
+    expect(screen.getByText("Not done yet")).toBeTruthy();
+  });
+
   it("drags a whole routine, carrying its members", async () => {
     const store = await renderScreen();
     await addGroup("Skincare");

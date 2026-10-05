@@ -9,6 +9,8 @@ import {
   completionsByWeek,
   dateKeyFromMs,
   formatDuration,
+  makeFormatters,
+  resolveLocale,
   shiftDateKey,
   totalCompleted,
   type Habit,
@@ -39,30 +41,55 @@ const RANGES = [
   { days: 90, labelKey: "stats.range90" },
 ];
 
+/** Content width at/above which the three stat cards share one row; below it they stack full width. */
+const CARDS_ROW_MIN_WIDTH = 560;
+
+/** A day key ("2026-06-17") as a short "17 Jun", read in UTC so no time zone can move it a day. */
+function dayLabel(fmt: ReturnType<typeof makeFormatters>, key: string): string {
+  return fmt.dueChip(
+    Date.UTC(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1, Number(key.slice(8, 10)), 12),
+  );
+}
+
 function StatCard({
   icon: Icon,
   label,
   value,
+  unit,
   accent,
+  inRow,
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
+  /** Set smaller after the value on the same line ("19 days"), so a long unit never wraps the figure. */
+  unit?: string;
   accent: string;
+  /** Share a row with the other cards (`flex-1`); otherwise the card takes its content height in a stack. */
+  inRow: boolean;
 }) {
   return (
-    // Grouped, so a screen reader announces "12, completed in 30 days" as one.
+    // Grouped, so a screen reader announces "12, completed in 30 days" as one. `items-start` and the
+    // icon's nudge keep every card's figure on the same baseline, however its label wraps.
     <View
       accessible
-      accessibilityLabel={`${value} ${label}`}
-      className="flex-1 flex-row items-center gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
+      accessibilityLabel={unit === undefined ? `${value} ${label}` : `${value} ${unit} ${label}`}
+      className={`${inRow ? "flex-1 " : ""}flex-row items-start gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800`}
     >
-      <Icon size={24} className={accent} />
+      <Icon size={24} className={`mt-1 ${accent}`} />
       <View className="flex-1">
-        <Text className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">
+        <Text
+          numberOfLines={1}
+          className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50"
+        >
           {value}
+          {unit !== undefined && (
+            <Text className="text-sm font-normal text-neutral-500 dark:text-neutral-400">
+              {` ${unit}`}
+            </Text>
+          )}
         </Text>
-        <Text className="text-xs text-neutral-500">{label}</Text>
+        <Text className="text-xs text-neutral-500 dark:text-neutral-400">{label}</Text>
       </View>
     </View>
   );
@@ -72,12 +99,19 @@ export function StatsScreen({ now }: { now?: number }) {
   const { t } = useTranslation();
   const nowMs = now ?? Date.now();
   const [rangeDays, setRangeDays] = useState(30);
+  // The content width, measured, so the cards and the chart follow the space the screen gets
+  // (the sidebar takes a varying share of the window).
+  const [contentWidth, setContentWidth] = useState(0);
   const { tasks } = useLocalTasks();
   const { projects } = useProjects();
   const { habits, habitGroups } = useHabits();
   const { statesFor } = useHabitCheckins();
   const { sessions } = useFocusSessions();
-  const { weekStartsOn, focusEnabled, timezone } = usePreferences();
+  const { weekStartsOn, focusEnabled, timezone, language, region } = usePreferences();
+  const dayFmt = useMemo(
+    () => makeFormatters({ locale: resolveLocale(region, language), timeZone: "UTC" }),
+    [region, language],
+  );
   const timeZone = timezone || undefined;
   const habitsEnabled = useFeature("habits");
 
@@ -106,12 +140,23 @@ export function StatsScreen({ now }: { now?: number }) {
   );
 
   const weekly = rangeDays > 45;
+  // Every bucket of the range, zeros included, with the day key that starts each.
   const chart = useMemo(() => {
     if (weekly) {
-      return completionsByWeek(tasks, fromMs, toMs, weekStartsOn, timeZone).map((w) => w.count);
+      return completionsByWeek(tasks, fromMs, toMs, weekStartsOn, timeZone).map((w) => ({
+        key: w.weekStart,
+        count: w.count,
+      }));
     }
-    return completionsByDay(tasks, fromMs, toMs, timeZone).map((d) => d.count);
+    return completionsByDay(tasks, fromMs, toMs, timeZone).map((d) => ({
+      key: d.date,
+      count: d.count,
+    }));
   }, [tasks, fromMs, toMs, weekly, weekStartsOn, timeZone]);
+  const chartPeak = Math.max(0, ...chart.map((c) => c.count));
+  // Taller on a wide panel, so 30 bars across 1000px are not a flat strip.
+  const chartHeight = Math.round(Math.min(240, Math.max(128, contentWidth * 0.28)));
+  const cardsInRow = contentWidth >= CARDS_ROW_MIN_WIDTH;
 
   const byProject = useMemo(() => completionsByProject(tasks, fromMs, toMs), [tasks, fromMs, toMs]);
   const maxProject = Math.max(1, ...byProject.map((p) => p.count));
@@ -190,33 +235,54 @@ export function StatsScreen({ now }: { now?: number }) {
           })}
         </View>
 
-        <View className="flex-row gap-3">
+        {/* One row when there is room for all three, else a full-width stack: a 2 + 1 grid left
+            the third card orphaned. */}
+        <View
+          onLayout={(e) => setContentWidth(e.nativeEvent.layout.width)}
+          className={cardsInRow ? "flex-row gap-3" : "gap-3"}
+        >
           <StatCard
             icon={CircleCheckBig}
             label={t("stats.completedInDays", { days: rangeDays })}
             value={String(total)}
             accent="text-emerald-500"
+            inRow={cardsInRow}
           />
           <StatCard
             icon={Flame}
             label={t("stats.currentStreak")}
-            value={t("stats.streak", { count: streak })}
+            value={String(streak)}
+            unit={t("stats.streakUnit", { count: streak })}
             accent="text-orange-500"
+            inRow={cardsInRow}
           />
+          {/* Focused time comes from Pomodoro; hide it entirely when focus is disabled. */}
+          {focusEnabled && (
+            <StatCard
+              icon={Timer}
+              label={t("stats.focusedTime")}
+              value={formatDuration(focusedMs)}
+              accent="text-accent-500"
+              inRow={cardsInRow}
+            />
+          )}
         </View>
-        {/* Focused time comes from Pomodoro; hide it entirely when focus is disabled. */}
-        {focusEnabled && (
-          <StatCard
-            icon={Timer}
-            label={t("stats.focusedTime")}
-            value={formatDuration(focusedMs)}
-            accent="text-accent-500"
-          />
-        )}
 
         <View>
           <SectionHeading>{weekly ? t("stats.perWeek") : t("stats.perDay")}</SectionHeading>
-          <BarChart values={chart} ariaLabel={t("stats.overTime")} />
+          <BarChart
+            values={chart.map((c) => c.count)}
+            ariaLabel={t("stats.overTime")}
+            height={chartHeight}
+            baseline
+            peakLabel={chartPeak > 0 ? t("stats.peak", { value: chartPeak }) : undefined}
+            startLabel={chart.length > 0 ? dayLabel(dayFmt, chart[0]!.key) : undefined}
+            endLabel={
+              weekly && chart.length > 0
+                ? dayLabel(dayFmt, chart[chart.length - 1]!.key)
+                : t("stats.today")
+            }
+          />
         </View>
 
         <View>

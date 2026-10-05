@@ -287,11 +287,16 @@ export function HabitDetailScreen({
                 className="h-20"
                 dense
                 track
+                startLabel={t("habits.strengthStart", { count: strength.length - 1 })}
+                endLabel={t("habits.strengthEnd")}
               />
-              <Text className="mt-1 text-xs text-neutral-500">
+              <Text className="mt-2 text-sm font-medium text-neutral-700 dark:text-neutral-200">
                 {t("habits.strengthValue", {
                   pct: Math.round(currentStrength(habit, states, todayMs, weekStartsOn) * 100),
                 })}
+              </Text>
+              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+                {t("habits.strengthHint")}
               </Text>
             </>
           )}

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
+  dateKeyFromMs,
   isScheduledOn,
   shiftDateKey,
   weekdayLabels,
@@ -41,6 +42,7 @@ export function HabitWeekStrip({
   );
   // Sunday-based, indexed by the day's own weekday; a fixed week start is meaningless for a rolling strip.
   const names = weekdayLabels(0);
+  const createdKey = habit.created_at > 0 ? dateKeyFromMs(habit.created_at) : "";
 
   return (
     // Sharing a row with the name, a fixed gap keeps the circles one strip; on a row of their own
@@ -55,6 +57,10 @@ export function HabitWeekStrip({
         const scheduled = isScheduledOn(habit, day, weekStartsOn);
         const backfilled = state === "done" && isBackfilled(day);
         const current = day === dayKey;
+        // Every day before the shown one is settled: due and not recorded means missed. The shown
+        // day is still open, so it stays empty and only carries the ring; so do days before the
+        // habit existed, which nobody could have missed.
+        const missed = state === undefined && scheduled && !current && day >= createdKey;
         const label = t("habits.dayState", {
           date: day,
           state: t(
@@ -62,7 +68,11 @@ export function HabitWeekStrip({
               ? "habits.stateDone"
               : state === "skip"
                 ? "habits.stateSkipped"
-                : "habits.stateNone",
+                : missed
+                  ? "habits.stateMissed"
+                  : scheduled
+                    ? "habits.stateNone"
+                    : "habits.stateNotDue",
           ),
         });
 
@@ -76,9 +86,11 @@ export function HabitWeekStrip({
                   : ""
                 : state === "skip"
                   ? "border border-dashed border-neutral-400 dark:border-neutral-500"
-                  : scheduled
-                    ? "bg-neutral-100 dark:bg-neutral-800"
-                    : "border border-neutral-100 dark:border-neutral-800")
+                  : missed
+                    ? "bg-neutral-300 dark:bg-neutral-700"
+                    : scheduled
+                      ? "border border-neutral-300 dark:border-neutral-600"
+                      : "")
             }
             style={
               state === "done"
@@ -94,12 +106,20 @@ export function HabitWeekStrip({
                 (state === "done" && !backfilled
                   ? "font-medium text-white"
                   : scheduled
-                    ? "text-neutral-700 dark:text-neutral-200"
-                    : "text-neutral-300 dark:text-neutral-700")
+                    ? "text-neutral-700 dark:text-neutral-100"
+                    : "text-neutral-400 dark:text-neutral-600")
               }
             >
               {Number(day.slice(8, 10))}
             </Text>
+            {/* The shown day's accent ring, drawn outside the circle so it neither resizes the strip
+                nor hides a done day's fill. */}
+            {current && (
+              <View
+                pointerEvents="none"
+                className="absolute -inset-[3px] rounded-full border-2 border-accent-500 dark:border-accent-400"
+              />
+            )}
           </View>
         );
 
@@ -131,6 +151,47 @@ export function HabitWeekStrip({
           </View>
         );
       })}
+    </View>
+  );
+}
+
+/** What each circle style means, once under the list rather than on every card. */
+export function HabitDayLegend() {
+  const { t } = useTranslation();
+  const items: { key: string; label: string; swatch: string }[] = [
+    { key: "done", label: t("habits.legendDone"), swatch: "bg-accent-500" },
+    {
+      key: "missed",
+      label: t("habits.legendMissed"),
+      swatch: "bg-neutral-300 dark:bg-neutral-700",
+    },
+    {
+      key: "skipped",
+      label: t("habits.legendSkipped"),
+      swatch: "border border-dashed border-neutral-400 dark:border-neutral-500",
+    },
+    {
+      key: "upcoming",
+      label: t("habits.legendUpcoming"),
+      swatch: "border border-neutral-300 dark:border-neutral-600",
+    },
+    {
+      key: "today",
+      label: t("habits.legendToday"),
+      swatch: "border-2 border-accent-500 dark:border-accent-400",
+    },
+  ];
+  return (
+    <View
+      accessibilityLabel={t("habits.legend")}
+      className="flex-row flex-wrap items-center gap-x-4 gap-y-1.5 px-4 pb-2 pt-1"
+    >
+      {items.map((item) => (
+        <View key={item.key} className="flex-row items-center gap-1.5">
+          <View className={`h-3 w-3 rounded-full ${item.swatch}`} />
+          <Text className="text-xs text-neutral-500 dark:text-neutral-400">{item.label}</Text>
+        </View>
+      ))}
     </View>
   );
 }

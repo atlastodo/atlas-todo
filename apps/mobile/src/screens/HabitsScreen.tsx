@@ -23,13 +23,12 @@ import { useToast } from "../data/ToastProvider";
 import { useNow } from "../hooks/useNow";
 import { useContextMenu, type MenuPos } from "../hooks/useContextMenu";
 import { useDragPan } from "../hooks/useDragPan";
-import { useIsWide } from "../hooks/useIsWide";
 import { ContextMenu, type ContextMenuItem } from "../ui/ContextMenu";
 import { AnimatedRow } from "../ui/AnimatedRow";
 import { DragToReorder } from "../ui/DragToReorder";
 import { EmptyState } from "../ui/EmptyState";
 import { Segmented } from "../ui/Segmented";
-import { HabitWeekStrip } from "../ui/HabitWeekStrip";
+import { HabitDayLegend, HabitWeekStrip } from "../ui/HabitWeekStrip";
 import { AddHabitSheet } from "../ui/AddHabitSheet";
 import { HabitGroupPicker } from "../ui/HabitGroupPicker";
 import { ScreenFade } from "../ui/ScreenFade";
@@ -193,6 +192,7 @@ function HabitCard({
   onToggleExpand,
   onOpen,
   onOpenActions,
+  inlineStrip,
 }: {
   habit: Habit;
   summary: HabitSummary;
@@ -206,6 +206,8 @@ function HabitCard({
   onToggleExpand: (habit: Habit) => void;
   onOpen?: (habit: Habit) => void;
   onOpenActions: (habit: Habit, pos: MenuPos) => void;
+  /** Whether the list is wide enough for the week strip beside the name (see `STRIP_INLINE_MIN_WIDTH`). */
+  inlineStrip: boolean;
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -218,7 +220,6 @@ function HabitCard({
   const Icon = projectIconFor(habit.icon);
 
   const contextRef = useContextMenu((pos) => onOpenActions(habit, pos));
-  const isWide = useIsWide();
 
   const toggleDay = (date: string) => {
     const { next, undo } = cycle(habit.id, date);
@@ -337,7 +338,7 @@ function HabitCard({
                   </Text>
                 </View>
                 {period !== null && period.target > 0 && (
-                  <Text className="text-xs text-neutral-500">
+                  <Text numberOfLines={1} className="shrink text-xs text-neutral-500">
                     {t("habits.periodProgress", { done: period.done, target: period.target })}
                   </Text>
                 )}
@@ -345,10 +346,10 @@ function HabitCard({
             </Pressable>
 
             {/* Inline only when the row can actually hold it. Seven 36px circles plus their gaps are
-            ~300px, and a phone card has ~334px of inner width for the check, the name, the steps
-            chevron and the overflow button as well -- so on a narrow screen the strip goes below
-            (see the second row) and the name gets the space instead of being squeezed to nothing. */}
-            {isWide && strip(false)}
+            ~300px, and the check, the steps chevron and the overflow button take ~130px more -- so
+            on a narrow list (a phone, or a tablet beside the sidebar) the strip goes below (see the
+            second row) and the name gets the space instead of being squeezed to "Read 20 …". */}
+            {inlineStrip && strip(false)}
 
             {/* A chevron on a habit with no steps would do nothing. */}
             {habit.steps.length > 0 && (
@@ -384,7 +385,7 @@ function HabitCard({
           </View>
 
           {/* The strip's own row on a phone: a row that cannot fit its contents truncates the name to nothing. */}
-          {!isWide && <View className="mt-2 flex-row">{strip(true)}</View>}
+          {!inlineStrip && <View className="mt-2 flex-row">{strip(true)}</View>}
 
           {/* Reference only: not pressable, because nothing here should suggest a step can be ticked.
           `entering` and nothing else -- a `layout` animation anywhere inside a reorderable row
@@ -407,6 +408,9 @@ function HabitCard({
   );
 }
 
+/** List width at/above which a card's week strip sits beside the name; it leaves the name ~300px. */
+const STRIP_INLINE_MIN_WIDTH = 760;
+
 export function HabitsScreen({
   now,
   onOpenHabit,
@@ -420,6 +424,10 @@ export function HabitsScreen({
   // Local and momentary: a backfill is a visit to yesterday, not a preference.
   const [day, setDay] = useState<HabitsDay>("today");
   const yesterday = day === "yesterday";
+  // The list's own width, not the window's: beside a sidebar a tablet has far less room than its
+  // window suggests.
+  const [listWidth, setListWidth] = useState(0);
+  const inlineStrip = listWidth >= STRIP_INLINE_MIN_WIDTH;
   // One instant for the whole screen so circles, strip, streaks and the Due filter agree. Local
   // noon on the shifted date key, not `now - 24h`, which differs across a DST boundary.
   const dayMs = yesterday ? dateKeyToMs(shiftDateKey(dateKeyFromMs(nowMs), -1)) : nowMs;
@@ -625,7 +633,10 @@ export function HabitsScreen({
 
   return (
     <ScreenFade>
-      <View className="flex-1 bg-white dark:bg-zinc-950">
+      <View
+        className="flex-1 bg-white dark:bg-zinc-950"
+        onLayout={(e) => setListWidth(e.nativeEvent.layout.width)}
+      >
         {/* Outside the list rather than in its header, so both controls survive a scope that
             empties the list -- otherwise the only way back to All, or back to today, would be
             hidden behind the filter itself. */}
@@ -709,13 +720,16 @@ export function HabitsScreen({
             onReorder={onReorder}
             ListHeaderComponent={header}
             ListFooterComponent={
-              hiddenByScope > 0 ? (
-                <Text className="px-4 pb-6 pt-1 text-xs text-neutral-400">
-                  {t(yesterday ? "habits.hiddenYesterday" : "habits.hiddenToday", {
-                    count: hiddenByScope,
-                  })}
-                </Text>
-              ) : null
+              <View className="pb-6">
+                <HabitDayLegend />
+                {hiddenByScope > 0 && (
+                  <Text className="px-4 pt-1 text-xs text-neutral-400">
+                    {t(yesterday ? "habits.hiddenYesterday" : "habits.hiddenToday", {
+                      count: hiddenByScope,
+                    })}
+                  </Text>
+                )}
+              </View>
             }
             panGesture={dragPan}
             // A worklet: the library calls this on the UI thread, and a plain arrow throws there.
@@ -758,6 +772,7 @@ export function HabitsScreen({
                         onToggleExpand={toggleExpand}
                         onOpen={onOpenHabit}
                         onOpenActions={openActions}
+                        inlineStrip={inlineStrip}
                       />
                     )
                   }
