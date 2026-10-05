@@ -62,9 +62,6 @@ export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
 
-/** The overlay drawer's shadow along its open edge, lifting it off the scrim. */
-const DRAWER_EDGE_SHADOW = { boxShadow: "4px 0 24px rgba(0, 0, 0, 0.25)" } as ViewStyle;
-
 /**
  * The app's shell: below the wide breakpoint (a phone, native or web alike) the three primary lists
  * are a bottom bar whose Menu tab opens {@link MobileMenuModal} with the rest. On a wide viewport
@@ -621,7 +618,7 @@ export default function DrawerLayout() {
           // `transition` style.
           drawerStyle: {
             ...drawerThemeOptions(scheme).drawerStyle,
-            ...(isWide ? { width: railed ? 72 : 288 } : { width: 288, ...DRAWER_EDGE_SHADOW }),
+            ...(isWide ? { width: railed ? 72 : 288 } : { width: 288 }),
             ...(isWeb
               ? ({
                   transition: isWide ? "width 0.3s ease" : "transform 0.3s ease",
