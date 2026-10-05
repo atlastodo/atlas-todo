@@ -283,6 +283,16 @@ describe("LoginScreen", () => {
     expect(screen.getByText("Sign in")).toBeTruthy();
   });
 
+  it("marks the email as the account name and moves on from it with Next", async () => {
+    await render(<LoginScreen />, { wrapper: withAuth({}) });
+
+    const email = screen.getByLabelText("Email");
+    expect(email.props.returnKeyType).toBe("next");
+    expect(email.props.autoComplete).toBe("username");
+    expect(email.props.textContentType).toBe("username");
+    expect(screen.getByLabelText("Password").props.autoComplete).toBe("current-password");
+  });
+
   it("hides the server URL field on online web", async () => {
     const origPlatform = Platform.OS;
     Platform.OS = "web";

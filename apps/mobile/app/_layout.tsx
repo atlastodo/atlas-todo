@@ -28,9 +28,9 @@ import {
   usePathname,
   type ErrorBoundaryProps,
 } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import { ThemeProvider } from "../src/theme/ThemeProvider";
 import { SyncedTheme } from "../src/theme/SyncedTheme";
+import { SystemBars } from "../src/theme/SystemBars";
 import { StoreProvider } from "../src/data/StoreProvider";
 import { ToastProvider } from "../src/data/ToastProvider";
 import { SelectionProvider, useSelection } from "../src/data/SelectionProvider";
@@ -51,7 +51,7 @@ import { NotificationsProvider } from "../src/data/NotificationsProvider";
 import { AuthProvider, useAuth } from "../src/auth/AuthContext";
 import { AuthGate } from "../src/auth/AuthGate";
 import { RecoveryPhraseModal } from "../src/auth/RecoveryPhraseModal";
-import { withAccent, headerThemeOptions, isDark } from "../src/theme/navTheme";
+import { withAccent, headerThemeOptions, isDark, sceneBackground } from "../src/theme/navTheme";
 import { DEFAULT_ACCENT } from "@atlas/shared";
 import { useI18nLanguage } from "../src/hooks/useI18nLanguage";
 import { useHapticsPref } from "../src/hooks/useHapticsPref";
@@ -263,9 +263,7 @@ function Gate() {
                                     screenOptions={{
                                       headerTitleAlign: "left",
                                       ...headerThemeOptions(scheme),
-                                      contentStyle: {
-                                        backgroundColor: isDark(scheme) ? "#09090b" : "#ffffff",
-                                      },
+                                      contentStyle: { backgroundColor: sceneBackground(scheme) },
                                     }}
                                   >
                                     <Stack.Screen
@@ -301,7 +299,9 @@ export default function RootLayout() {
   const { colorScheme: scheme } = useColorScheme();
   const dark = isDark(scheme);
   return (
-    <GestureHandlerRootView className="flex-1 bg-white dark:bg-zinc-950">
+    // A style, not a className: NativeWind does not wrap GestureHandlerRootView, so its classes were
+    // dropped and the window's default white showed wherever the screen above did not paint.
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: sceneBackground(scheme) }}>
       {/* Default accent for the login screen; SyncedTheme re-provides the synced one inside the store. */}
       <NavigationThemeProvider
         value={withAccent(dark ? DarkTheme : DefaultTheme, dark, DEFAULT_ACCENT)}
@@ -311,8 +311,7 @@ export default function RootLayout() {
             <CrashReporterBinding />
             <Gate />
           </AuthProvider>
-          {/* Follows the applied scheme; "auto" would track the OS instead. */}
-          <StatusBar style={isDark(scheme) ? "light" : "dark"} />
+          <SystemBars scheme={scheme} />
         </ThemeProvider>
       </NavigationThemeProvider>
     </GestureHandlerRootView>

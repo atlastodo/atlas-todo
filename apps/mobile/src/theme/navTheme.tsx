@@ -50,6 +50,11 @@ export function isDark(scheme: Scheme): boolean {
   return scheme === "dark";
 }
 
+/** The scene background (`bg-white` / `dark:bg-zinc-950`) as a hex, for surfaces that take no className. */
+export function sceneBackground(scheme: Scheme): string {
+  return (isDark(scheme) ? DARK : LIGHT).background;
+}
+
 /**
  * Overlays the app's chrome and the user's accent preference onto a react-navigation base theme.
  *

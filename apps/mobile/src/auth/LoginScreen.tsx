@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,6 +11,7 @@ import {
   type KeyboardTypeOptions,
   type TextInputProps,
 } from "react-native";
+import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { ApiError, RecoveryPhraseError, apiErrorCode } from "@atlas/client-core";
@@ -19,6 +20,7 @@ import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { useAuth, type SignOutNotice } from "./AuthContext";
 import { defaultServerUrl, isOnlineWeb, loadServerUrl } from "./serverUrl";
 import { RecoveryPhraseModal } from "./RecoveryPhraseModal";
+import { isDark } from "../theme/navTheme";
 
 /**
  * Combined sign-in / sign-up screen. On success the provider persists the session and the gate in
@@ -67,6 +69,11 @@ export function LoginScreen({
   const [deletionDaysRemaining, setDeletionDaysRemaining] = useState(30);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Return on one field moves to the next, as a credential form should.
+  const emailRef = useRef<TextInput>(null);
+  const phraseRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const { colorScheme } = useColorScheme();
 
   useEffect(() => {
     let live = true;
@@ -151,11 +158,14 @@ export function LoginScreen({
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-neutral-50 dark:bg-neutral-950"
+      // Styles, not classes, for the page and its centring: on Android the classes here did not
+      // take, leaving the card at the top of a white page. neutral-50 / neutral-950 under the card.
+      style={{ flex: 1, backgroundColor: isDark(colorScheme) ? "#0a0a0a" : "#fafafa" }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        contentContainerClassName="flex-grow justify-center p-4"
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 16 }}
         keyboardShouldPersistTaps="handled"
       >
         <View className="w-full self-center rounded-xl border border-neutral-200 bg-white p-6 sm:max-w-sm dark:border-neutral-800 dark:bg-neutral-900">
@@ -190,28 +200,42 @@ export function LoginScreen({
                 value={displayName}
                 onChange={setDisplayName}
                 textContentType="name"
+                autoComplete="name"
+                returnKeyType="next"
+                onSubmitEditing={() => emailRef.current?.focus()}
               />
             )}
             <Field
               label={t("auth.email")}
               value={email}
               onChange={setEmail}
+              inputRef={emailRef}
               keyboardType="email-address"
-              textContentType="emailAddress"
-              autoComplete="email"
+              // The account name for credential managers, which pair "username" with the password
+              // field below to offer, and to save, a login.
+              textContentType="username"
+              autoComplete="username"
+              returnKeyType="next"
+              onSubmitEditing={() =>
+                (mode === "recover" ? phraseRef : passwordRef).current?.focus()
+              }
             />
             {mode === "recover" && (
               <Field
                 label={t("recovery.phraseLabel")}
                 value={recoveryInput}
                 onChange={setRecoveryInput}
+                inputRef={phraseRef}
                 autoComplete="off"
+                returnKeyType="next"
+                onSubmitEditing={() => passwordRef.current?.focus()}
               />
             )}
             <Field
               label={mode === "recover" ? t("auth.newPassword") : t("auth.password")}
               value={password}
               onChange={setPassword}
+              inputRef={passwordRef}
               secureTextEntry
               textContentType={mode === "login" ? "password" : "newPassword"}
               autoComplete={mode === "login" ? "current-password" : "new-password"}
@@ -396,7 +420,9 @@ interface FieldProps {
   placeholder?: string;
   textContentType?: TextInputProps["textContentType"];
   autoComplete?: TextInputProps["autoComplete"];
+  returnKeyType?: TextInputProps["returnKeyType"];
   onSubmitEditing?: () => void;
+  inputRef?: Ref<TextInput>;
 }
 
 /** The invite code an admin's link carries (`?invite=`), read once. Web only; screens under src/ must not import the router. */
@@ -409,14 +435,17 @@ function readInviteFromLink(): string {
   }
 }
 
-function Field({ label, value, onChange, ...input }: FieldProps) {
+function Field({ label, value, onChange, inputRef, ...input }: FieldProps) {
   return (
     <View className="gap-1">
       <Text className="text-sm text-neutral-600 dark:text-neutral-400">{label}</Text>
       <TextInput
         // The label is the accessible name; an RN TextInput has no <label for>.
         accessibilityLabel={label}
+        ref={inputRef}
         value={value}
+        // A "next" field hands focus on without the keyboard closing in between.
+        submitBehavior={input.returnKeyType === "next" ? "submit" : undefined}
         onChangeText={onChange}
         // iOS would otherwise capitalise an email ("Ada@...") and the sign-in would fail invisibly.
         autoCapitalize="none"
