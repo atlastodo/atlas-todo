@@ -58,7 +58,8 @@ import type { MenuPos } from "../hooks/useContextMenu";
 import type { ListPref } from "../hooks/usePreferences";
 import { dragReleaseAction } from "../lib/dragRelease";
 import { haptics } from "../lib/haptics";
-import { CalendarClock, ChevronDown, ChevronRight, Inbox } from "./icons";
+import { CalendarClock, ChevronDown, ChevronRight, Inbox, type LucideIcon } from "./icons";
+import { EmptyState } from "./EmptyState";
 import { displayTitle } from "../lib/taskTitle";
 
 /**
@@ -113,8 +114,10 @@ export interface GroupedTaskListProps {
   ) => void;
   /** Rendered above the list (quick-add, a header). */
   header?: ReactElement;
-  /** Shown when there is nothing at all. */
+  /** Shown when there is nothing at all, as the {@link EmptyState} title (with `emptyIcon` and `emptyHint`). */
   emptyLabel?: string;
+  emptyIcon?: LucideIcon;
+  emptyHint?: string;
   /** Group keys to start collapsed (seeded once on mount); e.g. Completed folds older buckets. */
   initialCollapsedKeys?: string[];
   /** Show the Select + group/sort toolbar (default true). The project screen has them in its nav header. */
@@ -193,6 +196,8 @@ export function GroupedTaskList({
   onBulkMove,
   header,
   emptyLabel,
+  emptyIcon,
+  emptyHint,
   initialCollapsedKeys,
   showToolbar = true,
   listPref,
@@ -393,10 +398,11 @@ export function GroupedTaskList({
   });
 
   const emptyView = (
-    <View className="items-center gap-2 py-16">
-      <Inbox size={32} className="text-neutral-400" />
-      <Text className="text-sm text-neutral-400">{emptyLabel ?? t("common.nothingHere")}</Text>
-    </View>
+    <EmptyState
+      icon={emptyIcon ?? Inbox}
+      title={emptyLabel ?? t("common.nothingHere")}
+      description={emptyHint}
+    />
   );
 
   const planDayLink =

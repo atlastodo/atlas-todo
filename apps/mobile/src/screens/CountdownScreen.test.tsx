@@ -10,13 +10,13 @@ describe("CountdownScreen", () => {
   it("enables a preset when its chip is tapped", async () => {
     await render(<CountdownScreen now={NOW} />, { wrapper: withApp(new LocalStore("test")) });
 
+    expect(screen.getByText("No countdowns yet")).toBeTruthy();
+
     // Only the chip carries this label until a card exists, so this press is unambiguous.
     await fireEvent.press(screen.getByLabelText("The weekend"));
 
     // A card appeared (it has the remove control) and the empty state is gone.
     expect(screen.getByLabelText("Remove preset")).toBeTruthy();
-    expect(
-      screen.queryByText("No countdowns yet. Enable one above to count down to it."),
-    ).toBeNull();
+    expect(screen.queryByText("No countdowns yet")).toBeNull();
   });
 });

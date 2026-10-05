@@ -1,7 +1,9 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { Task } from "@atlas/client-core";
 import { endOfDay, upcomingTasks } from "@atlas/shared";
 import { useTaskListView } from "../hooks/useTaskListView";
+import { CalendarDays } from "../ui/icons";
 import { QuickAddTaskList } from "./ViewTaskList";
 
 /**
@@ -15,6 +17,7 @@ export interface UpcomingScreenProps {
 }
 
 export function UpcomingScreen({ onOpenTask }: UpcomingScreenProps = {}) {
+  const { t } = useTranslation();
   const view = useTaskListView("upcoming", { group: "date", sort: "manual" });
 
   const tasks = useMemo(
@@ -27,6 +30,9 @@ export function UpcomingScreen({ onOpenTask }: UpcomingScreenProps = {}) {
       view={view}
       tasks={tasks}
       onOpenTask={onOpenTask}
+      emptyIcon={CalendarDays}
+      emptyLabel={t("empty.upcoming.title")}
+      emptyHint={t("empty.upcoming.hint")}
       quickAddDefaults={{ due_at: endOfDay(view.now + 86_400_000, view.timeZone) }}
     />
   );

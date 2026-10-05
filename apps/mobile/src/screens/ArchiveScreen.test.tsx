@@ -36,7 +36,7 @@ describe("ArchiveScreen", () => {
     expect(screen.queryByText("Morning")).toBeNull();
 
     await fireEvent.press(screen.getByLabelText("Restore"));
-    expect(screen.getByText("Nothing archived.")).toBeTruthy();
+    expect(screen.getByText("Nothing archived")).toBeTruthy();
   });
 
   it("restores an archived task, removing it from the view", async () => {
@@ -47,7 +47,7 @@ describe("ArchiveScreen", () => {
     // Only the task section is present -> a single Restore control.
     await fireEvent.press(screen.getByLabelText("Restore"));
     expect(screen.queryByText("Old task")).toBeNull();
-    expect(screen.getByText("Nothing archived.")).toBeTruthy();
+    expect(screen.getByText("Nothing archived")).toBeTruthy();
   });
 
   it("separates routines from habits, and names a habit's routine", async () => {

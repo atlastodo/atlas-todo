@@ -68,6 +68,12 @@ describe("AssignedScreen", () => {
     await render(<AssignedScreen />, { wrapper: withApp(store(), meAuth) });
     expect(screen.queryByLabelText("Add a task")).toBeNull();
   });
+
+  it("explains its own empty state rather than the inbox's", async () => {
+    await render(<AssignedScreen />, { wrapper: withApp(store(), meAuth) });
+    expect(screen.getByText("Nothing is assigned to you.")).toBeTruthy();
+    expect(screen.queryByText("Your inbox is empty")).toBeNull();
+  });
 });
 
 describe("subtasks in a smart list", () => {
