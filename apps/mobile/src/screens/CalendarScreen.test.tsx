@@ -30,6 +30,25 @@ describe("CalendarScreen", () => {
     expect(store.get("task", id)!.due_at).not.toBe(before);
   });
 
+  it("shows dots instead of titled chips on a phone, leaving the titles to the agenda", async () => {
+    const spy = jest
+      .spyOn(
+        jest.requireActual<typeof import("react-native")>("react-native"),
+        "useWindowDimensions",
+      )
+      .mockReturnValue({ width: 390, height: 844, scale: 1, fontScale: 1 });
+    try {
+      const { store } = storeWithTask("Dentist");
+      await render(<CalendarScreen />, { wrapper: withApp(store) });
+
+      // Only the agenda row names the task; the day cell counts it instead.
+      expect(screen.getAllByLabelText("Dentist")).toHaveLength(1);
+      expect(screen.getByLabelText(/^\d+, 1 task$/)).toBeTruthy();
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("hides week numbers when show_week_numbers is false", async () => {
     const { store } = storeWithTask("Dentist");
     store.set("preference", PREFERENCES_ID, "show_week_numbers", false);

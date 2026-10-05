@@ -41,18 +41,21 @@ export function FocusRing({
           strokeWidth={stroke}
           fill="none"
         />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - clamped)}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
+        {/* Skipped at zero: a round cap on an empty dash still paints a dot at twelve o'clock. */}
+        {clamped > 0 && (
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            stroke={color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - clamped)}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+        )}
       </Svg>
       {children}
     </View>

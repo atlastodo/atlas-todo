@@ -231,8 +231,9 @@ export function ListPicker<T extends string>({
                 {selected?.label ?? ""}
               </Text>
               {selected?.hint != null && (
+                // Two lines: in a 220px trigger a one-line hint is cut mid-word ("not counted agai…").
                 <Text
-                  numberOfLines={1}
+                  numberOfLines={2}
                   className={"text-neutral-500 " + (isWeb ? "text-xs" : "text-sm")}
                 >
                   {selected.hint}
