@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Platform } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { fireEvent, render as render, screen, waitFor } from "@testing-library/react-native";
 import { ApiError, RecoveryPhraseError } from "@atlas/client-core";
 import { fakeAuth } from "../testutil";
@@ -291,6 +291,27 @@ describe("LoginScreen", () => {
     expect(email.props.autoComplete).toBe("username");
     expect(email.props.textContentType).toBe("username");
     expect(screen.getByLabelText("Password").props.autoComplete).toBe("current-password");
+  });
+
+  it("paints the web page from the dark: classes, not the JS scheme, so it matches the card", async () => {
+    // Before sign-in NativeWind's JS scheme can still say "light" while <html> has `.dark`; the
+    // card follows the class, so the page behind it must too.
+    const origPlatform = Platform.OS;
+    Platform.OS = "web";
+    try {
+      await render(<LoginScreen />, { wrapper: withAuth({}) });
+      const page = screen.getByTestId("login-page");
+      expect(page.props.className).toBe("bg-neutral-50 dark:bg-neutral-950");
+      expect(StyleSheet.flatten(page.props.style)).not.toHaveProperty("backgroundColor");
+    } finally {
+      Platform.OS = origPlatform;
+    }
+  });
+
+  it("paints the native page from the applied scheme", async () => {
+    await render(<LoginScreen />, { wrapper: withAuth({}) });
+    const style = StyleSheet.flatten(screen.getByTestId("login-page").props.style);
+    expect(style).toMatchObject({ backgroundColor: "#fafafa" });
   });
 
   it("hides the server URL field on online web", async () => {

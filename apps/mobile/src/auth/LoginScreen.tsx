@@ -158,9 +158,16 @@ export function LoginScreen({
 
   return (
     <KeyboardAvoidingView
-      // Styles, not classes, for the page and its centring: on Android the classes here did not
-      // take, leaving the card at the top of a white page. neutral-50 / neutral-950 under the card.
-      style={{ flex: 1, backgroundColor: isDark(colorScheme) ? "#0a0a0a" : "#fafafa" }}
+      // On native a style, not classes: on Android the classes here did not take, leaving the card
+      // at the top of a white page. On web the classes, so the page follows `.dark` on <html> like
+      // the card does; the JS scheme can lag it before sign-in. neutral-50 / neutral-950.
+      testID="login-page"
+      className={Platform.OS === "web" ? "bg-neutral-50 dark:bg-neutral-950" : undefined}
+      style={
+        Platform.OS === "web"
+          ? { flex: 1 }
+          : { flex: 1, backgroundColor: isDark(colorScheme) ? "#0a0a0a" : "#fafafa" }
+      }
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
