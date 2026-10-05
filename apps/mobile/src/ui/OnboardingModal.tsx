@@ -340,7 +340,7 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
               accessibilityLabel={t("onboarding.skip")}
               onPress={() => handleFinish(true)}
               hitSlop={8}
-              className="px-2 py-1 active:opacity-70"
+              className="rounded-md px-2 py-1 active:opacity-70"
             >
               <Text className="text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100">
                 {t("onboarding.skip")}

@@ -47,7 +47,13 @@ const CARDS_ROW_MIN_WIDTH = 560;
 /** A day key ("2026-06-17") as a short "17 Jun", read in UTC so no time zone can move it a day. */
 function dayLabel(fmt: ReturnType<typeof makeFormatters>, key: string): string {
   return fmt.dueChip(
-    Date.UTC(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1, Number(key.slice(8, 10)), 12),
+    Date.UTC(
+      Number(key.slice(0, 4)),
+      Number(key.slice(5, 7)) - 1,
+      Number(key.slice(8, 10)),
+      23,
+      59,
+    ),
   );
 }
 
