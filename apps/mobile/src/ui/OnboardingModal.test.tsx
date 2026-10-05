@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlas/client-core";
 import { PREFERENCES_ID } from "@atlas/shared";
-import { fakeAuth, withApp } from "../testutil";
+import { fakeAuth, fakeLocalMode, withApp } from "../testutil";
+import { LocalModeContext, type LocalModeValue } from "../auth/localMode";
 import { StoreContext } from "../data/StoreProvider";
 import { OnboardingProvider, useOnboarding } from "../data/OnboardingContext";
 import { OnboardingModal } from "./OnboardingModal";
@@ -25,8 +26,57 @@ async function mount(seed: Record<string, unknown> = {}, onFinish?: () => void) 
   return store;
 }
 
+async function mountLocalMode(local: LocalModeValue, localOnly: boolean) {
+  const store = new LocalStore("test");
+  const BaseWrapper = withApp(store, fakeAuth(), null, { localOnly });
+  await render(
+    <BaseWrapper>
+      <LocalModeContext.Provider value={local}>
+        <OnboardingProvider>
+          <OnboardingModal />
+        </OnboardingProvider>
+      </LocalModeContext.Provider>
+    </BaseWrapper>,
+  );
+  return store;
+}
+
 const readPref = (store: LocalStore, field: string) =>
   (store.get("preference", PREFERENCES_ID) ?? {})[field];
+
+describe("OnboardingModal in local-only mode", () => {
+  it("offers an account right after Welcome", async () => {
+    const local = fakeLocalMode();
+    await mountLocalMode(local, true);
+    expect(screen.getByText("Welcome to Atlas Todo")).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText("Continue"));
+
+    expect(screen.getByText("Sync and collaborate?")).toBeTruthy();
+    // The choices move on; there is no plain Continue on this step.
+    expect(screen.queryByLabelText("Continue")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("Create an account"));
+    expect(local.openAuth).toHaveBeenCalledWith("signup", { resumeOnboarding: true });
+    await fireEvent.press(screen.getByLabelText("Sign in"));
+    expect(local.openAuth).toHaveBeenLastCalledWith("login");
+
+    await fireEvent.press(screen.getByLabelText("Continue on this device"));
+    expect(screen.getByText("Make it yours")).toBeTruthy();
+  });
+
+  it("has no account step once signed in", async () => {
+    await mountLocalMode(fakeLocalMode(), false);
+    await fireEvent.press(screen.getByLabelText("Continue"));
+    expect(screen.getByText("Make it yours")).toBeTruthy();
+  });
+
+  it("resumes after the account step for an account just created from it", async () => {
+    const local = fakeLocalMode({ resumeOnboarding: true });
+    await mountLocalMode(local, false);
+    expect(screen.getByText("Make it yours")).toBeTruthy();
+    expect(local.clearResumeOnboarding).toHaveBeenCalled();
+  });
+});
 
 describe("OnboardingModal", () => {
   it("does not render when onboarding is already completed", async () => {

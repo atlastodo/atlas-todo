@@ -11,9 +11,15 @@ import {
 import { useStore } from "./StoreProvider";
 import { usePreferences } from "../hooks/usePreferences";
 import { useFirstSyncDone } from "../hooks/useFirstSyncDone";
+import { useLocalMode } from "../auth/localMode";
+
+/** A wizard step the wizard can be opened at, other than the first. */
+export type OnboardingStart = "appearance";
 
 export interface OnboardingContextValue {
   isOpen: boolean;
+  /** The step to open at, or null for the first. */
+  startAt?: OnboardingStart | null;
   openOnboarding: () => void;
   closeOnboarding: () => void;
 }
@@ -21,10 +27,12 @@ export interface OnboardingContextValue {
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
-  const { store, version } = useStore();
+  const { store, version, localOnly } = useStore();
   const firstSyncDone = useFirstSyncDone();
   const { onboardingCompleted, setOnboardingCompleted } = usePreferences();
+  const local = useLocalMode();
   const [isOpen, setIsOpen] = useState(false);
+  const [startAt, setStartAt] = useState<OnboardingStart | null>(null);
   const autoPromptChecked = useRef(false);
   // Opened by the first-run check (not replayed by the user), so synced data may still close it.
   const autoOpened = useRef(false);
@@ -34,6 +42,19 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
+
+  // A new account created from the wizard's account step: carry on after that step. The choices the
+  // wizard makes from here are the account's own settings, so they sync to every device.
+  const resume = local?.resumeOnboarding === true && !localOnly;
+  const clearResume = local?.clearResumeOnboarding;
+  useEffect(() => {
+    if (!resume) return;
+    clearResume?.();
+    autoPromptChecked.current = true;
+    autoOpened.current = false;
+    setStartAt("appearance");
+    setIsOpen(true);
+  }, [resume, clearResume]);
 
   // First run only opens once a sync has succeeded: before that a new device holds none of the
   // account's data or preferences, so an existing user would be onboarded again and the wizard's
@@ -62,21 +83,24 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const openOnboarding = useCallback(() => {
     autoOpened.current = false;
+    setStartAt(null);
     setIsOpen(true);
   }, []);
 
   const closeOnboarding = useCallback(() => {
     autoOpened.current = false;
+    setStartAt(null);
     setIsOpen(false);
   }, []);
 
   const value = useMemo(
     () => ({
       isOpen,
+      startAt,
       openOnboarding,
       closeOnboarding,
     }),
-    [isOpen, openOnboarding, closeOnboarding],
+    [isOpen, startAt, openOnboarding, closeOnboarding],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

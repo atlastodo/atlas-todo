@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { isAdmin } from "@atlas/client-core";
 import { useAuth } from "../auth/AuthContext";
+import { useStoreOptional } from "../data/StoreProvider";
 import {
   resolveSettingsSection,
   settingsSections,
@@ -30,7 +31,8 @@ export function SettingsSidebar({
 }) {
   const { t } = useTranslation();
   const { session } = useAuth();
-  const visible = settingsSections(isAdmin(session));
+  const localOnly = useStoreOptional()?.localOnly === true;
+  const visible = settingsSections(isAdmin(session), localOnly);
   const active = resolveSettingsSection(section, visible);
 
   const sections: SidebarSection[] = [
