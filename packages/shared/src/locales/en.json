@@ -467,6 +467,7 @@
     "complete": "Complete task",
     "reopen": "Reopen task",
     "skipOccurrence": "Skip occurrence",
+    "completedOn": "Completed {{date}}",
     "hasReminder": "Has reminder",
     "recurring": "Recurring",
     "priority": "Priority {{level}}",

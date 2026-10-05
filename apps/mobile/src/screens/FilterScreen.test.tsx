@@ -75,4 +75,16 @@ describe("FilterScreen", () => {
 
     expect(screen.getByLabelText("Filter query").props.value).toBe("p1");
   });
+
+  it("keeps Select and the filter's actions on one toolbar row with the match count", async () => {
+    const store = seed();
+    store.set("saved_filter", "fa", "name", "A");
+    store.set("saved_filter", "fa", "query", "p1");
+    await render(<FilterScreen filterId="fa" />, { wrapper: withApp(store) });
+
+    // One Select, from the filter's own toolbar (the list's separate toolbar is off).
+    expect(screen.getAllByLabelText("Select")).toHaveLength(1);
+    expect(screen.getByText("1 matching")).toBeTruthy();
+    expect(screen.getByLabelText("Delete filter")).toBeTruthy();
+  });
 });

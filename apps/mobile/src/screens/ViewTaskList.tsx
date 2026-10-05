@@ -97,7 +97,8 @@ export function QuickAddTaskList({
       onChangeListPref={view.setListPref}
       header={
         Platform.OS === "web" && isWide ? (
-          <View className="px-4 py-2">
+          // `pl-1`: QuickAdd's own inset then centres its "+" on the rows' 16px checkbox column.
+          <View className="py-2 pl-1 pr-4">
             <QuickAdd
               onAdd={view.create}
               onCreateProject={view.createProject}

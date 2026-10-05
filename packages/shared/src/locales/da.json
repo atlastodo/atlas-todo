@@ -467,6 +467,7 @@
     "complete": "Fuldfør opgave",
     "reopen": "Genåbn opgave",
     "skipOccurrence": "Spring forekomst over",
+    "completedOn": "Fuldført {{date}}",
     "hasReminder": "Har påmindelse",
     "recurring": "Tilbagevendende",
     "priority": "Prioritet {{level}}",
