@@ -9,7 +9,7 @@ import { Segmented } from "../ui/Segmented";
 import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
-import { AdminRow } from "../ui/AdminRow";
+import { ADMIN_CARD, AdminBadge, AdminRow } from "../ui/AdminRow";
 import { AdminReportDetail } from "../ui/AdminReportDetail";
 import { CircleAlert, Trash2 } from "../ui/icons";
 
@@ -80,10 +80,11 @@ export function AdminReportsScreen() {
         <FlatList
           data={reports}
           keyExtractor={(r) => r.id}
-          contentContainerClassName="px-4 pb-16"
-          renderItem={({ item }) => (
+          contentContainerClassName={"mx-4 mb-16 " + ADMIN_CARD}
+          renderItem={({ item, index }) => (
             <ReportRow
               report={item}
+              first={index === 0}
               when={format.dateTime(item.occurred_at_ms)}
               onPress={() => setOpenId(item.id)}
             />
@@ -137,10 +138,12 @@ export function AdminReportsScreen() {
 function ReportRow({
   report,
   when,
+  first,
   onPress,
 }: {
   report: BugReportSummary;
   when: string;
+  first: boolean;
   onPress: () => void;
 }) {
   const { t } = useTranslation();
@@ -149,12 +152,13 @@ function ReportRow({
       title={report.message}
       badges={
         report.resolved_at_ms != null ? (
-          <Text className="text-xs text-green-600">{t("admin.resolved")}</Text>
+          <AdminBadge label={t("admin.resolved")} tone="green" />
         ) : null
       }
       detail={`${report.platform} ${report.app_version} - ${when} - ${
         report.user_email ?? t("admin.anonymous")
       }`}
+      first={first}
       onPress={onPress}
     />
   );

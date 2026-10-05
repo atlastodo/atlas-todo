@@ -116,7 +116,7 @@ describe("AdminSettingsScreen", () => {
     });
 
     await screen.findByText("Made admin");
-    expect(screen.getByText(/System \(cli\) -> ada@example.com/)).toBeTruthy();
+    expect(screen.getByText(/System \(cli\) → ada@example.com/)).toBeTruthy();
     expect(screen.queryByText(/Not signed in/)).toBeNull();
   });
 });

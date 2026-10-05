@@ -1,3 +1,4 @@
+import { View } from "react-native";
 import { router } from "expo-router";
 import { AdminReportsScreen } from "../../src/screens/AdminReportsScreen";
 import { ScreenFocusBoundary } from "../../src/ui/ScreenFocusBoundary";
@@ -7,8 +8,10 @@ import { AdminSectionNav } from "../../src/ui/AdminSectionNav";
 export default function AdminReports() {
   return (
     <ScreenFocusBoundary>
-      <AdminSectionNav active="reports" onNavigate={(href) => router.replace(href)} />
-      <AdminReportsScreen />
+      <View className="w-full max-w-2xl flex-1 self-center">
+        <AdminSectionNav active="reports" onNavigate={(href) => router.replace(href)} />
+        <AdminReportsScreen />
+      </View>
     </ScreenFocusBoundary>
   );
 }

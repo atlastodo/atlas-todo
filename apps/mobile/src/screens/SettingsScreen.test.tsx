@@ -150,14 +150,14 @@ describe("SettingsScreen", () => {
     expect(logout).toHaveBeenCalledTimes(1);
   });
 
-  it("confirms and calls deleteAccount with the password when Delete Account is clicked", async () => {
+  it("confirms and calls deleteAccount with the password when Delete account is clicked", async () => {
     const deleteAccount = jest.fn(async () => {});
     const store = new LocalStore("test");
     await mountAuth("account", store, {
       deleteAccount,
     });
 
-    await fireEvent.press(screen.getByText("Delete Account"));
+    await fireEvent.press(screen.getByRole("button", { name: "Delete account" }));
     expect(
       screen.getByText(
         "Your account and all associated data will be scheduled for deletion. You can cancel this within 30 days by signing back in. After 30 days, your account will be permanently deleted.",
@@ -166,7 +166,7 @@ describe("SettingsScreen", () => {
 
     // The confirmation asks for the account's password; the empty form does not reach the auth
     // context, and a wrong password stays in the dialog with an inline error.
-    const confirmButtons = () => screen.getAllByRole("button", { name: "Delete Account" });
+    const confirmButtons = () => screen.getAllByRole("button", { name: "Delete account" });
     await fireEvent.press(confirmButtons()[confirmButtons().length - 1]!);
     expect(deleteAccount).not.toHaveBeenCalled();
 

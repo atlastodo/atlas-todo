@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FlatList, Platform, Pressable, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { AdminAuditEntry, AdminInviteView } from "@atlas/client-core";
 import { useAdminSettings } from "../hooks/useAdminSettings";
@@ -12,7 +12,8 @@ import { Toggle } from "../ui/Toggle";
 import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
-import { CircleAlert, CircleX, Plus } from "../ui/icons";
+import { Section } from "../ui/Section";
+import { CircleAlert, CircleX, History, Plus, Send, UserPlus } from "../ui/icons";
 import { copyText } from "../lib/clipboard";
 
 /** The admin panel's instance section: the runtime signup toggle, signup invites, and the audit trail of admin actions. REST-driven (instance state, not a user's replica). */
@@ -56,56 +57,53 @@ export function AdminSettingsScreen() {
 
   return (
     <View className="flex-1">
-      <FlatList
-        data={entries}
-        keyExtractor={(e) => String(e.id)}
-        contentContainerClassName="px-4 pb-16"
-        ListHeaderComponent={
-          <>
-            {loading ? (
-              <View className="px-4 pt-3">
-                <SkeletonRows count={3} />
-              </View>
-            ) : failed || !settings ? (
-              <EmptyState
-                icon={CircleAlert}
-                title={t("admin.settingsLoadFailed")}
-                actions={[
-                  { label: t("common.retry"), onPress: () => void refresh(), primary: true },
-                ]}
-              />
-            ) : (
-              <View className="pt-1">
-                <Toggle
-                  label={t("admin.signupToggle")}
-                  description={t("admin.signupToggleDesc")}
-                  value={settings.signup_enabled}
-                  onValueChange={(next) =>
-                    void setSignupEnabled(next).then((ok) => {
-                      if (!ok) toast.show(t("admin.actionFailed"));
-                    })
-                  }
-                  accessibilityLabel={t("admin.signupToggle")}
-                />
-              </View>
-            )}
-
-            <InviteSection invites={invites} onCreate={onCreate} onRevoke={onRevoke} />
-
-            <Text className="px-4 pb-1 pt-6 text-xs font-medium uppercase tracking-wide text-neutral-500">
-              {t("admin.auditSection")}
-            </Text>
-          </>
-        }
-        ListEmptyComponent={
-          <View className="px-0">
-            <EmptyState icon={CircleAlert} title={t("admin.noAudit")} />
+      <ScrollView className="flex-1" contentContainerClassName="px-4 pb-16 pt-4">
+        {loading ? (
+          <View className="pb-6">
+            <SkeletonRows count={3} />
           </View>
-        }
-        renderItem={({ item }) => (
-          <AuditRow entry={item} when={format.dateTime(item.created_at_ms)} />
+        ) : failed || !settings ? (
+          <EmptyState
+            icon={CircleAlert}
+            title={t("admin.settingsLoadFailed")}
+            actions={[{ label: t("common.retry"), onPress: () => void refresh(), primary: true }]}
+          />
+        ) : (
+          <Section icon={UserPlus} title={t("admin.signupSection")}>
+            <Toggle
+              label={t("admin.signupToggle")}
+              description={t("admin.signupToggleDesc")}
+              value={settings.signup_enabled}
+              onValueChange={(next) =>
+                void setSignupEnabled(next).then((ok) => {
+                  if (!ok) toast.show(t("admin.actionFailed"));
+                })
+              }
+              accessibilityLabel={t("admin.signupToggle")}
+              className="py-3.5"
+            />
+          </Section>
         )}
-      />
+
+        <InviteSection invites={invites} onCreate={onCreate} onRevoke={onRevoke} />
+
+        <Section icon={History} title={t("admin.auditSection")}>
+          {entries.length === 0 ? (
+            <Text className="py-3.5 text-sm text-neutral-500 dark:text-neutral-400">
+              {t("admin.noAudit")}
+            </Text>
+          ) : (
+            entries.map((entry, index) => (
+              <AuditRow
+                key={entry.id}
+                entry={entry}
+                first={index === 0}
+                when={format.dateTime(entry.created_at_ms)}
+              />
+            ))
+          )}
+        </Section>
+      </ScrollView>
 
       {/* The freshly minted invite, with the code to copy. The server hands out the code only in
           this answer (the list never carries it), so this is the one chance to copy the link. */}
@@ -159,31 +157,19 @@ function InviteSection({
   const live = invites.filter((i) => i.used_at_ms == null && i.revoked_at_ms == null);
 
   return (
-    <View className="px-4 pt-6">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-xs font-medium uppercase tracking-wide text-neutral-500">
-          {t("admin.inviteSection")}
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("admin.createInvite")}
-          onPress={onCreate}
-          className="flex-row items-center gap-1 rounded-md bg-accent-50 px-2.5 py-2 active:bg-accent-100 dark:bg-accent-950 dark:active:bg-accent-900"
-        >
-          <Plus size={13} className="text-accent-600 dark:text-accent-400" />
-          <Text className="text-xs font-medium text-accent-600 dark:text-accent-400">
-            {t("admin.createInvite")}
-          </Text>
-        </Pressable>
-      </View>
-
+    <Section icon={Send} title={t("admin.inviteSection")}>
       {live.length === 0 ? (
-        <Text className="py-3 text-sm text-neutral-500">{t("admin.noInvites")}</Text>
+        <Text className="py-3.5 text-sm text-neutral-500 dark:text-neutral-400">
+          {t("admin.noInvites")}
+        </Text>
       ) : (
-        live.map((invite) => (
+        live.map((invite, index) => (
           <View
             key={invite.id}
-            className="flex-row items-center gap-2 border-b border-neutral-100 py-3 dark:border-neutral-900"
+            className={
+              "flex-row items-center gap-2 py-3 " +
+              (index === 0 ? "" : "border-t border-neutral-200/50 dark:border-neutral-800/60")
+            }
           >
             <View className="flex-1">
               <Text numberOfLines={1} className="text-sm text-neutral-900 dark:text-neutral-100">
@@ -201,23 +187,48 @@ function InviteSection({
           </View>
         ))
       )}
-    </View>
+      <View className="border-t border-neutral-200/50 py-3 dark:border-neutral-800/60">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("admin.createInvite")}
+          onPress={onCreate}
+          className="min-h-10 flex-row items-center justify-center gap-1.5 self-start rounded-md border border-accent-200 bg-accent-50 px-3.5 py-2 active:bg-accent-100 dark:border-accent-800 dark:bg-accent-950/60 dark:active:bg-accent-900"
+        >
+          <Plus size={16} className="text-accent-700 dark:text-accent-300" />
+          <Text className="text-sm font-medium text-accent-700 dark:text-accent-300">
+            {t("admin.createInvite")}
+          </Text>
+        </Pressable>
+      </View>
+    </Section>
   );
 }
 
-function AuditRow({ entry, when }: { entry: AdminAuditEntry; when: string }) {
+function AuditRow({
+  entry,
+  when,
+  first,
+}: {
+  entry: AdminAuditEntry;
+  when: string;
+  first: boolean;
+}) {
   const { t } = useTranslation();
   return (
-    <View className="border-b border-neutral-100 py-3 dark:border-neutral-900">
+    <View
+      className={
+        "py-3 " + (first ? "" : "border-t border-neutral-200/50 dark:border-neutral-800/60")
+      }
+    >
       <View className="flex-row items-center gap-2">
         <Text numberOfLines={1} className="flex-1 text-sm text-neutral-900 dark:text-neutral-100">
           {t(`admin.action.${entry.action}`, entry.action)}
         </Text>
       </View>
-      <Text className="mt-1 text-xs text-neutral-500">
+      <Text className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
         {`${actorLabel(entry, t("admin.systemActor"))}${
-          entry.target_email ? ` -> ${entry.target_email}` : ""
-        } - ${when}`}
+          entry.target_email ? ` → ${entry.target_email}` : ""
+        } · ${when}`}
       </Text>
     </View>
   );

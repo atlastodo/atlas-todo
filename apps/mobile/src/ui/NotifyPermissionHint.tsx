@@ -5,9 +5,10 @@ import { useNotifyPermission } from "../hooks/useReminders";
 /**
  * Says when reminders can't reach the user because notification permission is missing, with the
  * one action that can fix it: ask again, or on a phone where it was denied for good, open system
- * settings. Renders nothing once granted (or unknowable).
+ * settings. Renders nothing once granted (or unknowable). `className` adds to the root, for a host
+ * that needs the hint padded or divided off.
  */
-export function NotifyPermissionHint() {
+export function NotifyPermissionHint({ className }: { className?: string }) {
   const { t } = useTranslation();
   const { permission, request } = useNotifyPermission();
   if (permission !== "default" && permission !== "denied") return null;
@@ -20,7 +21,7 @@ export function NotifyPermissionHint() {
   const action = settingsOnly ? t("reminder.openSettings") : t("reminder.enableNotifications");
 
   return (
-    <View className="flex-row flex-wrap items-center gap-2">
+    <View className={"flex-row flex-wrap items-center gap-2 " + (className ?? "")}>
       <Text className="flex-1 text-xs text-neutral-500 dark:text-neutral-400">{message}</Text>
       <Pressable
         accessibilityRole="button"
