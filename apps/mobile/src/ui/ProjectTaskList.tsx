@@ -229,14 +229,15 @@ export function ProjectTaskList({
 
   // Small/touch web renders a plain FlatList: the reorder library's pan-gesture handler eats touch scrolling.
   const isWide = useIsWide();
-  const isPhone = !isWide && Platform.OS !== "web";
+  // The phone shell, native or web: bottom nav plus the add button (see `(drawer)/_layout`).
+  const isPhone = !isWide;
   const dynamicBottomPadding =
     editingTaskId !== null
       ? Math.max(keyboardHeight, 300) + 80
       : keyboardHeight > 0
         ? keyboardHeight + 80
         : isPhone
-          ? 72
+          ? 88
           : 16;
   const dragDisabled = Platform.OS === "web" && !isWide;
   const pressPos = useRef<MenuPos>({ x: 0, y: 0 });
@@ -1025,7 +1026,7 @@ export function ProjectTaskList({
         onClose={() => setRescheduling(null)}
       />
 
-      {Platform.OS !== "web" && onCreateTask && !selection.mode && !editingTaskId && (
+      {(!isWeb || isPhone) && onCreateTask && !selection.mode && !editingTaskId && (
         <FloatingAddButton
           onPress={() => {
             setAddSectionTarget(null);
@@ -1034,7 +1035,7 @@ export function ProjectTaskList({
         />
       )}
 
-      {Platform.OS !== "web" && onCreateTask && (
+      {(!isWeb || isPhone) && onCreateTask && (
         <KeyboardPinnedTaskAdd
           visible={fabOpen}
           onClose={() => {

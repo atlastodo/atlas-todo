@@ -17,6 +17,7 @@ import { useTaskListView } from "../hooks/useTaskListView";
 import { useProjects } from "../hooks/useProjects";
 import { useProjectMembers } from "../hooks/useProjectMembers";
 import { usePreferences } from "../hooks/usePreferences";
+import { useIsWide } from "../hooks/useIsWide";
 import { useSections } from "../hooks/useSections";
 import { useToast } from "../data/ToastProvider";
 import { useSelection } from "../data/SelectionProvider";
@@ -62,6 +63,7 @@ export function ProjectScreen({
   const { store, version, kick } = useStore();
   const { api, session } = useAuth();
   const view = useTaskListView(`project:${projectId}`);
+  const isWide = useIsWide();
   const { renameProject, updateProject, duplicateProject, removeProject, setProjectArchived } =
     useProjects();
   const {
@@ -420,7 +422,8 @@ export function ProjectScreen({
   const quickAddHeader = (
     <View>
       {ownerDeletionBanner}
-      {Platform.OS === "web" && (sections.length === 0 || grouped) && (
+      {/* A phone, web included, adds through the list's add button instead. */}
+      {Platform.OS === "web" && isWide && (sections.length === 0 || grouped) && (
         <View className="px-4 py-2">
           <QuickAdd
             onAdd={view.create}

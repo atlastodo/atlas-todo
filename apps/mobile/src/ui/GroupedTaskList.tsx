@@ -240,14 +240,15 @@ export function GroupedTaskList({
   const sectionListRef = useRef<SectionList<Task>>(null);
   const keyboardHeight = useKeyboardHeight();
   const isWeb = Platform.OS === "web";
-  const isPhone = !isWeb && !isWide;
+  // The phone shell, native or web: bottom nav plus the add button (see `(drawer)/_layout`).
+  const isPhone = !isWide;
   const dynamicBottomPadding =
     editingTaskId !== null
       ? Math.max(keyboardHeight, 300) + 80
       : keyboardHeight > 0
         ? keyboardHeight + 80
         : isPhone
-          ? 72
+          ? 88
           : 16;
 
   // `groupTasks` emits only keys it is given an order for; without one every task outside the
@@ -934,11 +935,11 @@ export function GroupedTaskList({
         />
       )}
 
-      {Platform.OS !== "web" && onCreateTask && !selection.mode && !editingTaskId && (
+      {(!isWeb || isPhone) && onCreateTask && !selection.mode && !editingTaskId && (
         <FloatingAddButton onPress={() => setFabOpen(true)} />
       )}
 
-      {Platform.OS !== "web" && onCreateTask && (
+      {(!isWeb || isPhone) && onCreateTask && (
         <KeyboardPinnedTaskAdd
           visible={fabOpen}
           onClose={() => setFabOpen(false)}

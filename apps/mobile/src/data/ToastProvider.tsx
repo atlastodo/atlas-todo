@@ -89,10 +89,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
   const isWide = useIsWide();
   const isWeb = Platform.OS === "web";
-  const isPhone = !isWeb && !isWide;
+  // Any phone width has the bottom nav, web included.
+  const isPhone = !isWide;
 
   // On phones, place toasts just above the MobileBottomNav (~56px high + insets.bottom + 12px margin);
-  // on web/wide viewports or when no bottom nav is present, use safe-area bottom offset + 24px.
+  // on wide viewports, where there is no bottom nav, use safe-area bottom offset + 24px.
   const bottomOffset = isPhone
     ? 56 + Math.max(insets.bottom, 6) + 12
     : Math.max(insets.bottom + 16, 24);

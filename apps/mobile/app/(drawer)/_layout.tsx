@@ -26,7 +26,7 @@ import { useAuth } from "../../src/auth/AuthContext";
 import { useStore } from "../../src/data/StoreProvider";
 import { useToast } from "../../src/data/ToastProvider";
 import { useFeature } from "../../src/hooks/useFeature";
-import { useIsWide } from "../../src/hooks/useIsWide";
+import { useIsTablet, useIsWide } from "../../src/hooks/useIsWide";
 import { usePreferences } from "../../src/hooks/usePreferences";
 import { useProjectMembers } from "../../src/hooks/useProjectMembers";
 import { useProjects } from "../../src/hooks/useProjects";
@@ -50,22 +50,26 @@ import {
   CopyPlus,
   House,
   Info,
-  Menu,
   Settings,
   SquareArrowOutUpRight,
   Star,
   StarOff,
   Trash2,
+  X,
 } from "../../src/ui/icons";
 
 export const unstable_settings = {
   initialRouteName: "(tabs)",
 };
 
+/** The overlay drawer's shadow along its open edge, lifting it off the scrim. */
+const DRAWER_EDGE_SHADOW = { boxShadow: "4px 0 24px rgba(0, 0, 0, 0.25)" } as ViewStyle;
+
 /**
- * The app's shell: the three primary lists are bottom tabs on a phone and the drawer carries the
- * rest. On a wide viewport (`useIsWide`) the drawer becomes a permanent sidebar and the tabs hide;
- * only `drawerType` changes by width, never a forked screen.
+ * The app's shell: below the wide breakpoint (a phone, native or web alike) the three primary lists
+ * are a bottom bar whose Menu tab opens {@link MobileMenuModal} with the rest. On a wide viewport
+ * (`useIsWide`) the drawer becomes a permanent sidebar and the bar hides; a tablet's sidebar starts
+ * as the icon rail (`SidebarContext`). Only `drawerType` changes by width, never a forked screen.
  *
  * The nav list is a custom `drawerContent` ({@link AppDrawerContent}) built from `navModel`, so the
  * wide sidebar lists every smart list individually. A disabled feature's row is filtered out of the
@@ -75,10 +79,12 @@ export const unstable_settings = {
 export default function DrawerLayout() {
   const { t } = useTranslation();
   const isWide = useIsWide();
+  const isTablet = useIsTablet();
   const isWeb = Platform.OS === "web";
-  const isPhone = !isWeb && !isWide;
+  // Phone-width web navigates like the native app: bottom bar, menu modal and add button.
+  const isPhone = !isWide;
   const { colorScheme: scheme } = useColorScheme();
-  const { collapsed } = useSidebar();
+  const { collapsed, toggle: toggleSidebar } = useSidebar();
   const pathname = usePathname();
   // While Settings is open on a wide viewport the sidebar becomes its section nav
   // (`SettingsSidebar`), selected by the same `?section=` the page reads.
@@ -558,7 +564,20 @@ export default function DrawerLayout() {
               router.push(viewPath(defaultView));
             },
             statusSlot: <SyncStatusBadge />,
-            action: isWide || isWeb ? <SidebarToggle /> : undefined,
+            // The overlay drawer closes rather than collapsing into a rail.
+            action: isWide ? (
+              <SidebarToggle />
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("common.close")}
+                onPress={() => props.navigation.closeDrawer()}
+                hitSlop={8}
+                className="p-1 web:cursor-pointer"
+              >
+                <X size={20} className="text-neutral-500 dark:text-neutral-400" />
+              </Pressable>
+            ),
             collapsed: railed,
           };
           if (settingsNav) {
@@ -580,33 +599,21 @@ export default function DrawerLayout() {
               sections={sections}
               activeHref={pathname}
               onNavigate={(href) => {
-                // Only the overlay drawer closes; the wide sidebar is permanent.
+                // Only the overlay drawer closes; the wide sidebar is permanent. A tablet's expanded
+                // sidebar folds back into the rail, handing the room back to the page just opened.
                 if (!isWide) props.navigation.closeDrawer();
+                else if (isTablet && !collapsed) toggleSidebar();
                 router.push(href);
               }}
             />
           );
         }}
-        screenOptions={({ navigation }) => ({
+        screenOptions={{
           headerTitleAlign: "left",
           drawerType: isWide ? "permanent" : "front",
-          // A native phone navigates by the bottom bar and menu modal instead of swiping.
-          swipeEnabled: isWeb ? true : false,
-          // Narrow web needs a drawer toggle; a native phone has the bottom bar.
-          headerLeft:
-            isWeb && !isWide
-              ? () => (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t("nav.openMenu", "Open menu")}
-                    onPress={() => navigation.toggleDrawer()}
-                    hitSlop={8}
-                    className="pl-3 pr-1 web:cursor-pointer"
-                  >
-                    <Menu size={22} className="text-neutral-600 dark:text-neutral-300" />
-                  </Pressable>
-                )
-              : () => null,
+          // A phone, native or web, navigates by the bottom bar and menu modal: no swipe, no hamburger.
+          swipeEnabled: false,
+          headerLeft: () => null,
           ...headerThemeOptions(scheme),
           // On web the lib only attaches a CSS transition to the overlay drawer, so a permanent
           // sidebar's rail <-> full collapse would snap. drawerStyle is last in the lib's style
@@ -614,7 +621,7 @@ export default function DrawerLayout() {
           // `transition` style.
           drawerStyle: {
             ...drawerThemeOptions(scheme).drawerStyle,
-            ...(isWide ? { width: railed ? 72 : 288 } : { width: 288 }),
+            ...(isWide ? { width: railed ? 72 : 288 } : { width: 288, ...DRAWER_EDGE_SHADOW }),
             ...(isWeb
               ? ({
                   transition: isWide ? "width 0.3s ease" : "transform 0.3s ease",
@@ -622,7 +629,7 @@ export default function DrawerLayout() {
               : null),
           },
           sceneStyle: drawerThemeOptions(scheme).sceneStyle,
-        })}
+        }}
       >
         <Drawer.Screen name="(tabs)" options={{ title: t("nav.tasks"), headerShown: false }} />
         {NAV.filter((item) => !PRIMARY_TABS.includes(item.view)).map((item) => (

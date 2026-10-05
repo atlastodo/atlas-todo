@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { CalendarClock, Inbox, Menu, Sun } from "./icons";
@@ -20,11 +20,14 @@ export interface MobileBottomNavProps {
 }
 
 /**
- * Bottom navigation bar on mobile phones with 4 destinations:
+ * Bottom navigation bar on phone-width viewports, native and web alike, with 4 destinations:
  * 1. Inbox (/inbox)
  * 2. Today (/today)
  * 3. Upcoming (/upcoming)
  * 4. Menu (opens the phone menu modal)
+ *
+ * It sits in the shell's layout flow below the drawer (never `position: fixed`), so every screen
+ * ends above it and no list needs to pad for it.
  */
 export function MobileBottomNav({
   activePath,
@@ -39,8 +42,6 @@ export function MobileBottomNav({
   // space back on unmount, or a rotation to a wide layout would leave them floating above nothing.
   const { setNavHeight } = useBottomChrome();
   useEffect(() => () => setNavHeight(0), [setNavHeight]);
-
-  const isWeb = Platform.OS === "web";
 
   // Check which tab is active
   const isInbox = activePath === "/inbox" && !isMenuOpen;
@@ -61,17 +62,6 @@ export function MobileBottomNav({
   return (
     <View
       onLayout={(e) => setNavHeight(e.nativeEvent.layout.height)}
-      style={
-        isWeb
-          ? ({
-              position: "fixed",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              zIndex: 40,
-            } as object)
-          : undefined
-      }
       className="border-t border-neutral-200 bg-white/95 backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/95"
     >
       <View

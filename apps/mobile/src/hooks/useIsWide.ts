@@ -14,3 +14,15 @@ const WIDE_BREAKPOINT = 768;
 export function useIsWide(): boolean {
   return useWindowDimensions().width >= WIDE_BREAKPOINT;
 }
+
+/**
+ * The width at/above which the wide layout is a desktop: below it (a tablet, `768-1023px`) the
+ * sidebar starts as the collapsed icon rail so the content keeps its room.
+ */
+const DESKTOP_BREAKPOINT = 1024;
+
+/** True on a tablet-width viewport: wide enough for the sidebar, too narrow to keep it expanded. */
+export function useIsTablet(): boolean {
+  const { width } = useWindowDimensions();
+  return width >= WIDE_BREAKPOINT && width < DESKTOP_BREAKPOINT;
+}
