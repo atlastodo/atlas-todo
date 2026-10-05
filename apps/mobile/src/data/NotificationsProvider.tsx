@@ -171,7 +171,7 @@ const announceKey = (invite: InviteView) => `${invite.project_id}:${invite.invit
  */
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { api, keyring, session } = useAuth();
-  const { store, version, kick } = useStore();
+  const { store, version, kick, localOnly } = useStore();
   const userId = session?.user.id;
   const [invites, setInvites] = useState<InviteView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,6 +181,11 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const requestSeq = useRef(0);
 
   const load = useCallback(async (): Promise<InviteView[] | null> => {
+    // Local-only mode has no server and so no invites.
+    if (localOnly) {
+      setLoading(false);
+      return [];
+    }
     const seq = ++requestSeq.current;
     setLoading(true);
     try {
@@ -196,7 +201,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     } finally {
       if (seq === requestSeq.current) setLoading(false);
     }
-  }, [api]);
+  }, [api, localOnly]);
 
   const refresh = useCallback(async () => {
     await load();

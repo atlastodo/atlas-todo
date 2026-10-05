@@ -225,3 +225,61 @@ describe("StoreProvider E2EE migration walk", () => {
     warn.mockRestore();
   });
 });
+
+describe("StoreProvider in local-only mode", () => {
+  function LocalProbe() {
+    const { store, localOnly, initialSyncDone } = useStore();
+    return (
+      <Text>{`local ${String(localOnly)} ready ${String(initialSyncDone)} tasks ${store.list("task").length}`}</Text>
+    );
+  }
+
+  it("loads without a server, trims superseded history, and records the database", async () => {
+    const persistence = new MemoryPersistence();
+    const node = "00000000-0000-0000-0000-0000000010ca";
+    const ts = (wallMs: number) => ({ wallMs, counter: 0, node });
+    await persistence.append(
+      {
+        id: "a",
+        entity: "task",
+        entityId: "t1",
+        ts: ts(1),
+        op: "set",
+        field: "title",
+        value: "v1",
+      },
+      false,
+    );
+    await persistence.append(
+      {
+        id: "b",
+        entity: "task",
+        entityId: "t1",
+        ts: ts(2),
+        op: "set",
+        field: "title",
+        value: "v2",
+      },
+      false,
+    );
+    const open = jest.fn(async (_userId: string) => persistence as Persistence);
+
+    const view = await render(
+      <StoreProvider
+        api={null}
+        deviceId={node}
+        userId="local"
+        keyring={null}
+        openPersistence={open}
+      >
+        <LocalProbe />
+      </StoreProvider>,
+    );
+
+    expect(await screen.findByText("local true ready true tasks 1")).toBeTruthy();
+    expect(open).toHaveBeenCalledWith("local", expect.anything());
+    expect((await persistence.load()).map((r) => r.op.id)).toEqual(["b"]);
+    expect(await AsyncStorage.getItem("@atlas_local_db_used")).toBe("1");
+    await view.unmount();
+  });
+});

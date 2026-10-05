@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { Text } from "react-native";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Keyring, generateDek, type Session } from "@atlas/client-core";
-import { fakeAuth } from "../testutil";
+import { fakeAuth, fakeLocalMode } from "../testutil";
 import { AuthContext, type AuthContextValue } from "./AuthContext";
-import { AuthGate } from "./AuthGate";
+import { AuthGate, type GateState } from "./AuthGate";
+import { LocalModeContext, type LocalModeValue } from "./localMode";
 
 // Signing out counts the unsynced changes in the on-device SQLite database, which does not exist in
 // a node process (and its failure would only log); this device holds none.
@@ -13,10 +14,20 @@ jest.mock("../data/localData", () => ({
   countUnsyncedChanges: jest.fn(async () => 0),
 }));
 
-function withAuth(value: Partial<AuthContextValue>) {
+// No local-only data to move into an account in these tests.
+jest.mock("../data/localUpgrade", () => ({
+  ...jest.requireActual<typeof import("../data/localUpgrade")>("../data/localUpgrade"),
+  readLocalData: jest.fn(async () => null),
+}));
+
+function withAuth(value: Partial<AuthContextValue>, local: LocalModeValue | null = null) {
   const full = fakeAuth(value);
   return function Wrapper({ children }: { children: ReactNode }) {
-    return <AuthContext.Provider value={full}>{children}</AuthContext.Provider>;
+    return (
+      <AuthContext.Provider value={full}>
+        <LocalModeContext.Provider value={local}>{children}</LocalModeContext.Provider>
+      </AuthContext.Provider>
+    );
   };
 }
 
@@ -54,7 +65,34 @@ describe("AuthGate", () => {
   it("renders the app once the keyring is unlocked", async () => {
     const keyring = new Keyring({ dek: generateDek() });
     await render(<AuthGate>{app}</AuthGate>, { wrapper: withAuth({ session: LOCKED, keyring }) });
+    expect(await screen.findByText("APP CONTENT")).toBeTruthy();
+  });
+
+  it("runs the app in local-only mode without a session", async () => {
+    const seen: GateState[] = [];
+    const local = fakeLocalMode();
+    await render(
+      <AuthGate>
+        {(state) => {
+          seen.push(state);
+          return <Text>APP CONTENT</Text>;
+        }}
+      </AuthGate>,
+      { wrapper: withAuth({}, local) },
+    );
     expect(screen.getByText("APP CONTENT")).toBeTruthy();
+    expect(screen.queryByText("Sign in")).toBeNull();
+    expect(seen.at(-1)).toEqual({ mode: "local", deviceId: local.deviceId });
+  });
+
+  it("shows the asked-for sign-in form, with the way back to this device", async () => {
+    const local = fakeLocalMode({ authScreen: "signup" });
+    await render(<AuthGate>{app}</AuthGate>, { wrapper: withAuth({}, local) });
+    expect(screen.getByText("Create account")).toBeTruthy();
+    expect(screen.queryByText("APP CONTENT")).toBeNull();
+
+    await fireEvent.press(screen.getByText("Continue without an account"));
+    expect(local.closeAuth).toHaveBeenCalled();
   });
 
   it("says a wrong password inline, and unlocks with the right one", async () => {

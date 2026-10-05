@@ -30,6 +30,7 @@ import {
 import { useStore } from "../data/StoreProvider";
 import { usePreferences } from "../hooks/usePreferences";
 import { useOnboarding } from "../data/OnboardingContext";
+import { useLocalMode } from "../auth/localMode";
 import { deviceLanguage } from "../i18n";
 import { ThemeScope } from "../theme/ThemeProvider";
 import { ensureNotifyPermission } from "../lib/notify";
@@ -53,8 +54,11 @@ import {
   Inbox,
   ListTodo,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Sun,
+  UserPlus,
+  UserRound,
   type LucideIcon,
 } from "./icons";
 
@@ -76,6 +80,65 @@ const DATE_OPTIONS: { value: DateFormatPref; labelKey: string }[] = [
   { value: "medium", labelKey: "settings.medium" },
   { value: "long", labelKey: "settings.long" },
 ];
+
+/**
+ * The wizard's steps. Local-only mode adds the account step after Welcome: create an account to
+ * sync and share, sign in to an existing one, or carry on with this device only. It comes before
+ * any setting is chosen, so signing in to an existing account never overwrites its settings.
+ */
+type StepKey = "welcome" | "account" | "appearance" | "defaults" | "features" | "ready";
+const ACCOUNT_STEPS: StepKey[] = ["welcome", "appearance", "defaults", "features", "ready"];
+const LOCAL_STEPS: StepKey[] = [
+  "welcome",
+  "account",
+  "appearance",
+  "defaults",
+  "features",
+  "ready",
+];
+
+/** One choice on the account step: an icon, a title, a line of explanation, and a press. */
+function AccountChoice({
+  icon: Icon,
+  title,
+  description,
+  onPress,
+  primary,
+  accentHex,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  onPress: () => void;
+  primary?: boolean;
+  accentHex: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onPress}
+      style={primary ? { borderColor: accentHex } : undefined}
+      className={
+        "flex-row items-start gap-3.5 rounded-xl border p-4 active:opacity-80 web:cursor-pointer " +
+        (primary
+          ? "bg-accent-50/60 dark:bg-accent-950/40"
+          : "border-neutral-200 bg-neutral-50/60 dark:border-neutral-800 dark:bg-neutral-900/60")
+      }
+    >
+      <View className="mt-0.5 rounded-lg p-2" style={{ backgroundColor: accentHex + "20" }}>
+        <Icon size={18} color={accentHex} />
+      </View>
+      <View className="flex-1">
+        <Text className="font-semibold text-neutral-900 dark:text-neutral-100">{title}</Text>
+        <Text className="mt-0.5 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+          {description}
+        </Text>
+      </View>
+      <ChevronRight size={16} className="mt-1 text-neutral-400" />
+    </Pressable>
+  );
+}
 
 const VIEW_CHOICES: { view: SmartView; icon: LucideIcon }[] = [
   { view: "today", icon: Sun },
@@ -144,8 +207,10 @@ function OnboardingToggleItem({
 export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { store, kick } = useStore();
-  const { isOpen, closeOnboarding } = useOnboarding();
+  const { store, kick, localOnly } = useStore();
+  const { isOpen, startAt, closeOnboarding } = useOnboarding();
+  const local = useLocalMode();
+  const steps = localOnly && local ? LOCAL_STEPS : ACCOUNT_STEPS;
   const {
     theme,
     setTheme,
@@ -183,16 +248,18 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
   const [step, setStep] = useState<number>(1);
   const [firstTaskTitle, setFirstTaskTitle] = useState("");
 
-  // Always reset to step 1 when the onboarding wizard is opened or replayed
+  // Reset to the first step (or the one asked for) when the wizard is opened or replayed.
   useEffect(() => {
     if (isOpen) {
-      setStep(1);
+      setStep(startAt ? Math.max(1, steps.indexOf(startAt) + 1) : 1);
       setFirstTaskTitle("");
     }
-  }, [isOpen]);
+    // `steps` follows the mode, which a running wizard never changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, startAt]);
 
-  const TOTAL_STEPS = 5;
-  const FEATURES_STEP = 4;
+  const TOTAL_STEPS = steps.length;
+  const current = steps[step - 1] ?? "welcome";
   const currentAccentHex = ACCENTS[accent]?.[600] ?? "#4f46e5";
 
   // Resolve browser/device defaults for timezone and region display
@@ -268,7 +335,7 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
     haptics.selection();
     // Reminders are on by default, so the toggle's own prompt never runs for most people: leaving
     // the step that presents them is the gesture that asks. A no-op once answered.
-    if (step === FEATURES_STEP && remindersEnabled) void ensureNotifyPermission();
+    if (current === "features" && remindersEnabled) void ensureNotifyPermission();
     if (step < TOTAL_STEPS) {
       setStep(step + 1);
     } else {
@@ -357,8 +424,8 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
           contentContainerClassName="px-6 py-6 web:mx-auto web:w-full web:max-w-xl"
           keyboardShouldPersistTaps="handled"
         >
-          {/* Step 1: Welcome & Value Prop */}
-          {step === 1 && (
+          {/* Welcome & Value Prop */}
+          {current === "welcome" && (
             <View className="gap-6">
               <View className="items-center py-4">
                 <View className="mb-4 h-20 w-20 items-center justify-center rounded-3xl border border-accent-300 bg-accent-50 shadow-sm dark:border-accent-700 dark:bg-accent-950">
@@ -421,8 +488,46 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
             </View>
           )}
 
-          {/* Step 2: Appearance & Theme */}
-          {step === 2 && (
+          {/* Account: sync and collaborate, or this device only (local-only mode) */}
+          {current === "account" && local && (
+            <View className="gap-6">
+              <View>
+                <Text className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
+                  {t("localMode.stepTitle")}
+                </Text>
+                <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                  {t("localMode.stepDesc")}
+                </Text>
+              </View>
+              <View className="gap-3">
+                <AccountChoice
+                  icon={UserPlus}
+                  title={t("localMode.createAccount")}
+                  description={t("localMode.createAccountDesc")}
+                  onPress={() => local.openAuth("signup", { resumeOnboarding: true })}
+                  primary
+                  accentHex={currentAccentHex}
+                />
+                <AccountChoice
+                  icon={UserRound}
+                  title={t("localMode.signIn")}
+                  description={t("localMode.signInDesc")}
+                  onPress={() => local.openAuth("login")}
+                  accentHex={currentAccentHex}
+                />
+                <AccountChoice
+                  icon={Smartphone}
+                  title={t("localMode.continueLocal")}
+                  description={t("localMode.continueLocalDesc")}
+                  onPress={handleNext}
+                  accentHex={currentAccentHex}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Appearance & Theme */}
+          {current === "appearance" && (
             <View className="gap-6">
               <View>
                 <Text className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
@@ -606,8 +711,8 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
             </View>
           )}
 
-          {/* Step 3: Calendar & Routine Defaults */}
-          {step === 3 && (
+          {/* Calendar & Routine Defaults */}
+          {current === "defaults" && (
             <View className="gap-6">
               <View>
                 <Text className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
@@ -767,8 +872,8 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
             </View>
           )}
 
-          {/* Step 4: Feature Modules */}
-          {step === FEATURES_STEP && (
+          {/* Feature Modules */}
+          {current === "features" && (
             <View className="gap-6">
               <View>
                 <Text className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
@@ -845,8 +950,8 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
             </View>
           )}
 
-          {/* Step 5: Ready to Go & Optional First Task */}
-          {step === 5 && (
+          {/* Ready to Go & Optional First Task */}
+          {current === "ready" && (
             <View className="gap-6">
               <View className="items-center py-4">
                 <View className="mb-4 h-20 w-20 items-center justify-center rounded-3xl bg-emerald-500/10">
@@ -912,7 +1017,10 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
             <View className="w-16" />
           )}
 
-          {step < TOTAL_STEPS ? (
+          {current === "account" ? (
+            // The step's own choices move on; "This device only" is the plain Next.
+            <View className="w-16" />
+          ) : step < TOTAL_STEPS ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("onboarding.next")}
