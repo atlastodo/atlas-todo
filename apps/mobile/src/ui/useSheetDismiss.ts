@@ -20,6 +20,23 @@ export const WEB_OVERLAY_STYLE = {
   zIndex: 9999,
 } as object;
 
+/** The one scrim every overlay dims the app with. */
+export const SCRIM_CLASS = "bg-black/50";
+
+/**
+ * The raised surface of a dialog, popover or desktop sheet. Dark mode gets a lighter border and a
+ * deep shadow, since a 1px dark border alone barely lifts the panel off a near-black page.
+ */
+export const ELEVATED_SURFACE_CLASS =
+  "border border-neutral-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-zinc-900 dark:shadow-black/80";
+
+/** Placeholder text in overlay fields (neutral-500): dim enough in both themes not to read as a typed value. */
+export const PLACEHOLDER_COLOR = "#737373";
+
+/** A primary button with nothing to submit yet: a flat grey fill, not a faded accent that still looks pressable. */
+export const DISABLED_BUTTON_CLASS = "bg-neutral-200 dark:bg-neutral-800";
+export const DISABLED_BUTTON_TEXT_CLASS = "text-neutral-500 dark:text-neutral-500";
+
 /**
  * Slide-in, pull-down dismissal and animation shared by the bottom sheets. Native slides the
  * sheet in on `visible` and out on dismiss; web and tests close immediately.

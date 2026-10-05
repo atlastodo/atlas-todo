@@ -190,29 +190,15 @@ export function PlanDaySheet({
   };
 
   return (
-    <BottomSheet visible={open} onClose={onClose}>
+    <BottomSheet
+      visible={open}
+      onClose={onClose}
+      size="list"
+      title={t("planDay.title")}
+      subtitle={review.length > 0 ? t("planDay.subtitle", { count: review.length }) : undefined}
+      icon={<CalendarClock size={18} className="text-neutral-500" />}
+    >
       <View>
-        <View className="mb-3 flex-row items-center gap-2">
-          <CalendarClock size={18} className="text-neutral-500" />
-          <View className="flex-1">
-            <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-              {t("planDay.title")}
-            </Text>
-            {review.length > 0 && (
-              <Text className="text-xs text-neutral-500">
-                {t("planDay.subtitle", { count: review.length })}
-              </Text>
-            )}
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("common.close")}
-            onPress={onClose}
-          >
-            <X size={20} className="text-neutral-500" />
-          </Pressable>
-        </View>
-
         {review.length === 0 ? (
           <View className="min-h-[240px] flex-1 justify-center">
             <EmptyState

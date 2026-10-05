@@ -3,7 +3,8 @@ import { Modal, Platform, Pressable, ScrollView, Text, View } from "react-native
 import { useTranslation } from "react-i18next";
 import { HOTKEY_BINDINGS, HOTKEY_GROUPS, type HotkeyGroup } from "@atlas/shared";
 import { ThemeScope } from "../theme/ThemeProvider";
-import { X } from "./icons";
+import { SheetHeader } from "./BottomSheet";
+import { ELEVATED_SURFACE_CLASS, SCRIM_CLASS } from "./useSheetDismiss";
 
 /**
  * The keyboard-shortcuts help, rendered from `@atlas/shared`'s `HOTKEY_BINDINGS` (the table
@@ -28,8 +29,13 @@ function cmdKey(): string {
 
 function Keycap({ label }: { label: string }) {
   return (
-    <View className="items-center justify-center rounded-md border border-neutral-300 bg-neutral-100 px-2 py-1 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
-      <Text className="font-mono text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+    <View className="min-w-[28px] items-center justify-center rounded-md border border-neutral-300 bg-neutral-100 px-2 py-1 shadow-sm dark:border-neutral-700 dark:bg-neutral-800">
+      {/* A lone symbol (⌫, ↑, ?) gets a larger size, or it shrinks to a speck beside "Ctrl". */}
+      <Text
+        className={`font-mono font-semibold text-neutral-800 dark:text-neutral-200 ${
+          label.length === 1 ? "text-sm leading-4" : "text-xs leading-4"
+        }`}
+      >
         {label}
       </Text>
     </View>
@@ -103,29 +109,33 @@ export function ShortcutsModal({ visible, onClose }: { visible: boolean; onClose
           accessibilityRole="button"
           accessibilityLabel={t("common.close")}
           onPress={onClose}
-          className="flex-1 bg-black/30"
+          className={`flex-1 ${SCRIM_CLASS}`}
         />
-        <View className="absolute inset-x-3 top-24 flex max-h-[75%] flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-          <View className="flex-row items-center justify-between border-b border-neutral-100 px-4 py-3 dark:border-neutral-800">
-            <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-              {t("about.shortcutsTitle")}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("common.close")}
-              onPress={onClose}
-              className="rounded-md p-1 active:opacity-70 web:cursor-pointer"
-            >
-              <X size={18} className="text-neutral-500" />
-            </Pressable>
-          </View>
-          <ScrollView
-            className="flex-1"
-            contentContainerClassName="px-4 py-4"
-            keyboardShouldPersistTaps="handled"
+        {/* A 560px column, so each keycap sits next to its label; presses beside it reach the backdrop. */}
+        <View
+          style={{ top: "8%", bottom: "8%", pointerEvents: "box-none" }}
+          className="absolute inset-x-3 items-center"
+        >
+          <View
+            className={`max-h-full w-full max-w-[560px] flex-col overflow-hidden rounded-2xl ${ELEVATED_SURFACE_CLASS}`}
           >
-            <ShortcutsTable />
-          </ScrollView>
+            <View className="border-b border-neutral-100 px-4 pt-3 dark:border-neutral-800">
+              <SheetHeader title={t("about.shortcutsTitle")} onClose={onClose} />
+            </View>
+            <View className="flex-shrink">
+              <ScrollView
+                contentContainerClassName="px-4 pb-8 pt-4"
+                keyboardShouldPersistTaps="handled"
+              >
+                <ShortcutsTable />
+              </ScrollView>
+              {/* Fades the last rows out under the panel edge, so a cut-off row reads as "scroll for more". */}
+              <View
+                style={{ pointerEvents: "none" }}
+                className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white to-transparent dark:from-zinc-900"
+              />
+            </View>
+          </View>
         </View>
       </ThemeScope>
     </Modal>

@@ -3,6 +3,11 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { HabitGoalKind, HabitKind } from "@atlas/shared";
 import { BottomSheet } from "./BottomSheet";
+import {
+  DISABLED_BUTTON_CLASS,
+  DISABLED_BUTTON_TEXT_CLASS,
+  PLACEHOLDER_COLOR,
+} from "./useSheetDismiss";
 import { HabitGoalEditor, type HabitGoal } from "./HabitGoalEditor";
 import { haptics } from "../lib/haptics";
 import { KEEP_FOCUS_SUBMIT } from "../lib/submitBehavior";
@@ -55,27 +60,23 @@ export function AddHabitSheet({
   };
 
   return (
-    <BottomSheet visible={visible} onClose={close}>
+    <BottomSheet
+      visible={visible}
+      onClose={close}
+      title={t(kind === "group" ? "habits.newGroupTitle" : "habits.newTitle")}
+      // Shown when a parent group was chosen before the sheet opened.
+      subtitle={
+        groupName !== undefined ? t("habits.addingToGroup", { name: groupName }) : undefined
+      }
+    >
       <View className="gap-4">
-        <View className="gap-0.5">
-          <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
-            {t(kind === "group" ? "habits.newGroupTitle" : "habits.newTitle")}
-          </Text>
-          {/* Shown when a parent group was chosen before the sheet opened. */}
-          {groupName !== undefined && (
-            <Text numberOfLines={1} className="text-xs text-neutral-500">
-              {t("habits.addingToGroup", { name: groupName })}
-            </Text>
-          )}
-        </View>
-
         <TextInput
           ref={escape.ref}
           accessibilityLabel={t(kind === "group" ? "habits.groupName" : "habits.name")}
           placeholder={t(
             kind === "group" ? "habits.groupNamePlaceholder" : "habits.newPlaceholder",
           )}
-          placeholderTextColor="#a1a1aa"
+          placeholderTextColor={PLACEHOLDER_COLOR}
           value={name}
           onChangeText={setName}
           onKeyPress={escape.onKeyPress}
@@ -109,9 +110,19 @@ export function AddHabitSheet({
             accessibilityLabel={t("common.add")}
             disabled={!name.trim()}
             onPress={submit}
-            className={"rounded-md bg-accent-600 px-4 py-2 " + (!name.trim() ? "opacity-40" : "")}
+            accessibilityState={{ disabled: !name.trim() }}
+            className={
+              "rounded-md px-4 py-2 " +
+              (name.trim() ? "bg-accent-600 web:cursor-pointer" : DISABLED_BUTTON_CLASS)
+            }
           >
-            <Text className="text-sm font-medium text-white">{t("common.add")}</Text>
+            <Text
+              className={
+                "text-sm font-medium " + (name.trim() ? "text-white" : DISABLED_BUTTON_TEXT_CLASS)
+              }
+            >
+              {t("common.add")}
+            </Text>
           </Pressable>
         </View>
       </View>

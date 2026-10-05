@@ -7,6 +7,8 @@ import { ThemeScope } from "../theme/ThemeProvider";
 import type { Command } from "../hooks/useCommands";
 import type { TaskSearchSource } from "../hooks/useTaskSearch";
 import { useListKeyboardNav } from "../hooks/useListKeyboardNav";
+import { useIsWide } from "../hooks/useIsWide";
+import { ELEVATED_SURFACE_CLASS, PLACEHOLDER_COLOR, SCRIM_CLASS } from "./useSheetDismiss";
 import { Search } from "./icons";
 import { displayTitle } from "../lib/taskTitle";
 
@@ -33,7 +35,7 @@ function rowClass(active: boolean): string {
   return `flex-row items-center justify-between px-3 py-3 web:cursor-pointer ${
     active
       ? "bg-accent-50 dark:bg-accent-950"
-      : "web:hover:bg-neutral-100 dark:web:hover:bg-neutral-900"
+      : "web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800"
   }`;
 }
 
@@ -54,6 +56,7 @@ export function CommandPalette({
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const listRef = useRef<FlatList<PaletteRow>>(null);
+  const isWide = useIsWide();
 
   const results = useMemo(() => filterActions(query, commands), [query, commands]);
   const hits = useMemo(() => (search ? searchTasks(search.tasks, query) : []), [search, query]);
@@ -109,80 +112,92 @@ export function CommandPalette({
           accessibilityRole="button"
           accessibilityLabel={t("common.close")}
           onPress={handleClose}
-          className="flex-1 bg-black/30"
+          className={`flex-1 ${SCRIM_CLASS}`}
         />
-        <View className="absolute inset-x-3 top-24 max-h-[70%] overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-          <View className="flex-row items-center gap-2 border-b border-neutral-100 px-3 dark:border-neutral-800">
-            <Search size={16} className="text-neutral-400" />
-            <TextInput
-              accessibilityLabel={t("palette.search")}
-              placeholder={t("palette.placeholder")}
-              placeholderTextColor="#a1a1aa"
-              value={query}
-              onChangeText={setQuery}
-              autoFocus
-              autoCapitalize="none"
-              autoCorrect={false}
-              className="flex-1 py-3 text-sm text-neutral-900 dark:text-neutral-100"
-            />
-          </View>
-          <FlatList
-            ref={listRef}
-            data={rows}
-            keyExtractor={(row) =>
-              row.kind === "task" ? `task:${row.hit.task.id}` : row.command.id
-            }
-            keyboardShouldPersistTaps="handled"
-            onScrollToIndexFailed={() => {}}
-            ListHeaderComponent={
-              showingTasks ? (
-                <Text className="px-3 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-neutral-400">
-                  {t("palette.taskResults")}
+        {/* A 640px column ~12% from the top on wide screens; full width under the header on a phone.
+            The frame passes presses outside the panel through to the backdrop. */}
+        <View
+          style={{ top: isWide ? "12%" : 96, bottom: "10%", pointerEvents: "box-none" }}
+          className="absolute inset-x-3 items-center"
+        >
+          <View
+            className={`max-h-full w-full max-w-[640px] overflow-hidden rounded-xl ${ELEVATED_SURFACE_CLASS}`}
+          >
+            <View className="flex-row items-center gap-2 border-b border-neutral-100 px-3 dark:border-neutral-800">
+              <Search size={16} className="text-neutral-400" />
+              <TextInput
+                accessibilityLabel={t("palette.search")}
+                placeholder={t("palette.placeholder")}
+                placeholderTextColor={PLACEHOLDER_COLOR}
+                value={query}
+                onChangeText={setQuery}
+                autoFocus
+                autoCapitalize="none"
+                autoCorrect={false}
+                // The panel is the field; a focus ring around the bare input would double it.
+                className="flex-1 py-3 text-sm text-neutral-900 dark:text-neutral-100 web:outline-none"
+              />
+            </View>
+            <FlatList
+              ref={listRef}
+              data={rows}
+              keyExtractor={(row) =>
+                row.kind === "task" ? `task:${row.hit.task.id}` : row.command.id
+              }
+              keyboardShouldPersistTaps="handled"
+              onScrollToIndexFailed={() => {}}
+              ListHeaderComponent={
+                showingTasks ? (
+                  <Text className="px-3 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    {t("palette.taskResults")}
+                  </Text>
+                ) : null
+              }
+              ListEmptyComponent={
+                <Text className="px-3 py-6 text-center text-sm text-neutral-400">
+                  {t("palette.noMatches")}
                 </Text>
-              ) : null
-            }
-            ListEmptyComponent={
-              <Text className="px-3 py-6 text-center text-sm text-neutral-400">
-                {t("palette.noMatches")}
-              </Text>
-            }
-            renderItem={({ item, index }) => {
-              const active = index === highlighted;
-              if (item.kind === "task") {
-                const task = item.hit.task;
+              }
+              renderItem={({ item, index }) => {
+                const active = index === highlighted;
+                if (item.kind === "task") {
+                  const task = item.hit.task;
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={displayTitle(task, t)}
+                      accessibilityState={{ selected: active }}
+                      onPress={() => openTask(task)}
+                      className={rowClass(active)}
+                    >
+                      <Text className={rowLabelClass(active)} numberOfLines={1}>
+                        {displayTitle(task, t)}
+                      </Text>
+                      {search && (
+                        <Text className="ml-2 text-xs text-neutral-400">
+                          {search.context(task)}
+                        </Text>
+                      )}
+                    </Pressable>
+                  );
+                }
                 return (
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={displayTitle(task, t)}
+                    accessibilityLabel={item.command.label}
                     accessibilityState={{ selected: active }}
-                    onPress={() => openTask(task)}
+                    onPress={() => run(item.command)}
                     className={rowClass(active)}
                   >
-                    <Text className={rowLabelClass(active)} numberOfLines={1}>
-                      {displayTitle(task, t)}
-                    </Text>
-                    {search && (
-                      <Text className="ml-2 text-xs text-neutral-400">{search.context(task)}</Text>
+                    <Text className={rowLabelClass(active)}>{item.command.label}</Text>
+                    {item.command.hint != null && (
+                      <Text className="text-xs text-neutral-400">{item.command.hint}</Text>
                     )}
                   </Pressable>
                 );
-              }
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={item.command.label}
-                  accessibilityState={{ selected: active }}
-                  onPress={() => run(item.command)}
-                  className={rowClass(active)}
-                >
-                  <Text className={rowLabelClass(active)}>{item.command.label}</Text>
-                  {item.command.hint != null && (
-                    <Text className="text-xs text-neutral-400">{item.command.hint}</Text>
-                  )}
-                </Pressable>
-              );
-            }}
-          />
+              }}
+            />
+          </View>
         </View>
       </ThemeScope>
     </Modal>

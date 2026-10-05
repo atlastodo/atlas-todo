@@ -2,7 +2,6 @@ import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { quickScheduleOptions, type QuickScheduleOption } from "@atlas/shared";
 import { BottomSheet } from "./BottomSheet";
-import { X } from "./icons";
 import { haptics } from "../lib/haptics";
 
 /** A bottom sheet of quick reschedule choices (today / tomorrow / this weekend / next week, plus clear), opened by swiping left on a task row. Uses the pure `quickScheduleOptions`. */
@@ -33,25 +32,12 @@ export function QuickRescheduleSheet({
   const options = quickScheduleOptions(now, timeZone);
 
   return (
-    <BottomSheet visible={title !== null} onClose={onClose}>
+    <BottomSheet
+      visible={title !== null}
+      onClose={onClose}
+      title={t("task.reschedule") + (title != null && title !== "" ? `: ${title}` : "")}
+    >
       <View className="gap-1">
-        <View className="mb-2 flex-row items-center gap-2">
-          <Text
-            numberOfLines={1}
-            className="flex-1 text-base font-semibold text-neutral-900 dark:text-neutral-100"
-          >
-            {t("task.reschedule")}
-            {title != null && title !== "" ? `: ${title}` : ""}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("common.close")}
-            onPress={onClose}
-          >
-            <X size={20} className="text-neutral-500" />
-          </Pressable>
-        </View>
-
         {options.map((opt) => (
           <Pressable
             key={opt.key}

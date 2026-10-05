@@ -42,4 +42,34 @@ describe("BottomSheet", () => {
     expect(dismissSpy).toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it("renders the shared header with a title, subtitle and an X that closes", async () => {
+    jest.spyOn(useKeyboardHeightModule, "useKeyboardHeight").mockReturnValue(0);
+    const onClose = jest.fn();
+
+    await render(
+      <BottomSheet visible onClose={onClose} title="New habit" subtitle="In Mornings">
+        <Text>Sheet content</Text>
+      </BottomSheet>,
+    );
+
+    expect(screen.getByRole("header", { name: "New habit" })).toBeTruthy();
+    expect(screen.getByText("In Mornings")).toBeTruthy();
+    // Backdrop first, then the header X.
+    const closes = screen.getAllByLabelText(i18n.t("common.close"));
+    expect(closes).toHaveLength(2);
+    await fireEvent.press(closes[1]!);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("has no header without a title", async () => {
+    await render(
+      <BottomSheet visible onClose={() => {}}>
+        <Text>Sheet content</Text>
+      </BottomSheet>,
+    );
+
+    expect(screen.queryByRole("header")).toBeNull();
+    expect(screen.getAllByLabelText(i18n.t("common.close"))).toHaveLength(1);
+  });
 });

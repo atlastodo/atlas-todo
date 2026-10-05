@@ -3,6 +3,7 @@ import { Modal, Platform, Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { ThemeScope } from "../theme/ThemeProvider";
 import { haptics } from "../lib/haptics";
+import { ELEVATED_SURFACE_CLASS, SCRIM_CLASS } from "./useSheetDismiss";
 
 /**
  * A centred cross-platform confirm dialog, for the few actions that are not locally reversible
@@ -90,12 +91,12 @@ export function ConfirmDialog({
           accessibilityRole="button"
           accessibilityLabel={t("common.close")}
           onPress={onCancel}
-          className="absolute inset-0 bg-black/40"
+          className={`absolute inset-0 ${SCRIM_CLASS}`}
         />
         <View
           ref={dialogRef}
           {...({ tabIndex: -1 } as object)}
-          className="w-full max-w-sm gap-3 rounded-2xl bg-white p-5 shadow-xl outline-none dark:bg-zinc-900"
+          className={`w-full max-w-sm gap-3 rounded-2xl p-5 outline-none ${ELEVATED_SURFACE_CLASS}`}
         >
           <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
             {title}

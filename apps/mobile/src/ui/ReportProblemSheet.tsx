@@ -14,6 +14,7 @@ import { buildPreview, mintReportId, sendReport } from "../lib/crashReporter";
 import { copyText } from "../lib/clipboard";
 import { useCancelOnEscape } from "../hooks/useCancelOnEscape";
 import { BottomSheet } from "./BottomSheet";
+import { PLACEHOLDER_COLOR } from "./useSheetDismiss";
 import { Field } from "./Field";
 import { Check } from "./icons";
 
@@ -70,30 +71,30 @@ export function ReportProblemSheet({ open, onClose }: { open: boolean; onClose: 
   };
 
   return (
-    <BottomSheet visible={open} onClose={onClose}>
+    <BottomSheet
+      visible={open}
+      onClose={onClose}
+      title={t("report.title")}
+      headerAction={
+        Platform.OS !== "web" ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("common.done", "Done")}
+            onPress={() => Keyboard.dismiss()}
+            hitSlop={8}
+            className="flex-row items-center gap-1 rounded-md bg-neutral-100 px-2.5 py-1 active:bg-neutral-200 dark:bg-neutral-800 dark:active:bg-neutral-700"
+          >
+            <Check size={14} className="text-neutral-700 dark:text-neutral-200" />
+            <Text className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
+              {t("common.done", "Done")}
+            </Text>
+          </Pressable>
+        ) : undefined
+      }
+    >
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Pressable onPress={() => Keyboard.dismiss()}>
           <View className="gap-3">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                {t("report.title")}
-              </Text>
-              {Platform.OS !== "web" && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t("common.done", "Done")}
-                  onPress={() => Keyboard.dismiss()}
-                  hitSlop={8}
-                  className="flex-row items-center gap-1 rounded-md bg-neutral-100 px-2.5 py-1 active:bg-neutral-200 dark:bg-neutral-800 dark:active:bg-neutral-700"
-                >
-                  <Check size={14} className="text-neutral-700 dark:text-neutral-200" />
-                  <Text className="text-xs font-medium text-neutral-700 dark:text-neutral-200">
-                    {t("common.done", "Done")}
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-
             <TextInput
               ref={esc.ref}
               onKeyPress={esc.onKeyPress}
@@ -103,6 +104,7 @@ export function ReportProblemSheet({ open, onClose }: { open: boolean; onClose: 
               numberOfLines={4}
               accessibilityLabel={t("report.whatHappened")}
               placeholder={t("report.placeholder")}
+              placeholderTextColor={PLACEHOLDER_COLOR}
               className="min-h-24 rounded-lg border border-neutral-200 p-3 text-sm text-neutral-900 dark:border-neutral-800 dark:text-neutral-100"
               textAlignVertical="top"
             />
