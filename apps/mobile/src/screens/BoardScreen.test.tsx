@@ -335,6 +335,23 @@ describe("BoardScreen", () => {
     expect(inColumn).toContain("Sand the floor");
   });
 
+  it("hides an empty No section column once the project has sections", async () => {
+    const { s, projectId } = boardStore();
+    await render(<BoardScreen projectId={projectId} />, { wrapper: withApp(s) });
+    // Without sections it is the only column, so it stays.
+    expect(screen.getByLabelText("Add task to No section")).toBeTruthy();
+
+    addSection(s, projectId, "To do", 10);
+    await act(async () => {});
+    await waitFor(() => expect(screen.queryByLabelText("Add task to No section")).toBeNull());
+
+    // A task without a section brings it back.
+    await act(async () => {
+      createTask(s, { title: "Loose end", project_id: projectId });
+    });
+    await waitFor(() => expect(screen.getByLabelText("Add task to No section")).toBeTruthy());
+  });
+
   it("places a task in its section's column with the count", async () => {
     const { s, projectId } = boardStore();
     const sectionId = addSection(s, projectId, "To do", 10);

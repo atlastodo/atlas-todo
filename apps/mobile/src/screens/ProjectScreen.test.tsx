@@ -447,6 +447,32 @@ describe("ProjectScreen", () => {
       );
     });
 
+    it("picks the header layout by the pane's width, not the window's", async () => {
+      await setWindowWidth(1280);
+      const { s, id } = projectStore();
+      createTask(s, { title: "Paint the hall", project_id: id });
+      await render(<ProjectWithHeader projectId={id} />, { wrapper: withApp(s) });
+      const layoutPane = (width: number) =>
+        fireEvent(screen.getByTestId("project-screen"), "layout", {
+          nativeEvent: { layout: { x: 0, y: 0, width, height: 800 } },
+        });
+
+      // A wide window whose sidebar leaves a narrow pane: the overflow layout.
+      await layoutPane(560);
+      expect(header().getByLabelText("Project actions")).toBeTruthy();
+      expect(header().queryByLabelText("Favorite")).toBeNull();
+      expect(header().getByText("Board")).toBeTruthy();
+
+      // A phone-narrow pane: the switch drops its text but keeps its accessible names.
+      await layoutPane(360);
+      expect(header().queryByText("Board")).toBeNull();
+      expect(header().getByRole("radio", { name: "Board" })).toBeTruthy();
+
+      await layoutPane(1000);
+      expect(header().getByLabelText("Favorite")).toBeTruthy();
+      expect(header().queryByLabelText("Project actions")).toBeNull();
+    });
+
     it("runs each list action from the phone overflow", async () => {
       const { s, id } = projectStore();
       createTask(s, { title: "Paint the hall", project_id: id });

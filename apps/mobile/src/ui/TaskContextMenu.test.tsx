@@ -83,6 +83,16 @@ describe("TaskContextMenu", () => {
     expect(screen.queryByLabelText("Skip occurrence")).toBeNull();
   });
 
+  it("labels each priority and marks the current one", async () => {
+    const props = await renderMenu({ task: task({ priority: 2 }) });
+    for (const text of ["P1", "P2", "P3", "None"]) expect(screen.getByText(text)).toBeTruthy();
+    expect(screen.getByLabelText("Priority 2").props.accessibilityState.selected).toBe(true);
+    expect(screen.getByLabelText("No priority").props.accessibilityState.selected).toBe(false);
+
+    await fireEvent.press(screen.getByLabelText("No priority"));
+    expect(props.onSetPriority).toHaveBeenCalledWith(props.task, 4);
+  });
+
   it("schedules to a preset and clears the date", async () => {
     const props = await renderMenu();
     await fireEvent.press(screen.getByLabelText("Today"));

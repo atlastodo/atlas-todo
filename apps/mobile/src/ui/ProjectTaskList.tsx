@@ -679,7 +679,8 @@ export function ProjectTaskList({
             now={now}
             onToggle={onToggle}
             onOpen={onOpen}
-            focused={task.id === cursorId}
+            // The row a context menu is open for stays highlighted while the menu shows.
+            focused={task.id === cursorId || task.id === menu?.task.id}
             isEditing={editingTaskId === task.id}
             onStartRename={handleStartRename}
             onSaveRename={handleSaveRename}

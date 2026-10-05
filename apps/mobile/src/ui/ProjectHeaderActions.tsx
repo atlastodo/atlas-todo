@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { useRef, useState } from "react";
+import { Pressable, View, type GestureResponderEvent } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useIsWide } from "../hooks/useIsWide";
 import { useSelection } from "../data/SelectionProvider";
@@ -12,18 +12,38 @@ import { SelectButton } from "./SelectButton";
 import { StyleEditButton } from "./StyleEditor";
 import {
   EllipsisVertical,
+  Kanban,
   ListChecks,
   ListFilter,
+  ListTodo,
   SlidersHorizontal,
   Star,
   UserPlus,
 } from "./icons";
 
 /**
+ * How the header lays out its actions: "inline" shows each one, "menu" keeps the List|Board switch
+ * and folds the rest into an overflow, and "menu-compact" also shrinks the switch to icons.
+ */
+export type HeaderLayout = "inline" | "menu" | "menu-compact";
+
+/** Below this pane width the inline actions (~360px) would crowd the project title. */
+const INLINE_MIN_WIDTH = 640;
+/** Below this the labelled List|Board switch (~130px) would truncate the title to a few letters. */
+const COMPACT_MAX_WIDTH = 400;
+
+/** The header layout for a content pane `width` wide (the pane, not the window: a sidebar may take the rest). */
+export function headerLayoutFor(width: number): HeaderLayout {
+  if (width >= INLINE_MIN_WIDTH) return "inline";
+  return width < COMPACT_MAX_WIDTH ? "menu-compact" : "menu";
+}
+
+/**
  * A project's actions, rendered as the nav header's `headerRight` so the list and board keep their
- * full height. A wide viewport shows every action inline, with the List|Board switch at the far
- * right. A phone keeps only the switch and folds the rest into an overflow menu. Both layouts use
- * the same labels. Presentational: the screen owns what each action does.
+ * full height. A wide pane shows every action inline, with the List|Board switch at the far right.
+ * A narrow one keeps only the switch and folds the rest into an overflow menu, opened right-aligned
+ * under its trigger. Both layouts use the same labels. Presentational: the screen owns what each
+ * action does.
  */
 export interface ProjectHeaderActionsProps {
   mode: "list" | "board";
@@ -37,6 +57,8 @@ export interface ProjectHeaderActionsProps {
   listPref?: ListPref;
   onChangeListPref?: (patch: Partial<ListPref>) => void;
   accentColor?: string;
+  /** From the screen's measured width ({@link headerLayoutFor}). Until it is measured, the window decides. */
+  layout?: HeaderLayout;
 }
 
 export function ProjectHeaderActions({
@@ -50,12 +72,25 @@ export function ProjectHeaderActions({
   listPref,
   onChangeListPref,
   accentColor,
+  layout: layoutProp,
 }: ProjectHeaderActionsProps) {
   const { t } = useTranslation();
   const isWide = useIsWide();
   const selection = useSelection();
   const [menuPos, setMenuPos] = useState<MenuPos | null>(null);
   const [arranging, setArranging] = useState(false);
+  const triggerRef = useRef<View>(null);
+  const layout = layoutProp ?? (isWide ? "inline" : "menu");
+
+  // The menu hangs right-aligned under the ⋮, so it covers the list rather than the title and switch.
+  // Opens at the press point at once, then moves to the measured trigger (the menu stays hidden
+  // until its own first layout, so the hop doesn't show).
+  const openMenu = (e?: GestureResponderEvent) => {
+    setMenuPos({ x: e?.nativeEvent?.pageX ?? 0, y: e?.nativeEvent?.pageY ?? 0 });
+    triggerRef.current?.measureInWindow?.((x, y, width, height) =>
+      setMenuPos({ x: x + width, y: y + height + 4 }),
+    );
+  };
 
   const favoriteLabel = isFavorite
     ? t("workspace.unfavorite", "Remove from favorites")
@@ -65,18 +100,19 @@ export function ProjectHeaderActions({
     <Segmented
       value={mode}
       options={[
-        { value: "list", label: t("board.viewList") },
-        { value: "board", label: t("board.viewBoard") },
+        { value: "list", label: t("board.viewList"), icon: ListTodo },
+        { value: "board", label: t("board.viewBoard"), icon: Kanban },
       ]}
       onChange={onSetMode}
       label={t("board.viewMode")}
       accentColor={accentColor}
+      iconOnly={layout === "menu-compact"}
     />
   );
 
-  if (isWide) {
+  if (layout === "inline") {
     return (
-      <View className="flex-row items-center gap-2 pr-3">
+      <View className="shrink-0 flex-row items-center gap-2 pr-3">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={favoriteLabel}
@@ -135,20 +171,21 @@ export function ProjectHeaderActions({
   ];
 
   return (
-    <View className="flex-row items-center gap-1 pr-2">
+    <View className="shrink-0 flex-row items-center gap-1 pr-2">
       {modeSwitch}
       <Pressable
+        ref={triggerRef}
         accessibilityRole="button"
         accessibilityLabel={t("workspace.projectActions")}
-        onPress={(e) =>
-          setMenuPos({ x: e?.nativeEvent?.pageX ?? 0, y: e?.nativeEvent?.pageY ?? 0 })
-        }
-        hitSlop={8}
-        className="p-1.5 web:cursor-pointer"
+        onPress={openMenu}
+        hitSlop={4}
+        className="h-11 w-11 items-center justify-center rounded-full web:cursor-pointer active:bg-neutral-100 dark:active:bg-neutral-800"
       >
         <EllipsisVertical size={20} className="text-neutral-500" />
       </Pressable>
-      {menuPos && <ContextMenu items={items} pos={menuPos} onClose={() => setMenuPos(null)} />}
+      {menuPos && (
+        <ContextMenu items={items} pos={menuPos} align="right" onClose={() => setMenuPos(null)} />
+      )}
       {listPref && onChangeListPref && (
         <ListPrefSheet
           visible={arranging}

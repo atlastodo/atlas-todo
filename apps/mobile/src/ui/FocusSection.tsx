@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { Task } from "@atlas/client-core";
@@ -23,6 +24,7 @@ export function FocusSection({
   const { focusEnabled } = usePreferences();
   const { start, active, taskId, running } = useFocus();
   const { trackedMs } = useFocusSessions();
+  const [estimateFocused, setEstimateFocused] = useState(false);
 
   if (!focusEnabled) return null;
 
@@ -60,16 +62,34 @@ export function FocusSection({
 
       <View className="flex-row items-center justify-between gap-2">
         <Text className="text-xs text-neutral-500">{t("focus.estimate")}</Text>
-        <TextInput
-          accessibilityLabel={t("focus.estimateAria")}
-          keyboardType="number-pad"
-          value={task.estimate_min != null ? String(task.estimate_min) : ""}
-          onChangeText={(text) => {
-            const digits = text.replace(/[^0-9]/g, "");
-            onUpdate(task, { estimate_min: digits === "" ? null : Math.round(Number(digits)) });
-          }}
-          className="w-20 rounded border border-neutral-200 px-2 py-1 text-right text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
-        />
+        {/* Bordered like the label input, with the unit as a suffix so the box reads as minutes. The
+            wrapper carries the focus ring, since the bare input sits inside it. */}
+        <View
+          className={
+            "w-28 flex-row items-center gap-1 rounded border px-2 " +
+            (estimateFocused
+              ? "border-accent-400 dark:border-accent-500"
+              : "border-neutral-200 dark:border-neutral-700")
+          }
+        >
+          <TextInput
+            accessibilityLabel={t("focus.estimateAria")}
+            keyboardType="number-pad"
+            placeholder={t("focus.estimatePlaceholder")}
+            placeholderTextColor="#a1a1aa"
+            value={task.estimate_min != null ? String(task.estimate_min) : ""}
+            onFocus={() => setEstimateFocused(true)}
+            onBlur={() => setEstimateFocused(false)}
+            onChangeText={(text) => {
+              const digits = text.replace(/[^0-9]/g, "");
+              onUpdate(task, { estimate_min: digits === "" ? null : Math.round(Number(digits)) });
+            }}
+            className="min-w-0 flex-1 bg-transparent py-1 text-right text-sm text-neutral-900 web:outline-none dark:text-neutral-100"
+          />
+          <Text className="text-sm text-neutral-500 dark:text-neutral-400">
+            {t("focus.minutesSuffix")}
+          </Text>
+        </View>
       </View>
 
       <Text className="text-xs text-neutral-500">
