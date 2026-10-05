@@ -158,8 +158,10 @@ prerelease and is not "latest"; the Docker image gets `0.1.4-rc.1` and a moving 
 GitHub prerelease; the desktop tarball is attached without the `-latest` copy. There is no dev
 server. Hosted instances stay on stable releases.
 
-To ship, merge `dev` into `main`, then `version:bump 0.1.4`, commit `chore(release): v0.1.4`, tag
-and push `main` and the tag as usual. The stable notes list everything since the last stable tag,
+To ship: `main` only accepts pull requests (merge commits, CI must pass, no bypass). On `dev`, run
+`version:bump 0.1.4` and commit `chore(release): v0.1.4`; open a PR from `dev` to `main` and merge
+it; then `git tag v0.1.4` on the merged `main` and push the tag; finally fast-forward `dev` to `main`
+(`git checkout dev && git merge --ff-only origin/main && git push`). The stable notes list everything since the last stable tag,
 so they include what the rcs carried. Two release runs that overlap race at the Play upload (the
 lower versionCode is refused once the higher one is on the track), so let one finish first.
 

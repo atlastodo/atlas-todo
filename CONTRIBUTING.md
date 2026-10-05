@@ -137,7 +137,8 @@ A new language also needs an entry in `packages/shared/src/i18n.ts`.
 
 Work lands on the long-lived `dev` branch; open pull requests against `dev`. `main` holds stable
 releases only. A push publishes nothing: the maintainer tags pre-releases (`v0.1.4-rc.1`) on `dev`,
-and when one is good, merges `dev` into `main` and tags the stable `v0.1.4`. Pre-releases go to
+and when one is good, merges `dev` into `main` through a pull request (`main` takes no direct pushes)
+and tags the stable `v0.1.4`. Pre-releases go to
 GitHub as prereleases, to Docker as `0.1.4-rc.1` and `dev`, and to the Play internal track. Details
 in [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md).
 
