@@ -145,8 +145,8 @@ The published Android build is made by GitHub Actions, not EAS. Pushing a `vX.Y.
 
 ### Pre-releases (the `dev` branch)
 
-Work lands on the long-lived `dev` branch, where CI runs as on `main`. A plain push publishes
-nothing. To cut a pre-release, tag by hand on `dev`:
+Work lands on the long-lived `dev` branch. A plain push runs no CI and publishes nothing; the rc
+tag runs the full suite before anything is built. To cut a pre-release, tag by hand on `dev`:
 
 1. `version:bump 0.1.4-rc.1` (then `0.1.4-rc.2`, and so on). `RELEASE_NOTES.md` lists the commits
    since the previous tag of any kind.
