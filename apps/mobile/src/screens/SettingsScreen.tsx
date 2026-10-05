@@ -95,11 +95,13 @@ import {
   Tag,
   Trash2,
   Upload,
+  UserPlus,
   UserRound,
   type LucideIcon,
 } from "../ui/icons";
 import { SkeletonRows } from "../ui/Skeleton";
 import { useOnboarding } from "../data/OnboardingContext";
+import { useLocalMode } from "../auth/localMode";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { CloseToTrayRow } from "../ui/CloseToTrayRow";
 import { PersistentStorageRow } from "../ui/PersistentStorageRow";
@@ -284,6 +286,7 @@ function DataSection() {
 function HelpSection({ onOpenAbout }: { onOpenAbout?: () => void }) {
   const { t } = useTranslation();
   const { openOnboarding } = useOnboarding();
+  const { localOnly } = useStore();
   const [reportOpen, setReportOpen] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
 
@@ -326,17 +329,21 @@ function HelpSection({ onOpenAbout }: { onOpenAbout?: () => void }) {
           <Text className="text-sm text-neutral-600 dark:text-neutral-300">{t("report.send")}</Text>
         </Pressable>
       </Row>
-      <Row label={t("sync.detailsTitle")} description={t("settings.syncDetailsDesc")}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("sync.detailsTitle")}
-          onPress={() => setSyncOpen(true)}
-          className="flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
-        >
-          <RefreshCw size={18} className="text-neutral-600 dark:text-neutral-300" />
-          <Text className="text-sm text-neutral-600 dark:text-neutral-300">{t("common.open")}</Text>
-        </Pressable>
-      </Row>
+      {!localOnly && (
+        <Row label={t("sync.detailsTitle")} description={t("settings.syncDetailsDesc")}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("sync.detailsTitle")}
+            onPress={() => setSyncOpen(true)}
+            className="flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
+          >
+            <RefreshCw size={18} className="text-neutral-600 dark:text-neutral-300" />
+            <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+              {t("common.open")}
+            </Text>
+          </Pressable>
+        </Row>
+      )}
       <Row label={t("settings.appVersion")}>
         <Text className="text-sm text-neutral-600 dark:text-neutral-300">{APP_VERSION}</Text>
       </Row>
@@ -968,6 +975,48 @@ function RecoveryPhraseSection() {
 }
 
 /** A section's content, mounted only while selected, so e.g. the devices list is fetched only when opened. */
+/**
+ * The Account pane in local-only mode: the data is on this device only, and an account (to sync
+ * between devices and share projects) is one tap away. Either way the local data moves into the
+ * account (`LocalUpgradeGate`).
+ */
+function LocalAccountSection() {
+  const { t } = useTranslation();
+  const local = useLocalMode();
+  return (
+    <Section icon={UserRound} title={t("settings.account")}>
+      <View className="gap-1 py-3">
+        <Text className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+          {t("localMode.settingsTitle")}
+        </Text>
+        <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+          {t("localMode.settingsDesc")}
+        </Text>
+      </View>
+      <View className="flex-row flex-wrap items-center gap-2 pb-3">
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => local?.openAuth("signup")}
+          className="flex-row items-center gap-1.5 rounded-md bg-accent-600 px-3 py-2"
+        >
+          <UserPlus size={18} className="text-white" />
+          <Text className="text-sm font-medium text-white">{t("localMode.createAccount")}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => local?.openAuth("login")}
+          className="flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
+        >
+          <UserRound size={18} className="text-neutral-600 dark:text-neutral-300" />
+          <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+            {t("localMode.signIn")}
+          </Text>
+        </Pressable>
+      </View>
+    </Section>
+  );
+}
+
 function SettingsPane({
   id,
   active,
@@ -1045,6 +1094,7 @@ export function SettingsScreen({
   const isWide = useIsWide();
   const { config, setConfig } = usePomodoroConfig();
   const { session, deleteAccount } = useAuth();
+  const { localOnly } = useStore();
   const { signOut, dialog: signOutDialog } = useSignOut();
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
@@ -1063,7 +1113,10 @@ export function SettingsScreen({
     opts.map((o) => ({ value: o.value, label: t(o.labelKey) }));
 
   // The URL owns the selection (`?section=`), so deep links and back/forward land on the same section.
-  const sections = useMemo(() => settingsSections(isAdmin(session)), [session]);
+  const sections = useMemo(
+    () => settingsSections(isAdmin(session), localOnly === true),
+    [session, localOnly],
+  );
   const active = resolveSettingsSection(section, sections);
 
   // Keep the selected pill in view; the layout pass arrives after first render, so a pill measuring itself as selected scrolls too.
@@ -1506,45 +1559,51 @@ export function SettingsScreen({
 
       {/* Account */}
       <SettingsPane id="account" active={active}>
-        <Section icon={UserRound} title={t("settings.account")}>
-          <Row label={t("settings.signedInAs")}>
-            <Text className="text-sm text-neutral-600 dark:text-neutral-300">
-              {session?.user.display_name || session?.user.email || "-"}
-            </Text>
-          </Row>
-          {session?.user.display_name != null && session.user.display_name !== "" && (
-            <Row label={t("settings.email")}>
-              <Text className="text-sm text-neutral-600 dark:text-neutral-300">
-                {session.user.email}
-              </Text>
-            </Row>
-          )}
-          <View className="flex-row items-center gap-2 py-3">
-            <Pressable
-              accessibilityRole="button"
-              onPress={signOut}
-              className="flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
-            >
-              <LogOut size={18} className="text-neutral-600 dark:text-neutral-300" />
-              <Text className="text-sm text-neutral-600 dark:text-neutral-300">
-                {t("common.signOut")}
-              </Text>
-            </Pressable>
-          </View>
-        </Section>
+        {localOnly ? (
+          <LocalAccountSection />
+        ) : (
+          <>
+            <Section icon={UserRound} title={t("settings.account")}>
+              <Row label={t("settings.signedInAs")}>
+                <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+                  {session?.user.display_name || session?.user.email || "-"}
+                </Text>
+              </Row>
+              {session?.user.display_name != null && session.user.display_name !== "" && (
+                <Row label={t("settings.email")}>
+                  <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+                    {session.user.email}
+                  </Text>
+                </Row>
+              )}
+              <View className="flex-row items-center gap-2 py-3">
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={signOut}
+                  className="flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
+                >
+                  <LogOut size={18} className="text-neutral-600 dark:text-neutral-300" />
+                  <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+                    {t("common.signOut")}
+                  </Text>
+                </Pressable>
+              </View>
+            </Section>
 
-        <SecuritySection />
-        <RecoveryPhraseSection />
+            <SecuritySection />
+            <RecoveryPhraseSection />
 
-        <DangerZone>
-          <Row label={t("auth.deleteAccount")} description={t("settings.deleteAccountDesc")}>
-            <DangerButton
-              icon={Trash2}
-              label={t("auth.deleteAccount")}
-              onPress={() => setConfirmDeleteAccount(true)}
-            />
-          </Row>
-        </DangerZone>
+            <DangerZone>
+              <Row label={t("auth.deleteAccount")} description={t("settings.deleteAccountDesc")}>
+                <DangerButton
+                  icon={Trash2}
+                  label={t("auth.deleteAccount")}
+                  onPress={() => setConfirmDeleteAccount(true)}
+                />
+              </Row>
+            </DangerZone>
+          </>
+        )}
       </SettingsPane>
 
       {/* Admin */}

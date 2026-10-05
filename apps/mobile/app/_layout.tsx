@@ -50,6 +50,7 @@ import { UpdateBanner } from "../src/ui/UpdateBanner";
 import { NotificationsProvider } from "../src/data/NotificationsProvider";
 import { AuthProvider, useAuth } from "../src/auth/AuthContext";
 import { AuthGate } from "../src/auth/AuthGate";
+import { LOCAL_SCOPE, LocalModeProvider } from "../src/auth/localMode";
 import { RecoveryPhraseModal } from "../src/auth/RecoveryPhraseModal";
 import { withAccent, headerThemeOptions, isDark, sceneBackground } from "../src/theme/navTheme";
 import { DEFAULT_ACCENT } from "@atlas/shared";
@@ -212,11 +213,14 @@ function GlobalCommandPalette() {
 }
 
 /**
- * The auth gate (`AuthGate`): the login screen without a session, the unlock screen for a locked
- * one, otherwise the app with a store bound to the session. The store, and sync, only mounts unlocked.
+ * The auth gate (`AuthGate`): the unlock screen for a locked session, otherwise the app with a store
+ * bound to the session, or, with no session, to the local-only database (no server, no sync). The
+ * store, and sync, only mounts unlocked. Keyed by the database, so moving from local-only mode into
+ * an account remounts everything on the account's store.
  *
- * `deviceId` is the session's, never a constant: it is the HLC's final tiebreak, so two devices
- * sharing one id could order concurrent edits differently and fail to converge.
+ * `deviceId` is the session's (or this device's local one), never a constant: it is the HLC's final
+ * tiebreak, so two devices sharing one id could order concurrent edits differently and fail to
+ * converge.
  */
 function Gate() {
   const { api, recoveryPhrase, dismissRecoveryPhrase } = useAuth();
@@ -225,12 +229,13 @@ function Gate() {
 
   return (
     <AuthGate>
-      {({ session, keyring }) => (
+      {(gate) => (
         <StoreProvider
-          api={api}
-          deviceId={session.deviceId}
-          userId={session.user.id}
-          keyring={keyring}
+          key={gate.mode === "account" ? gate.session.user.id : LOCAL_SCOPE}
+          api={gate.mode === "account" ? api : null}
+          deviceId={gate.mode === "account" ? gate.session.deviceId : gate.deviceId}
+          userId={gate.mode === "account" ? gate.session.user.id : LOCAL_SCOPE}
+          keyring={gate.mode === "account" ? gate.keyring : null}
         >
           <RecoveryPhraseModal phrase={recoveryPhrase} onClose={dismissRecoveryPhrase} />
           <SyncedLanguage />
@@ -309,7 +314,9 @@ export default function RootLayout() {
         <ThemeProvider>
           <AuthProvider>
             <CrashReporterBinding />
-            <Gate />
+            <LocalModeProvider>
+              <Gate />
+            </LocalModeProvider>
           </AuthProvider>
           <SystemBars scheme={scheme} />
         </ThemeProvider>

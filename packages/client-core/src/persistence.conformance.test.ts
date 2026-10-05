@@ -281,6 +281,29 @@ describe.each(BACKENDS)("Persistence conformance: $name", ({ makeDurable }) => {
     expect(reloaded.unsyncedOps().map((o) => o.id)).toEqual([draft1.id, draft2.id]);
   });
 
+  it("compactLocal drops superseded unsynced ops too (no server can refuse them)", async () => {
+    const d = makeDurable();
+    const store = storeOver(d, "orig");
+    store.set("task", "t1", "title", "a");
+    const title = store.set("task", "t1", "title", "b");
+    const notes = store.set("task", "t1", "notes", "n");
+    const hidden = store.set("task", "t2", "title", "gone");
+    store.remove("task", "t2");
+    const del = store.remove("task", "t2");
+    await store.flush();
+
+    expect(await store.compactLocal()).toBe(2);
+
+    const kept = [title, notes, hidden, del].map((o) => o.id);
+    expect((await d.open().load()).map((r) => r.op.id)).toEqual(kept);
+    expect(store.unsyncedOps().map((o) => o.id)).toEqual(kept);
+    const reloaded = storeOver(d, "re");
+    await reloaded.hydrate();
+    expect(reloaded.get("task", "t1")).toEqual({ title: "b", notes: "n" });
+    expect(reloaded.get("task", "t2")).toBeNull();
+    expect(reloaded.unsyncedOps().map((o) => o.id)).toEqual(kept);
+  });
+
   it("rebuilds an entity from the remaining log when a refused local op is discarded", async () => {
     const d = makeDurable();
     const store = storeOver(d, "orig");

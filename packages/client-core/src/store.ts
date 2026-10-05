@@ -105,7 +105,7 @@ export class LocalStore {
   async hydrate(): Promise<void> {
     if (!this.persistence) return;
     const persisted = (await this.persistence.load()).filter(({ op }) => {
-      if (isWellFormed(op)) return true;
+      if (isWellFormedOp(op)) return true;
       // One bad row must not keep the whole log from loading.
       console.warn("[atlas] skipped a malformed op in the local log:", op);
       return false;
@@ -121,11 +121,7 @@ export class LocalStore {
 
   /** An entity with unsynced ops keeps its whole history: the server may refuse those (see `discard`). */
   private supersededIn(persisted: PersistedOp[]): string[] {
-    const keep = new Set<string>();
-    for (const state of this.allStates()) {
-      for (const fs of state.fields.values()) keep.add(fs.op);
-      if (state.deletedOp) keep.add(state.deletedOp);
-    }
+    const keep = this.winningOps();
     const pending = new Set<string>();
     for (const op of this.outbox.values()) pending.add(`${op.entity}:${op.entityId}`);
     return persisted
@@ -148,6 +144,45 @@ export class LocalStore {
     this.writeChain = this.writeChain.then(async () => {
       try {
         await p.compact!(drop);
+      } catch (err) {
+        this.reportPersistError(err);
+      }
+    });
+    await this.writeChain;
+    return drop.length;
+  }
+
+  /** The ids of the ops the current state is built from: each field's winner and each tombstone. */
+  private winningOps(): Set<string> {
+    const keep = new Set<string>();
+    for (const state of this.allStates()) {
+      for (const fs of state.fields.values()) keep.add(fs.op);
+      if (state.deletedOp) keep.add(state.deletedOp);
+    }
+    return keep;
+  }
+
+  /**
+   * For a store with no server (local-only mode): drop every op, unsynced ones included, that the
+   * current state no longer needs. `compact` keeps unsynced history because the server may refuse
+   * part of it; with no server nothing is ever refused, so without this the log would keep every
+   * edit forever, and an account created later would push all of it. Skipped while a write is
+   * failing, and on a backend that cannot delete. Returns how many ops were dropped.
+   */
+  async compactLocal(): Promise<number> {
+    const p = this.persistence;
+    if (!p?.deleteOps || this.unsaved.size > 0) return 0;
+    await this.writeChain;
+    const keep = this.winningOps();
+    const drop = (await p.load()).map(({ op }) => op.id).filter((id) => !keep.has(id));
+    if (drop.length === 0) return 0;
+    for (const id of drop) {
+      this.outbox.delete(id);
+      this.applied.delete(id);
+    }
+    this.writeChain = this.writeChain.then(async () => {
+      try {
+        await p.deleteOps!(drop);
       } catch (err) {
         this.reportPersistError(err);
       }
@@ -636,7 +671,8 @@ export class LocalStore {
   }
 }
 
-function isWellFormed(op: unknown): op is Operation {
+/** Whether `op` has the shape of an {@link Operation} (a row read from disk or a file may not). */
+export function isWellFormedOp(op: unknown): op is Operation {
   const o = op as Partial<Operation> | null | undefined;
   const ts = o?.ts as Partial<Hlc> | undefined;
   return (

@@ -51,7 +51,8 @@ export interface ProjectHeaderActionsProps {
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onEdit: () => void;
-  onShare: () => void;
+  /** Absent when the project cannot be shared (local-only mode): the action is not offered. */
+  onShare?: () => void;
   /** Whether Select is offered: the list has tasks and is not already selecting. Never on the board. */
   canSelect: boolean;
   listPref?: ListPref;
@@ -126,15 +127,17 @@ export function ProjectHeaderActions({
           />
         </Pressable>
         <StyleEditButton label={t("workspace.editProject")} onPress={onEdit} />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("workspace.shareProject")}
-          onPress={onShare}
-          hitSlop={8}
-          className="p-1 web:cursor-pointer"
-        >
-          <UserPlus size={18} className="text-neutral-500" />
-        </Pressable>
+        {onShare && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("workspace.shareProject")}
+            onPress={onShare}
+            hitSlop={8}
+            className="p-1 web:cursor-pointer"
+          >
+            <UserPlus size={18} className="text-neutral-500" />
+          </Pressable>
+        )}
         {canSelect && <SelectButton />}
         {listPref && onChangeListPref && (
           <ListPrefMenu value={listPref} onChange={onChangeListPref} />
@@ -147,7 +150,9 @@ export function ProjectHeaderActions({
   const items: ContextMenuItem[] = [
     { key: "favorite", label: favoriteLabel, icon: Star, onPress: onToggleFavorite },
     { key: "edit", label: t("workspace.editProject"), icon: SlidersHorizontal, onPress: onEdit },
-    { key: "share", label: t("workspace.shareProject"), icon: UserPlus, onPress: onShare },
+    ...(onShare
+      ? [{ key: "share", label: t("workspace.shareProject"), icon: UserPlus, onPress: onShare }]
+      : []),
     ...(canSelect
       ? [
           {
