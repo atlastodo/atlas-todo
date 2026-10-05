@@ -5,6 +5,7 @@ import { APP_VERSION } from "../lib/appVersion";
 import { resolveTimeZone } from "@atlas/shared";
 import { copyText } from "../lib/clipboard";
 import { useToast } from "../data/ToastProvider";
+import { useStoreOptional } from "../data/StoreProvider";
 import { usePreferences } from "../hooks/usePreferences";
 import { useIsWide } from "../hooks/useIsWide";
 import { deviceLanguage } from "../i18n";
@@ -49,6 +50,8 @@ export function AboutScreen() {
   const compactTabs = !useIsWide();
   const [reportOpen, setReportOpen] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
+  // Local-only mode has no sync to show.
+  const localOnly = useStoreOptional()?.localOnly === true;
   const [copied, setCopied] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -246,20 +249,22 @@ export function AboutScreen() {
                     <Text className="text-xs text-neutral-400">{t("common.open")}</Text>
                   </Pressable>
 
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={t("about.openSync")}
-                    onPress={() => setSyncOpen(true)}
-                    className="flex-row items-center justify-between rounded-lg border border-neutral-200 px-3.5 py-2.5 active:bg-neutral-50 dark:border-neutral-800 dark:active:bg-neutral-800/60"
-                  >
-                    <View className="flex-row items-center gap-2.5">
-                      <RefreshCw size={18} className="text-neutral-600 dark:text-neutral-300" />
-                      <Text className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                        {t("about.openSync")}
-                      </Text>
-                    </View>
-                    <Text className="text-xs text-neutral-400">{t("common.open")}</Text>
-                  </Pressable>
+                  {!localOnly && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t("about.openSync")}
+                      onPress={() => setSyncOpen(true)}
+                      className="flex-row items-center justify-between rounded-lg border border-neutral-200 px-3.5 py-2.5 active:bg-neutral-50 dark:border-neutral-800 dark:active:bg-neutral-800/60"
+                    >
+                      <View className="flex-row items-center gap-2.5">
+                        <RefreshCw size={18} className="text-neutral-600 dark:text-neutral-300" />
+                        <Text className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                          {t("about.openSync")}
+                        </Text>
+                      </View>
+                      <Text className="text-xs text-neutral-400">{t("common.open")}</Text>
+                    </Pressable>
+                  )}
 
                   {REPO_URL !== null && (
                     <Pressable

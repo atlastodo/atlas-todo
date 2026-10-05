@@ -117,7 +117,7 @@ function stateIcon(state: RowState): LucideIcon {
 export function AttachmentsSection({ task }: { task: Task }) {
   const { t } = useTranslation();
   const { keyring } = useAuth();
-  const { attachments: ctx, version } = useStore();
+  const { attachments: ctx, version, localOnly } = useStore();
   const { attachments, add, load, remove } = useAttachments(task);
   const toast = useToast();
 
@@ -350,7 +350,8 @@ export function AttachmentsSection({ task }: { task: Task }) {
     toast.show(t("attachment.deleted"), { label: t("common.undo"), run: undo });
   };
 
-  if (server?.enabled === false) return null;
+  // Files are stored on the server; local-only mode has none.
+  if (localOnly || server?.enabled === false) return null;
 
   return (
     <View className="gap-2">

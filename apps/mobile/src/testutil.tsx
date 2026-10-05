@@ -10,6 +10,7 @@ import {
   type Keyring,
 } from "@atlas/client-core";
 import { AuthContext, type AuthContextValue } from "./auth/AuthContext";
+import type { LocalModeValue } from "./auth/localMode";
 import {
   StoreContext,
   type AttachmentServerConfig,
@@ -71,6 +72,22 @@ export function fakeAuth(overrides: Partial<AuthContextValue> = {}): AuthContext
   };
 }
 
+/** A local-only mode state for tests, with spies for its actions. */
+export function fakeLocalMode(overrides: Partial<LocalModeValue> = {}): LocalModeValue {
+  return {
+    deviceId: "00000000-0000-0000-0000-0000000010ca",
+    authScreen: null,
+    openAuth: jest.fn(),
+    closeAuth: jest.fn(),
+    upgradeIntent: null,
+    setUpgradeIntent: jest.fn(),
+    clearUpgradeIntent: jest.fn(),
+    resumeOnboarding: false,
+    clearResumeOnboarding: jest.fn(),
+    ...overrides,
+  };
+}
+
 /**
  * Wrap a screen in the store + auth + selection contexts, over a real store (the real
  * `SelectionProvider`, which is plain state).
@@ -90,6 +107,7 @@ export function withApp(
   store: LocalStore,
   auth: AuthContextValue = fakeAuth(),
   attachments?: AttachmentsTestWiring | null,
+  opts: { localOnly?: boolean } = {},
 ) {
   // Built eagerly; the queue holds only durable ciphertext, so a plain object per test is safe.
   let attachmentsCtx: AttachmentsContextValue | null = null;
@@ -133,6 +151,7 @@ export function withApp(
             diagnostics: { lastError: null, lastSyncAt: 0, quarantined: [], pending: 0 },
             initialSyncDone: true,
             attachments: attachmentsCtx,
+            localOnly: opts.localOnly,
           }}
         >
           {/* Real ToastProvider: list actions raise undo toasts, so screens that toggle/delete/
