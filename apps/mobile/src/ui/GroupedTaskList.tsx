@@ -696,7 +696,7 @@ export function GroupedTaskList({
         // Derived from this row's own drag: a prop gating a native-only affordance must not use a web-only condition.
         enableLongPressMenu={!lift}
         onPressIn={(p) => (pressPos.current = p)}
-        focused={item.id === cursorId}
+        focused={item.id === cursorId || item.id === menu?.task.id}
       />
     );
     if (item.locked) return row;

@@ -2,10 +2,13 @@ import { useEffect, useState } from "react";
 import { LayoutChangeEvent, Platform, Pressable, Text, View } from "react-native";
 import { haptics } from "../lib/haptics";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import type { LucideIcon } from "./icons";
 
 export interface SegmentedOption<T> {
   value: T;
   label: string;
+  /** Shown in place of the label when the control is `iconOnly`; the label stays the accessible name. */
+  icon?: LucideIcon;
 }
 
 interface ItemLayout {
@@ -20,12 +23,15 @@ export function Segmented<T extends string | number>({
   onChange,
   label,
   accentColor,
+  iconOnly = false,
 }: {
   value: T;
   options: SegmentedOption<T>[];
   onChange: (value: T) => void;
   label: string;
   accentColor?: string;
+  /** Render each option's `icon` instead of its text, for a narrow header. */
+  iconOnly?: boolean;
 }) {
   const activeIndex = Math.max(
     0,
@@ -125,26 +131,35 @@ export function Segmented<T extends string | number>({
                 ...(active && { backgroundColor: hasMeasured ? "transparent" : activeAccent }),
               }}
               className={
-                "z-10 items-center justify-center px-3.5 py-1.5 web:cursor-pointer web:transition-colors web:duration-150 " +
+                "z-10 items-center justify-center py-1.5 " +
+                (iconOnly ? "px-2.5 " : "px-3.5 ") +
+                "web:cursor-pointer web:transition-colors web:duration-150 " +
                 (!hasMeasured && active ? "shadow-sm " : "") +
                 (active
                   ? ""
                   : "bg-transparent active:bg-neutral-200/50 dark:active:bg-neutral-800/50")
               }
             >
-              <Text
-                // Web only for the colour transition: on Android NativeWind's animated Text painted
-                // its own background, a lighter rectangle behind the selected label.
-                style={{ backgroundColor: "transparent" }}
-                className={
-                  "text-center text-sm web:transition-colors web:duration-150 " +
-                  (active
-                    ? "font-semibold text-white"
-                    : "font-medium text-neutral-600 dark:text-neutral-400")
-                }
-              >
-                {opt.label}
-              </Text>
+              {iconOnly && opt.icon ? (
+                <opt.icon
+                  size={18}
+                  className={active ? "text-white" : "text-neutral-600 dark:text-neutral-400"}
+                />
+              ) : (
+                <Text
+                  // Web only for the colour transition: on Android NativeWind's animated Text painted
+                  // its own background, a lighter rectangle behind the selected label.
+                  style={{ backgroundColor: "transparent" }}
+                  className={
+                    "text-center text-sm web:transition-colors web:duration-150 " +
+                    (active
+                      ? "font-semibold text-white"
+                      : "font-medium text-neutral-600 dark:text-neutral-400")
+                  }
+                >
+                  {opt.label}
+                </Text>
+              )}
             </Pressable>
           );
         })}

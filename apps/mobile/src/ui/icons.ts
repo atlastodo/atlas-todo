@@ -61,6 +61,7 @@ import House from "lucide-react-native/icons/house";
 import Inbox from "lucide-react-native/icons/inbox";
 import Info from "lucide-react-native/icons/info";
 import Keyboard from "lucide-react-native/icons/keyboard";
+import Kanban from "lucide-react-native/icons/kanban";
 import KeyRound from "lucide-react-native/icons/key-round";
 import ListChecks from "lucide-react-native/icons/list-checks";
 import ListFilter from "lucide-react-native/icons/list-filter";
@@ -163,6 +164,7 @@ const ICONS = {
   Inbox,
   Info,
   Keyboard,
+  Kanban,
   KeyRound,
   ListChecks,
   ListFilter,
@@ -260,6 +262,7 @@ export {
   Inbox,
   Info,
   Keyboard,
+  Kanban,
   KeyRound,
   ListChecks,
   ListFilter,

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import { Platform, Pressable, Switch, Text, View } from "react-native";
+import { Platform, Pressable, Switch, Text, View, type LayoutChangeEvent } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
   ACCENTS,
@@ -28,7 +28,11 @@ import { StyleEditor, StyleAction } from "../ui/StyleEditor";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { QuickAdd } from "../ui/QuickAdd";
 import { ShareDialog } from "../ui/ShareDialog";
-import { ProjectHeaderActions } from "../ui/ProjectHeaderActions";
+import {
+  ProjectHeaderActions,
+  headerLayoutFor,
+  type HeaderLayout,
+} from "../ui/ProjectHeaderActions";
 import { Archive, CircleAlert, CopyPlus, LogOut, Trash2 } from "../ui/icons";
 import { BoardScreen } from "./BoardScreen";
 
@@ -97,6 +101,11 @@ export function ProjectScreen({
   const [editing, setEditing] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  // The header spans this pane, not the window (a sidebar takes the rest), so its layout follows the
+  // pane's measured width. Bucketed, so a resize only re-sets the header when the layout changes.
+  const [headerLayout, setHeaderLayout] = useState<HeaderLayout | undefined>(undefined);
+  const onRootLayout = (e: LayoutChangeEvent) =>
+    setHeaderLayout(headerLayoutFor(e.nativeEvent.layout.width));
 
   // Only an owner may delete/archive a shared project; a non-owner can only leave it. An unshared
   // project has no member rows, so its creator is the implicit owner.
@@ -180,9 +189,10 @@ export function ProjectScreen({
           listPref={mode === "list" ? { group, sort } : undefined}
           onChangeListPref={(patch) => latest.current.setListPref(patch)}
           accentColor={ACCENTS[accent][600]}
+          layout={headerLayout}
         />
       ) : null,
-    [hasProject, mode, isFav, canSelect, group, sort, accent],
+    [hasProject, mode, isFav, canSelect, group, sort, accent, headerLayout],
   );
   useLayoutEffect(() => {
     onHeaderActions?.(headerActions);
@@ -341,7 +351,7 @@ export function ProjectScreen({
 
   if (mode === "board") {
     return (
-      <View className="flex-1 bg-white dark:bg-zinc-950">
+      <View onLayout={onRootLayout} className="flex-1 bg-white dark:bg-zinc-950">
         {ownerDeletionBanner}
         <BoardScreen projectId={projectId} onOpenTask={onOpenTask} />
         {shareDialog}
@@ -445,7 +455,11 @@ export function ProjectScreen({
   );
 
   return (
-    <View className="flex-1 bg-white dark:bg-zinc-950">
+    <View
+      testID="project-screen"
+      onLayout={onRootLayout}
+      className="flex-1 bg-white dark:bg-zinc-950"
+    >
       {grouped ? (
         <GroupedTaskList
           tasks={tasks}

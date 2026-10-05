@@ -21,6 +21,15 @@ import {
 } from "./icons";
 import { displayTitle } from "../lib/taskTitle";
 
+/**
+ * The card's lift: the 1px border does the outlining, so only a faint web shadow (`shadow-sm` drew a
+ * heavy grey bottom edge on light). Native relies on the border alone; on dark the shadow is invisible.
+ */
+const CARD_SHADOW = Platform.select({
+  web: { boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)" },
+  default: undefined,
+});
+
 /** A card on the board. Moves happen by drag-and-drop, or on touch through the card's actions menu (long-press or its ⋮), whose "Move to section" starts tap-to-move. */
 export interface BoardCardProps {
   task: Task;
@@ -120,8 +129,9 @@ export function BoardCard({
       }}
       delayLongPress={canDrag ? 200 : 250}
       disabled={!onOpen && !longPressMenu && !canDrag}
+      style={CARD_SHADOW}
       className={
-        "mb-2 rounded-lg border bg-white p-2.5 shadow-sm dark:bg-zinc-900 " +
+        "mb-2 rounded-lg border bg-white p-2.5 dark:bg-zinc-900 " +
         (preview
           ? "border-accent-500 ring-1 ring-accent-500 dark:border-accent-400 dark:ring-accent-400 "
           : focused

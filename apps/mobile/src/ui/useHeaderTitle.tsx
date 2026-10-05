@@ -16,6 +16,10 @@ export function useHeaderTitle(opts: { icon: LucideIcon; title: string; color?: 
       headerTitle: ({ tintColor }: { tintColor?: string }) => (
         <HeaderTitle icon={Icon} title={title} color={color} tintColor={tintColor} />
       ),
+      // The header's right slot otherwise has a zero flex basis, so wide actions overflow leftward
+      // over the title. Sized to its content instead, it holds its room and the title shrinks.
+      headerTitleContainerStyle: { flexShrink: 1, minWidth: 0 },
+      headerRightContainerStyle: { flexBasis: "auto", flexShrink: 0 },
     });
   }, [navigation, Icon, title, color]);
 }

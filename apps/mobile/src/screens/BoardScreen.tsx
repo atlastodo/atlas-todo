@@ -290,6 +290,18 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
 
   const colWidth = Math.min(320, width * 0.85);
 
+  // An empty "No section" column is only noise once the project has sections: it stays hidden
+  // until a card is being dragged or moved, when it is a drop target. A project without sections
+  // keeps it, as its only column.
+  const visibleColumns = columns.filter(
+    (col) =>
+      col.id != null ||
+      sections.length === 0 ||
+      draggingCard != null ||
+      moving != null ||
+      columnRoots(tasks, null).length > 0,
+  );
+
   const sectionMenuTarget = sectionMenu
     ? sections.find((s) => s.id === sectionMenu.sectionId)
     : null;
@@ -420,7 +432,7 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
         showsHorizontalScrollIndicator={false}
         contentContainerClassName="px-4 py-3 gap-4"
       >
-        {columns.map((col, colIndex) => (
+        {visibleColumns.map((col, colIndex) => (
           <BoardColumn
             key={col.id ?? "__none__"}
             column={col}
@@ -435,6 +447,7 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
             resolveProject={view.resolveProject}
             smartDates={view.smartDates}
             cursorId={cursorId}
+            menuTaskId={taskMenu?.task.id ?? null}
             projects={projects}
             labels={labels}
             onCreateProject={createProject}
@@ -571,6 +584,7 @@ function BoardColumn({
   resolveProject,
   smartDates,
   cursorId,
+  menuTaskId,
   projects,
   labels,
   onCreateProject,
@@ -612,6 +626,8 @@ function BoardColumn({
   resolveProject?: (name: string) => string | null | undefined;
   smartDates?: boolean;
   cursorId?: string | null;
+  /** The card a task menu is open for: highlighted like the cursor while the menu shows. */
+  menuTaskId?: string | null;
   projects?: { id: string; name: string }[];
   labels?: { id: string; name: string; color?: string }[];
   onCreateProject?: (name: string) => string;
@@ -736,7 +752,7 @@ function BoardColumn({
       task={item}
       now={now}
       dimmed={moving?.id === item.id}
-      focused={item.id === cursorId}
+      focused={item.id === cursorId || item.id === menuTaskId}
       isLast={index === cards.length - 1}
       onToggle={onToggle}
       onOpen={onOpen}
@@ -760,7 +776,7 @@ function BoardColumn({
       ref={columnRef}
       style={{ width }}
       className={
-        "relative max-h-full rounded-xl p-1.5 web:transition-colors " +
+        "relative max-h-full self-start rounded-xl p-1.5 web:transition-colors " +
         (columnDragging ? "opacity-40 " : "") +
         (over || isMoveTarget ? "bg-accent-50 dark:bg-accent-950 ring-1 ring-accent-300 " : "")
       }
@@ -847,7 +863,7 @@ function BoardColumn({
       {cards.length === 0 ? (
         <View
           className={
-            "my-2 min-h-[80px] flex-1 items-center justify-center rounded-lg border-2 border-dashed p-3 " +
+            "my-2 min-h-[80px] items-center justify-center rounded-lg border-2 border-dashed p-3 " +
             (over
               ? "border-accent-500 bg-accent-50 dark:border-accent-500 dark:bg-accent-950"
               : "border-neutral-200 dark:border-neutral-800")
@@ -862,7 +878,7 @@ function BoardColumn({
           )}
         </View>
       ) : (
-        <View className="flex-1">
+        <View className="shrink">
           {/* Top drop zone: hit target when dragging to the top of the column */}
           <View
             ref={topDropRef}
@@ -874,11 +890,11 @@ function BoardColumn({
             <FlatList
               data={cards}
               keyExtractor={(task, i) => task?.id ?? String(i)}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ flexGrow: 1, paddingTop: 4, paddingBottom: 4 }}
+              style={CARD_LIST}
+              contentContainerStyle={{ paddingTop: 4, paddingBottom: 4 }}
               renderItem={({ item, index }) => renderCard({ item, index })}
               ListFooterComponent={
-                <View ref={bottomDropRef} className="w-full flex-1 min-h-[32px] justify-start py-1">
+                <View ref={bottomDropRef} className="w-full min-h-[16px] justify-start py-1">
                   {(bottomOver || footerOver) && ghost}
                 </View>
               }
@@ -894,15 +910,15 @@ function BoardColumn({
                 "worklet";
                 scheduleOnRN(onDragRelease, from, to);
               }}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ flexGrow: 1, paddingTop: 4, paddingBottom: 4 }}
+              style={CARD_LIST}
+              contentContainerStyle={{ paddingTop: 4, paddingBottom: 4 }}
               renderItem={({ item, index }) => (
                 <DragToReorder enabled={!dragDisabled}>
                   {(startDrag) => renderCard({ item, index, drag: startDrag })}
                 </DragToReorder>
               )}
               ListFooterComponent={
-                <View ref={bottomDropRef} className="w-full flex-1 min-h-[32px] justify-start py-1">
+                <View ref={bottomDropRef} className="w-full min-h-[16px] justify-start py-1">
                   {(bottomOver || footerOver) && ghost}
                 </View>
               }
@@ -1038,6 +1054,13 @@ function GhostCard({
     </View>
   );
 }
+
+/**
+ * A column's card list sizes to its cards (so the column's Add task sits under the last one) and
+ * shrinks to scroll once the column reaches the board's height. Not `flex: 1`: a zero basis in a
+ * content-sized column collapses the list.
+ */
+const CARD_LIST = { flexGrow: 0, flexShrink: 1 } as const;
 
 /** A dragged card's footprint while lifted: none, with the element kept in the page. */
 const LIFTED = { height: 0, overflow: "hidden" } as const;

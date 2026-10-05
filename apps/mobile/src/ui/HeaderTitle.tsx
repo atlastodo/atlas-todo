@@ -17,9 +17,9 @@ export function HeaderTitle({
   tintColor?: string;
 }) {
   return (
-    <View className="flex-row items-center gap-2">
+    <View className="min-w-0 shrink flex-row items-center gap-2">
       <Icon size={20} color={color ?? tintColor} />
-      <Text numberOfLines={1} style={{ color: tintColor }} className="text-lg font-semibold">
+      <Text numberOfLines={1} style={{ color: tintColor }} className="shrink text-lg font-semibold">
         {title}
       </Text>
     </View>

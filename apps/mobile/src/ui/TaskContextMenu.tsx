@@ -26,7 +26,8 @@ import {
   X,
 } from "./icons";
 import { clampMenuPosition, type Size } from "../lib/menuPosition";
-import { MenuItem } from "./ContextMenu";
+import { MENU_SURFACE, MenuItem, ShortcutHint, useTouchMenu } from "./ContextMenu";
+import { hotkeyHint } from "../lib/hotkeyHint";
 import { useBackdropSwitch } from "../hooks/useBackdropSwitch";
 
 /**
@@ -92,6 +93,11 @@ export function TaskContextMenu({
 }: TaskContextMenuProps) {
   const { t } = useTranslation();
   const { width, height } = useWindowDimensions();
+  // Key hints only where there is a keyboard: a desktop pointer, not touch.
+  const touch = useTouchMenu();
+  const hint = (...args: Parameters<typeof hotkeyHint>) =>
+    touch ? undefined : hotkeyHint(...args);
+  const rescheduleHint = hint("rescheduleCursor");
 
   // Web only. Guarded on a real DOM `window`: the RN runtime and jest may expose a partial `window` without `addEventListener`.
   useEffect(() => {
@@ -124,7 +130,7 @@ export function TaskContextMenu({
           accessibilityLabel={t("context.title")}
           onLayout={onLayout}
           style={{ position: "absolute", left: placed.x, top: placed.y, opacity: size ? 1 : 0 }}
-          className="w-56 overflow-hidden rounded-md border border-neutral-200 bg-white p-1.5 shadow-xl dark:border-neutral-800 dark:bg-neutral-950"
+          className={"w-60 " + MENU_SURFACE}
         >
           <Text className="px-2 py-1.5 text-sm italic text-neutral-400">
             {t("task.lockedTitle")}
@@ -164,12 +170,13 @@ export function TaskContextMenu({
           maxHeight: height - 8,
           opacity: size ? 1 : 0,
         }}
-        className="w-56 overflow-hidden rounded-md border border-neutral-200 bg-white p-1.5 shadow-xl dark:border-neutral-800 dark:bg-neutral-950"
+        className={"w-60 " + MENU_SURFACE}
       >
         <ScrollView showsVerticalScrollIndicator={false}>
           <MenuItem
             icon={CircleCheckBig}
             label={task.is_completed ? t("task.reopen") : t("task.complete")}
+            shortcut={hint("completeCursor")}
             onPress={() => onToggle(task)}
             onClose={onClose}
           />
@@ -226,32 +233,56 @@ export function TaskContextMenu({
           <Text className="px-2 pb-1 text-xs font-medium text-neutral-400">
             {t("context.priority")}
           </Text>
+          {/* Each flag carries its P1–P3/None label (as the task detail does); the current one gets
+              an accent ring, so it doesn't read as a hovered tile. */}
           <View className="flex-row gap-1 px-1 pb-1">
-            {PRIORITIES.map((p) => (
-              <Pressable
-                key={p}
-                accessibilityRole="menuitem"
-                accessibilityLabel={t("task.priority", { level: p })}
-                accessibilityState={{ selected: task.priority === p }}
-                onPress={() => {
-                  onSetPriority(task, p);
-                  onClose();
-                }}
-                className={
-                  "flex-1 items-center justify-center rounded py-1 web:cursor-pointer " +
-                  (task.priority === p ? "bg-neutral-100 dark:bg-neutral-800" : "")
-                }
-              >
-                <Flag
-                  size={16}
-                  className={p < 4 ? (PRIORITY_COLOR[p] ?? "") : "text-neutral-400"}
-                />
-              </Pressable>
-            ))}
+            {PRIORITIES.map((p) => {
+              const current = task.priority === p;
+              return (
+                <Pressable
+                  key={p}
+                  accessibilityRole="menuitem"
+                  accessibilityLabel={
+                    p < 4 ? t("task.priority", { level: p }) : t("taskDetail.priorityNoneDesc")
+                  }
+                  accessibilityState={{ selected: current }}
+                  onPress={() => {
+                    onSetPriority(task, p);
+                    onClose();
+                  }}
+                  className={
+                    "flex-1 flex-row items-center justify-center gap-1 rounded border web:cursor-pointer " +
+                    (touch ? "min-h-[44px] " : "py-1 ") +
+                    (current
+                      ? "border-accent-500 bg-accent-50 dark:border-accent-400 dark:bg-accent-950/70"
+                      : "border-transparent web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800")
+                  }
+                >
+                  <Flag
+                    size={14}
+                    className={p < 4 ? (PRIORITY_COLOR[p] ?? "") : "text-neutral-400"}
+                  />
+                  <Text
+                    className={
+                      "text-xs " +
+                      (current
+                        ? "font-semibold text-accent-700 dark:text-accent-200"
+                        : "text-neutral-600 dark:text-neutral-300")
+                    }
+                  >
+                    {p < 4 ? `P${p}` : t("taskDetail.priorityNone")}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           <View className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
-          <Text className="px-2 pb-1 text-xs font-medium text-neutral-400">{t("context.due")}</Text>
+          {/* T opens the full reschedule picker for the cursor task; the presets below are its shortcuts. */}
+          <View className="flex-row items-center justify-between px-2 pb-1">
+            <Text className="text-xs font-medium text-neutral-400">{t("context.due")}</Text>
+            {rescheduleHint != null && <ShortcutHint keys={rescheduleHint} />}
+          </View>
           {quickScheduleOptions(now, timeZone).map((o) => (
             <MenuItem
               key={o.key}
@@ -272,18 +303,21 @@ export function TaskContextMenu({
           <MenuItem
             icon={Copy}
             label={t("selection.copy")}
+            shortcut={hint("copySelection")}
             onPress={() => onCopy(task)}
             onClose={onClose}
           />
           <MenuItem
             icon={CopyPlus}
             label={t("common.duplicate")}
+            shortcut={hint("duplicateSelection")}
             onPress={() => onDuplicate(task)}
             onClose={onClose}
           />
           <MenuItem
             icon={Trash2}
             label={t("common.delete")}
+            shortcut={hint("deleteCursor", "Del")}
             danger
             onPress={() => onDelete(task)}
             onClose={onClose}
