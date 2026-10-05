@@ -83,12 +83,8 @@ export function SyncDetails({ open, onClose }: { open: boolean; onClose: () => v
   };
 
   return (
-    <BottomSheet visible={open} onClose={onClose}>
+    <BottomSheet visible={open} onClose={onClose} title={t("sync.detailsTitle")}>
       <View className="gap-3">
-        <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-          {t("sync.detailsTitle")}
-        </Text>
-
         <ScrollView className="max-h-96">
           <Field label={t("sync.status")} value={statusLabel} />
           <Field

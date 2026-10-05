@@ -172,3 +172,22 @@ html.light ::-webkit-scrollbar-thumb {
 html.light ::-webkit-scrollbar-thumb:hover {
   background-color: rgba(0, 0, 0, 0.35);
 }
+
+/*
+ * Keyboard focus: an accent ring that follows each control's corner radius (outlines track
+ * `border-radius`), in place of the browser's square black/white default. Inputs take a tight ring
+ * on their border; everything else gets a small gap. `--accent-500-rgb` is inherited from
+ * `ThemeProvider`/`ThemeScope`; the fallback is the default accent.
+ *
+ * Every selector sits in `:where()`, so it has zero specificity: a component's own
+ * `web:outline-none` or `web:focus-visible:outline-*` class still wins.
+ */
+:where(:focus-visible) {
+  outline: 2px solid rgb(var(--accent-500-rgb, 99 102 241) / 0.9);
+  outline-offset: 2px;
+}
+
+:where(input:focus-visible, textarea:focus-visible, select:focus-visible) {
+  outline-color: rgb(var(--accent-500-rgb, 99 102 241) / 0.6);
+  outline-offset: 0;
+}

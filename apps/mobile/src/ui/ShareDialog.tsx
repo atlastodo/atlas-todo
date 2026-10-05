@@ -37,7 +37,12 @@ import {
 import { BottomSheet } from "./BottomSheet";
 import { Segmented } from "./Segmented";
 import { SkeletonRows } from "./Skeleton";
-import { RefreshCw, ShieldCheck, Trash2, UserPlus, X } from "./icons";
+import { RefreshCw, ShieldCheck, Trash2, UserPlus } from "./icons";
+import {
+  DISABLED_BUTTON_CLASS,
+  DISABLED_BUTTON_TEXT_CLASS,
+  PLACEHOLDER_COLOR,
+} from "./useSheetDismiss";
 
 /**
  * Manage a project's collaborators: invite by email, change roles, remove members. Membership is
@@ -325,38 +330,26 @@ export function ShareDialog({
     }
   };
 
+  const inviteDisabled = busy || email.trim() === "";
   const roleOptions: { value: MemberRole; label: string }[] = [
     { value: "editor", label: t("share.editor") },
     { value: "commenter", label: t("share.commenter") },
   ];
 
   return (
-    <BottomSheet visible onClose={onClose}>
+    <BottomSheet visible onClose={onClose} title={t("share.title", { name: projectName })}>
       <View className="gap-4">
-        <View className="flex-row items-center gap-2">
-          <Text className="flex-1 text-base font-semibold text-neutral-900 dark:text-neutral-100">
-            {t("share.title", { name: projectName })}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("common.close")}
-            onPress={onClose}
-          >
-            <X size={20} className="text-neutral-500" />
-          </Pressable>
-        </View>
-
         <View className="gap-2">
           <TextInput
             accessibilityLabel={t("share.inviteByEmail")}
             value={email}
             onChangeText={setEmail}
             placeholder={t("share.emailPlaceholder")}
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor={PLACEHOLDER_COLOR}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
-            className="rounded border border-neutral-200 px-2 py-1.5 text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+            className="rounded-md border border-neutral-200 px-3 py-2 text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
           />
           <View className="flex-row items-center gap-2">
             <Segmented
@@ -369,15 +362,25 @@ export function ShareDialog({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("share.sendInvite")}
-              disabled={busy || email.trim() === ""}
+              accessibilityState={{ disabled: inviteDisabled }}
+              disabled={inviteDisabled}
               onPress={() => void invite()}
               className={
-                "flex-row items-center gap-1.5 rounded-md bg-accent-600 px-3 py-2 " +
-                (busy || email.trim() === "" ? "opacity-50" : "")
+                "flex-row items-center gap-1.5 rounded-md px-3 py-2 " +
+                (inviteDisabled ? DISABLED_BUTTON_CLASS : "bg-accent-600 web:cursor-pointer")
               }
             >
-              <UserPlus size={16} className="text-white" />
-              <Text className="text-sm text-white">{t("share.sendInvite")}</Text>
+              <UserPlus
+                size={16}
+                className={inviteDisabled ? DISABLED_BUTTON_TEXT_CLASS : "text-white"}
+              />
+              <Text
+                className={
+                  "text-sm " + (inviteDisabled ? DISABLED_BUTTON_TEXT_CLASS : "text-white")
+                }
+              >
+                {t("share.sendInvite")}
+              </Text>
             </Pressable>
           </View>
           {error != null && (
