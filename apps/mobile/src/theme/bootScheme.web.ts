@@ -1,3 +1,4 @@
+import { colorScheme } from "nativewind";
 import { SCHEME_STORAGE_KEY } from "./schemeCache";
 
 /**
@@ -31,6 +32,11 @@ function applyCachedScheme(): void {
     root.classList.toggle("dark", dark);
     root.classList.toggle("light", !dark);
     root.style.colorScheme = dark ? "dark" : "light";
+    // NativeWind's JS scheme (`useColorScheme`) was seeded when its runtime loaded, which can be
+    // before this ran, so it may still say "light". Align it with the class, or anything coloured
+    // from the JS value (inline styles before sign-in, where SyncedTheme isn't mounted yet)
+    // disagrees with the `dark:` classes beside it.
+    colorScheme.set(dark ? "dark" : "light");
   } catch {
     // A cosmetic boot step must never take the app down; the worst case is a flash.
   }
