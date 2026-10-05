@@ -53,6 +53,12 @@
       "expo-secure-store",
       "expo-router",
       "expo-localization",
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false
+        }
+      ],
       "expo-notifications",
       [
         "expo-audio",
