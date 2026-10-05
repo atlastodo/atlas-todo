@@ -143,7 +143,8 @@ in [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md).
 
 ### What CI runs
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main` and `dev`:
+GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main` (pushes to `dev`
+run nothing; an rc tag runs the full suite):
 
 | Check             | What it runs                                                                  |
 | ----------------- | ----------------------------------------------------------------------------- |
