@@ -1,6 +1,9 @@
 # Release on a v* tag (pushed after `version:bump` + the `chore(release): vX.Y.Z` commit):
 # full CI, then the Docker image, the signed Android APK + AAB and the desktop tarball, then a
 # GitHub Release carrying the tag's RELEASE_NOTES.md section and every artifact.
+# A tag with a "-" (vX.Y.Z-rc.N, tagged by hand on the dev branch) is a pre-release: a GitHub
+# prerelease that is never "latest", Docker tags X.Y.Z-rc.N + dev (never latest), and the AAB goes
+# to the Play internal track.
 name: Release
 
 on:
@@ -45,6 +48,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -58,7 +62,17 @@ jobs:
             echo "::error::Tag $GITHUB_REF_NAME does not match package.json ($manifest). Run version:bump before tagging."
             exit 1
           fi
+          # Expo's version and the derived Android versionCode (scripts/version-code.mjs) must agree
+          # too: Play rejects a code that does not rise, and a hand-edited one would slip through.
+          app="$(jq -r .expo.version apps/mobile/app.json)"
+          code="$(jq -r .expo.android.versionCode apps/mobile/app.json)"
+          want="$(node scripts/version-code.mjs "$version")"
+          if [ "$app" != "$version" ] || [ "$code" != "$want" ]; then
+            echo "::error::apps/mobile/app.json has version $app / versionCode $code; expected $version / $want. Run version:bump."
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$version" == *-* ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
       - name: Extract the release notes
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -201,10 +215,13 @@ jobs:
           images: |
             ${{ steps.image.outputs.name }}
             ${{ env.DOCKERHUB_IMAGE && format('docker.io/{0}', env.DOCKERHUB_IMAGE) || '' }}
-          # X.Y.Z and X.Y; `latest` only for non-prerelease tags (latest=auto).
+          # X.Y.Z and X.Y; `latest` only for non-prerelease tags (latest=auto). A pre-release gets
+          # its exact X.Y.Z-rc.N plus the moving `dev` tag (semver's {{major}}.{{minor}} is not
+          # emitted for a pre-release, and neither is latest), on GHCR and the Docker Hub mirror alike.
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=dev,enable=${{ needs.prepare.outputs.prerelease == 'true' }}
           flavor: latest=auto
           annotations: ${{ env.IMAGE_METADATA }}
       - name: Tag the multi-arch image
@@ -322,7 +339,9 @@ jobs:
       - name: Upload to Google Play
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          PLAY_STORE_TRACK: ${{ vars.PLAY_STORE_TRACK || 'internal' }}
+          # A pre-release goes to the internal track (PLAY_STORE_PRERELEASE_TRACK to change it);
+          # a stable one to PLAY_STORE_TRACK.
+          PLAY_STORE_TRACK: ${{ needs.prepare.outputs.prerelease == 'true' && (vars.PLAY_STORE_PRERELEASE_TRACK || 'internal') || vars.PLAY_STORE_TRACK || 'internal' }}
         # Only where the service-account secret exists, so forks skip it.
         run: |
           if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
@@ -368,7 +387,7 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: desktop
-          # The -latest copy backs the stable
+          # The -latest copy (stable releases only) backs the
           # /releases/latest/download/atlas-desktop-latest.tar.gz URL (the Nix flake input).
           path: |
             atlas-desktop-${{ env.VERSION }}.tar.gz
@@ -393,18 +412,24 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         # Re-running a tag's workflow updates its release instead of failing on it.
         run: |
           cd dist
           mv release-notes.md ../release-notes.md
           sha256sum -- * > SHA256SUMS.txt
           tag="$GITHUB_REF_NAME"
+          # A pre-release is flagged prerelease and never "latest"; a stable one is "latest" (left to
+          # GitHub's date order, a late re-run of an older tag could otherwise take the badge).
+          if [ "$PRERELEASE" = true ]; then
+            flags=(--prerelease --latest=false)
+          else
+            flags=(--prerelease=false --latest)
+          fi
           if gh release view "$tag" >/dev/null 2>&1; then
-            gh release edit "$tag" --title "Atlas Todo $tag" --notes-file ../release-notes.md
+            gh release edit "$tag" --title "Atlas Todo $tag" --notes-file ../release-notes.md "${flags[@]}"
             gh release upload "$tag" --clobber -- *
           else
-            flags=()
-            if [[ "$tag" == *-* ]]; then flags+=(--prerelease); fi
             gh release create "$tag" --verify-tag --title "Atlas Todo $tag" \
               --notes-file ../release-notes.md "${flags[@]}" -- *
           fi

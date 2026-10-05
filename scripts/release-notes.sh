@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Generate RELEASE_NOTES.md for a version from the commit log: every commit since the previous
-# vX.Y.Z tag, grouped by conventional-commit type (Features / Fixes / Changes), one line per
+# release tag (see PREV below), grouped by conventional-commit type (Features / Fixes / Changes), one line per
 # commit. `chore(release):` commits are excluded -- they are the releases themselves.
 #
 # Called by bump-version.sh, so the notes live in the chore(release) commit and are reviewed in
@@ -10,7 +10,7 @@
 # an upcoming version.
 #
 # Usage:
-#   scripts/release-notes.sh <x.y.z|vX.Y.Z>   # default: the root package.json version
+#   scripts/release-notes.sh <x.y.z[-rc.N]|vX.Y.Z>   # default: the root package.json version
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -20,12 +20,16 @@ VERSION="$(node -p 'require("./package.json").version')"
 if [[ $# -gt 0 ]]; then
   VERSION="${1#v}"
 fi
-[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "error: version must be x.y.z, got '$VERSION'"; exit 1; }
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[1-9][0-9]*)?$ ]] || { echo "error: version must be x.y.z or x.y.z-rc.N, got '$VERSION'"; exit 1; }
 
-# The previous release tag: the newest existing vX.Y.Z tag that is not this version itself --
-# a re-run after v$VERSION was already cut must not zero out the range. Newest-first by
+# The previous release tag: the newest existing tag reachable from HEAD that is not this version
+# itself -- a re-run after v$VERSION was already cut must not zero out the range. Newest-first by
 # creatordate, so old-style tags (v0.9.0 sorting before v0.25.x alphabetically) stay correct.
-PREV="$(git tag -l 'v[0-9]*' --sort=-creatordate | grep -v -- "^v$VERSION\$" | head -1 || true)"
+#   - a stable release (x.y.z) takes notes since the last STABLE tag, so it lists everything the
+#     rcs carried (the rc notes stay on their own pre-releases);
+#   - an rc takes notes since the last tag of ANY kind, so rc.2 lists only what is new since rc.1.
+if [[ "$VERSION" == *-* ]]; then PATTERN='^v[0-9]+\.[0-9]+\.[0-9]+(-.+)?$'; else PATTERN='^v[0-9]+\.[0-9]+\.[0-9]+$'; fi
+PREV="$(git tag -l 'v[0-9]*' --merged HEAD --sort=-creatordate | grep -E -- "$PATTERN" | grep -v -- "^v$VERSION\$" | head -1 || true)"
 
 if [[ -n "$PREV" ]]; then
   RANGE="$PREV..HEAD"

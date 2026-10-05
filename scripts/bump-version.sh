@@ -7,9 +7,15 @@
 #
 # Usage:
 #   scripts/bump-version.sh [options] <x.y.z>     # set an explicit version
+#   scripts/bump-version.sh [options] <x.y.z-rc.N> # set a pre-release (cut on the dev branch)
 #   scripts/bump-version.sh [options] patch       # bump the patch component (x.y.Z -> x.y.Z+1)
 #   scripts/bump-version.sh [options] minor       # bump the minor  (x.Y.z -> x.Y+1.0)
 #   scripts/bump-version.sh [options] major       # bump the major  (X.y.z -> X+1.0.0)
+#
+# patch/minor/major need a stable current version; from an rc, name the version (x.y.z-rc.N+1, or
+# x.y.z to promote). Only x.y.z and x.y.z-rc.N are accepted. Android's versionCode is derived from
+# the version by scripts/version-code.mjs (it always grows, rc or stable); the version string itself
+# (-rc.N and all) is the Android versionName, which accepts it.
 #
 # Options:
 #   --no-notes   don't regenerate RELEASE_NOTES.md
@@ -41,7 +47,12 @@ done
 [[ -n "$ARG" ]] || { echo "usage: bump-version.sh [--no-notes] [--desktop] <x.y.z|patch|minor|major>" >&2; exit 2; }
 
 OLD="$(node -p 'require("./package.json").version')"
-[[ "$OLD" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "error: package.json version is not x.y.z: '$OLD'"; exit 1; }
+RELEASE_RE='^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[1-9][0-9]*)?$'
+[[ "$OLD" =~ $RELEASE_RE ]] || { echo "error: package.json version is not x.y.z or x.y.z-rc.N: '$OLD'"; exit 1; }
+if [[ "$ARG" =~ ^(patch|minor|major)$ && "$OLD" == *-* ]]; then
+  echo "error: '$ARG' needs a stable current version ($OLD is a pre-release); give the version explicitly." >&2
+  exit 2
+fi
 IFS=. read -r MAJOR MINOR PATCH <<<"$OLD"
 case "$ARG" in
   patch) NEW="$MAJOR.$MINOR.$((PATCH + 1))" ;;
@@ -50,7 +61,9 @@ case "$ARG" in
   *) NEW="$ARG" ;;
 esac
 
-[[ "$NEW" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "error: version must be x.y.z, got '$NEW'"; exit 1; }
+[[ "$NEW" =~ $RELEASE_RE ]] || { echo "error: version must be x.y.z or x.y.z-rc.N, got '$NEW'"; exit 1; }
+# Fails (set -e) when the version is out of range for the versionCode scheme.
+VERSION_CODE="$(node "$ROOT/scripts/version-code.mjs" "$NEW")"
 # "Already at X" still falls through to the verification below rather than exiting: the root
 # package.json agreeing says nothing about the others, and a manifest quietly drifting out of step is
 # the failure this script exists to prevent. Re-running with the current version is the way to check.
@@ -62,9 +75,9 @@ fi
 
 # Rewrite and verify in one node pass. Edits are textual (exact-match replacements) so every file
 # keeps its formatting; nothing is round-tripped through a JSON serializer.
-node - "$OLD" "$NEW" <<'JS'
+node - "$OLD" "$NEW" "$VERSION_CODE" <<'JS'
 const fs = require("fs");
-const [OLD, NEW] = process.argv.slice(2);
+const [OLD, NEW, VERSION_CODE] = process.argv.slice(2);
 const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const read = (f) => fs.readFileSync(f, "utf8");
 const edit = (f, fn) => {
@@ -93,10 +106,9 @@ const jsonFiles = [
 const versionKey = new RegExp(`"version": "${esc(OLD)}"`, "g");
 if (OLD !== NEW) {
   for (const f of jsonFiles) edit(f, (s) => s.replace(versionKey, `"version": "${NEW}"`));
-  // Every new version needs a new Android versionCode: stores reject a reused one.
-  edit("apps/mobile/app.json", (s) =>
-    s.replace(/("versionCode": )(\d+)/, (_, key, n) => key + (Number(n) + 1)),
-  );
+  // Every new version needs a higher Android versionCode (stores reject a reused or lower one):
+  // derived from the version, see scripts/version-code.mjs.
+  edit("apps/mobile/app.json", (s) => s.replace(/("versionCode": )(\d+)/, `$1${VERSION_CODE}`));
   // Cargo.toml workspace version -- line-anchored so dependency version pins are left alone.
   edit("Cargo.toml", (s) =>
     s.replace(new RegExp(`^version = "${esc(OLD)}"`, "m"), `version = "${NEW}"`),
@@ -123,6 +135,13 @@ const check = (label, actual) => {
 };
 for (const f of jsonFiles.slice(0, 5)) check(f, JSON.parse(read(f)).version ?? "");
 check("apps/mobile/app.json", JSON.parse(read("apps/mobile/app.json")).expo?.version ?? "");
+// (Not when merely verifying: v0.1.3 and older carry the legacy +1 codes.)
+if (OLD !== NEW) {
+  const code = String(JSON.parse(read("apps/mobile/app.json")).expo?.android?.versionCode);
+  const ok = code === VERSION_CODE;
+  if (!ok) failed = true;
+  console.log(`  ${ok ? "ok  " : "FAIL"} ${"app.json android.versionCode".padEnd(34)} ${code}${ok ? "" : ` (expected ${VERSION_CODE})`}`);
+}
 check("Cargo.toml", (read("Cargo.toml").match(/^version = "(.*)"$/m) ?? [])[1] ?? "");
 for (const [, name, ver] of read("Cargo.lock").matchAll(/name = "(atlas-[^"]+)"\nversion = "([^"]+)"/g))
   check(`Cargo.lock ${name}`, ver);

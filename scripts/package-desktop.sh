@@ -62,9 +62,13 @@ cp "$ROOT/nix/flake.desktop.lock" "$OUTPUT_DIR/flake.lock"
 # 5. Create release tarball archives
 echo ">> 5. Creating release archives..."
 (cd "$OUTPUT_DIR" && tar -czf "$ROOT/atlas-desktop-${VERSION}.tar.gz" .)
-cp "$ROOT/atlas-desktop-${VERSION}.tar.gz" "$ROOT/atlas-desktop-latest.tar.gz"
+# -latest backs the stable /releases/latest/download/ URL, so a pre-release (x.y.z-rc.N) never
+# writes it.
+if [[ "$VERSION" != *-* ]]; then
+  cp "$ROOT/atlas-desktop-${VERSION}.tar.gz" "$ROOT/atlas-desktop-latest.tar.gz"
+fi
 
 echo ">> Successfully created:"
 echo "   - $ROOT/atlas-desktop-${VERSION}.tar.gz"
-echo "   - $ROOT/atlas-desktop-latest.tar.gz"
+[[ "$VERSION" == *-* ]] || echo "   - $ROOT/atlas-desktop-latest.tar.gz"
 echo "   - Directory: ${OUTPUT_DIR}"
