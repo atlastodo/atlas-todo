@@ -7,6 +7,7 @@ import { useTaskListView } from "../hooks/useTaskListView";
 import { useProjects } from "../hooks/useProjects";
 import { GroupedTaskList } from "../ui/GroupedTaskList";
 import { ListPicker, type PickerOption } from "../ui/ListPicker";
+import { CircleCheckBig } from "../ui/icons";
 import { bulkHandlers } from "./ViewTaskList";
 
 /**
@@ -42,24 +43,29 @@ export function CompletedScreen({ onOpenTask }: CompletedScreenProps = {}) {
     [projects, t],
   );
 
-  const header = (
-    <View className="gap-2 px-3 py-3 web:w-full web:max-w-2xl">
+  // One row at the list's width (the list caps it); wraps to two on a phone. Hidden until there is
+  // any history: filters over nothing only push the empty state down.
+  const header = view.tasks.some((task) => task.is_completed && task.completed_at != null) ? (
+    <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
       <TextInput
         accessibilityLabel={t("stats.search")}
         placeholder={t("stats.search")}
         placeholderTextColor="#a1a1aa"
         value={query}
         onChangeText={setQuery}
-        className="rounded-md border border-neutral-200 px-3 py-2 text-sm text-neutral-900 dark:border-neutral-800 dark:text-neutral-100"
+        className="grow basis-[240px] rounded-md border border-neutral-200 px-3 py-2 text-sm text-neutral-900 dark:border-neutral-800 dark:text-neutral-100"
       />
-      <ListPicker
-        label={t("workspace.projectFilter")}
-        value={projectFilter}
-        options={projectOptions}
-        onChange={setProjectFilter}
-      />
+      <View className="grow basis-[260px] web:max-w-[320px]">
+        <ListPicker
+          label={t("workspace.projectFilter")}
+          value={projectFilter}
+          options={projectOptions}
+          onChange={setProjectFilter}
+          className=""
+        />
+      </View>
     </View>
-  );
+  ) : undefined;
 
   return (
     <GroupedTaskList
@@ -79,6 +85,7 @@ export function CompletedScreen({ onOpenTask }: CompletedScreenProps = {}) {
       header={header}
       initialCollapsedKeys={["thisMonth", "older"]}
       emptyLabel={t("workspace.emptyCompleted")}
+      emptyIcon={CircleCheckBig}
     />
   );
 }

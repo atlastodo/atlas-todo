@@ -2,6 +2,7 @@ import { fireEvent, render, screen, act } from "@testing-library/react-native";
 import { LocalStore, type Task } from "@atlas/client-core";
 import { PREFERENCES_ID } from "@atlas/shared";
 import { createRef } from "react";
+import { Platform } from "react-native";
 import { withApp } from "../testutil";
 import { TaskRow, type TaskRowHandle } from "./TaskRow";
 
@@ -457,6 +458,74 @@ describe("TaskRow", () => {
 
       expect(onToggle).not.toHaveBeenCalled();
       expect(onLongPress).not.toHaveBeenCalled();
+    });
+  });
+
+  it("shows when a task was completed instead of its due date on Completed", async () => {
+    const t = task({ is_completed: true, completed_at: 2, due_at: 1 });
+    await render(
+      <TaskRow
+        task={t}
+        now={NOW}
+        onToggle={() => {}}
+        showCompletedAt
+        formatDue={(ms) => (ms === 2 ? "done-day" : "due-day")}
+      />,
+    );
+
+    expect(screen.getByLabelText("Completed done-day")).toBeTruthy();
+    expect(screen.queryByText("due-day")).toBeNull();
+  });
+
+  describe("web hover actions", () => {
+    const os = Platform.OS;
+    const matchMedia = (globalThis as { matchMedia?: unknown }).matchMedia;
+    const pointer = (canHover: boolean) => {
+      (globalThis as { matchMedia?: unknown }).matchMedia = () => ({
+        matches: canHover,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      });
+    };
+    beforeEach(() => {
+      (Platform as { OS: string }).OS = "web";
+    });
+    afterEach(() => {
+      (Platform as { OS: string }).OS = os;
+      (globalThis as { matchMedia?: unknown }).matchMedia = matchMedia;
+    });
+
+    it("offers info and reschedule for a pointer that can hover", async () => {
+      pointer(true);
+      await render(
+        <TaskRow
+          task={task()}
+          now={NOW}
+          onToggle={() => {}}
+          onOpen={() => {}}
+          onSchedule={() => {}}
+        />,
+      );
+
+      expect(screen.getByLabelText("Task details")).toBeTruthy();
+      expect(screen.getByLabelText("Reschedule")).toBeTruthy();
+    });
+
+    // On touch they would stick after a tap and take room from the title.
+    it("renders no hover actions on a touch screen", async () => {
+      pointer(false);
+      await render(
+        <TaskRow
+          task={task()}
+          now={NOW}
+          onToggle={() => {}}
+          onOpen={() => {}}
+          onSchedule={() => {}}
+        />,
+      );
+
+      expect(screen.queryByLabelText("Task details")).toBeNull();
+      expect(screen.queryByLabelText("Reschedule")).toBeNull();
     });
   });
 });

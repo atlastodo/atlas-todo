@@ -44,9 +44,13 @@ import {
   Trash2,
 } from "./icons";
 import { useStoreOptional } from "../data/StoreProvider";
+import { useCanHover } from "../hooks/useCanHover";
+import { useIsWide } from "../hooks/useIsWide";
 
 /** Horizontal indent per subtask nesting level, in px. Shared with the touch indent gesture. */
 const INDENT_STEP = 20;
+/** The row's left padding: the 16px list edge the toolbar, quick-add and group headers share. */
+const ROW_EDGE = 16;
 import { GestureDetector } from "react-native-gesture-handler";
 import { LabelChips } from "./LabelChips";
 import { SwipeableRow } from "./SwipeableRow";
@@ -150,8 +154,10 @@ export interface TaskRowProps {
   depth?: number;
   /** Direct-subtask progress shown as an "n/m" marker on a parent row. */
   subtaskProgress?: { done: number; total: number };
-  /** Reserve the leading caret gutter so rows align whether or not they are parents (nested lists). */
+  /** Reserve the trailing caret slot so rows align whether or not they are parents (nested lists). */
   indentGutter?: boolean;
+  /** Show when the task was completed in the date slot instead of its due date (Completed). */
+  showCompletedAt?: boolean;
   /** Whether this parent's subtree is expanded (drives the caret); parent rows only. */
   expanded?: boolean;
   /** Toggle this parent's expand/collapse (given only for rows that have children). */
@@ -207,7 +213,8 @@ export function TaskRow({
   focused = false,
   depth = 0,
   subtaskProgress,
-  indentGutter: _indentGutter = false,
+  indentGutter = false,
+  showCompletedAt = false,
   expanded = true,
   onToggleExpand,
   ref,
@@ -378,6 +385,14 @@ export function TaskRow({
     !isEditing && (Boolean(onOpen) || (Boolean(onStartRename) && !locked) || selectMode);
   const isWeb = Platform.OS === "web";
   const iconSize = isWeb ? 16 : 18;
+  // Hover actions (and the drag grip) exist only for a pointer that can hover: on touch they stick
+  // after a tap and would take room the title needs.
+  const canHover = useCanHover();
+  const hoverActions =
+    canHover && !isEditing && !selectMode && (Boolean(onOpen) || (Boolean(onSchedule) && !locked));
+  // Wide layouts give the flag, date and caret fixed slots so they line up from row to row.
+  const columns = useIsWide();
+  const dateMs = showCompletedAt ? task.completed_at : task.due_at;
 
   const storeCtx = useStoreOptional();
   const rawPrefs = (storeCtx?.store.get("preference", PREFERENCES_ID) ?? {}) as Record<
@@ -481,17 +496,18 @@ export function TaskRow({
         }
         delayLongPress={dragLongPress ? 200 : 500}
         disabled={!canPressRow && !dragLongPress && !longPressMenu}
-        style={depth > 0 ? { paddingLeft: (isWeb ? 12 : 16) + depth * INDENT_STEP } : undefined}
+        style={depth > 0 ? { paddingLeft: ROW_EDGE + depth * INDENT_STEP } : undefined}
         className={
           "group relative flex-row items-center border-b border-neutral-100 dark:border-neutral-800 " +
-          (isWeb ? "pl-3 pr-9 py-3 gap-3 " : "px-4 py-3.5 gap-3.5 ") +
+          // `pr-9` keeps the drag grip (DraggableTaskRow.web) clear of the meta.
+          (isWeb ? "pl-4 py-3 gap-3 " + (canHover ? "pr-9 " : "pr-4 ") : "px-4 py-3.5 gap-3.5 ") +
           (onOpen || selectMode ? "web:cursor-pointer " : "") +
           (!isEditing ? "web:select-none " : "") +
           (selected
             ? "bg-accent-50 dark:bg-accent-900"
             : focused
               ? "bg-neutral-100 dark:bg-neutral-800"
-              : "web:hover:bg-neutral-50 dark:web:hover:bg-neutral-900/50")
+              : "web:hover:bg-neutral-50 dark:web:hover:bg-neutral-900")
         }
       >
         {depth > 0 &&
@@ -501,7 +517,7 @@ export function TaskRow({
               className="absolute bottom-0 top-0 w-px bg-neutral-200 dark:bg-neutral-700"
               style={{
                 pointerEvents: "none",
-                left: (isWeb ? 12 : 16) + level * INDENT_STEP + (isWeb ? 9 : 10),
+                left: ROW_EDGE + level * INDENT_STEP + (isWeb ? 9 : 10),
               }}
             />
           ))}
@@ -557,14 +573,16 @@ export function TaskRow({
           </GestureDetector>
         )}
 
+        {/* The title keeps at least 45% of the row: when the meta needs more, it wraps onto a line
+            of its own under the title, right-aligned (`ml-auto`). */}
         <View
           className={
             isWeb
-              ? "min-w-0 flex-1 flex-row items-center gap-3"
-              : "min-w-0 flex-1 flex-row items-center gap-3.5"
+              ? "min-w-0 flex-1 flex-row flex-wrap items-center gap-x-3 gap-y-1"
+              : "min-w-0 flex-1 flex-row flex-wrap items-center gap-x-3.5 gap-y-1"
           }
         >
-          <View className="min-w-0 flex-1">
+          <View className="min-w-[45%] flex-1">
             {isEditing ? (
               <TextInput
                 ref={inputRef}
@@ -668,128 +686,156 @@ export function TaskRow({
             )}
           </View>
 
-          {isEditing && onOpen && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("task.details", "Task details")}
-              onPressIn={handleOpenFromEdit}
-              onPress={handleOpenFromEdit}
-              {...(Platform.OS === "web"
-                ? ({
-                    onMouseDown: (e: { preventDefault?: () => void }) => {
-                      e?.preventDefault?.();
-                    },
-                  } as object)
-                : undefined)}
-              hitSlop={8}
-              className="p-1 rounded web:cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            >
-              <Info size={iconSize} className="text-accent-600 dark:text-accent-400" />
-            </Pressable>
-          )}
-
-          {assignee && (
-            <View
-              accessible
-              accessibilityLabel={t("task.assignedTo", { name: assignee.name })}
-              style={{ backgroundColor: assignee.color.background }}
-              className={
-                (isWeb ? "h-5 w-5 " : "h-6 w-6 ") + "items-center justify-center rounded-full"
-              }
-            >
-              <Text
-                style={{ color: assignee.color.color }}
-                className={isWeb ? "text-[10px] font-medium" : "text-xs font-medium"}
+          <View className={"ml-auto flex-row items-center " + (isWeb ? "gap-3" : "gap-3.5")}>
+            {isEditing && onOpen && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("task.details", "Task details")}
+                onPressIn={handleOpenFromEdit}
+                onPress={handleOpenFromEdit}
+                {...(Platform.OS === "web"
+                  ? ({
+                      onMouseDown: (e: { preventDefault?: () => void }) => {
+                        e?.preventDefault?.();
+                      },
+                    } as object)
+                  : undefined)}
+                hitSlop={8}
+                className="p-1 rounded web:cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
               >
-                {assignee.initials}
-              </Text>
-            </View>
-          )}
+                <Info size={iconSize} className="text-accent-600 dark:text-accent-400" />
+              </Pressable>
+            )}
 
-          {hasReminder && (
-            <Marker label={t("task.hasReminder")}>
-              <Bell size={iconSize} className="text-neutral-400" />
-            </Marker>
-          )}
+            {assignee && (
+              <View
+                accessible
+                accessibilityLabel={t("task.assignedTo", { name: assignee.name })}
+                style={{ backgroundColor: assignee.color.background }}
+                className={
+                  (isWeb ? "h-5 w-5 " : "h-6 w-6 ") + "items-center justify-center rounded-full"
+                }
+              >
+                <Text
+                  style={{ color: assignee.color.color }}
+                  className={isWeb ? "text-[10px] font-medium" : "text-xs font-medium"}
+                >
+                  {assignee.initials}
+                </Text>
+              </View>
+            )}
 
-          {task.recurrence !== null && (
-            <Marker label={t("task.recurring")}>
-              <Repeat size={iconSize} className="text-neutral-400" />
-            </Marker>
-          )}
+            {hasReminder && (
+              <Marker label={t("task.hasReminder")}>
+                <Bell size={iconSize} className="text-neutral-400" />
+              </Marker>
+            )}
 
-          {task.priority < 4 && (
-            <Marker label={t("task.priority", { level: task.priority })}>
-              <Flag size={iconSize} className={PRIORITY_COLOR[task.priority] ?? ""} />
-            </Marker>
-          )}
+            {task.recurrence !== null && (
+              <Marker label={t("task.recurring")}>
+                <Repeat size={iconSize} className="text-neutral-400" />
+              </Marker>
+            )}
 
-          {task.due_at !== null && (
-            <Text
-              className={
-                (isWeb ? "text-xs " : "text-base font-normal ") +
-                (overdue ? "text-red-500" : "text-neutral-500")
-              }
-            >
-              {formatDue(task.due_at)}
-            </Text>
-          )}
+            {subtaskProgress && subtaskProgress.total > 0 && (
+              <Pressable
+                disabled={!onToggleExpand}
+                onPress={
+                  onToggleExpand
+                    ? (e) => {
+                        e?.stopPropagation?.();
+                        onToggleExpand(task);
+                      }
+                    : undefined
+                }
+                accessible
+                accessibilityLabel={t("task.subtaskProgress", {
+                  done: subtaskProgress.done,
+                  total: subtaskProgress.total,
+                })}
+                className="flex-row items-center gap-1"
+              >
+                <CircleCheckBig size={isWeb ? 13 : 16} className="text-neutral-400" />
+                <Text
+                  className={(isWeb ? "text-xs " : "text-base ") + "tabular-nums text-neutral-400"}
+                >
+                  {subtaskProgress.done}/{subtaskProgress.total}
+                </Text>
+              </Pressable>
+            )}
 
-          {subtaskProgress && subtaskProgress.total > 0 && (
-            <Pressable
-              disabled={!onToggleExpand}
-              onPress={
-                onToggleExpand
-                  ? (e) => {
-                      e?.stopPropagation?.();
-                      onToggleExpand(task);
+            {/* Fixed slots on wide layouts: an empty flag or date slot still takes its width. */}
+            {task.priority < 4 ? (
+              <Marker label={t("task.priority", { level: task.priority })}>
+                <Flag size={iconSize} className={PRIORITY_COLOR[task.priority] ?? ""} />
+              </Marker>
+            ) : columns ? (
+              <View style={{ width: iconSize }} />
+            ) : null}
+
+            {(dateMs !== null || columns) && (
+              <View
+                style={columns ? { minWidth: isWeb ? 80 : 104 } : undefined}
+                className="items-end"
+              >
+                {dateMs !== null && (
+                  <Text
+                    accessibilityLabel={
+                      showCompletedAt
+                        ? t("task.completedOn", { date: formatDue(dateMs) })
+                        : undefined
                     }
-                  : undefined
-              }
-              accessible
-              accessibilityLabel={t("task.subtaskProgress", {
-                done: subtaskProgress.done,
-                total: subtaskProgress.total,
-              })}
-              className="flex-row items-center gap-1"
-            >
-              <CircleCheckBig size={isWeb ? 13 : 16} className="text-neutral-400" />
-              <Text
-                className={(isWeb ? "text-xs " : "text-base ") + "tabular-nums text-neutral-400"}
-              >
-                {subtaskProgress.done}/{subtaskProgress.total}
-              </Text>
-            </Pressable>
-          )}
+                    className={
+                      (isWeb ? "text-xs " : "text-base font-normal ") +
+                      (overdue && !showCompletedAt ? "text-red-500" : "text-neutral-500")
+                    }
+                  >
+                    {formatDue(dateMs)}
+                  </Text>
+                )}
+              </View>
+            )}
 
-          {onToggleExpand && (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={expanded ? t("task.collapseSubtasks") : t("task.expandSubtasks")}
-              onPress={(e) => {
-                e?.stopPropagation?.();
-                onToggleExpand(task);
-              }}
-              hitSlop={8}
-              className="p-1 items-center justify-center rounded web:cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
-            >
-              {expanded ? (
-                <ChevronDown
-                  size={isWeb ? 16 : 18}
-                  className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-                />
-              ) : (
-                <ChevronRight
-                  size={isWeb ? 16 : 18}
-                  className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-                />
-              )}
-            </Pressable>
-          )}
+            {onToggleExpand ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  expanded ? t("task.collapseSubtasks") : t("task.expandSubtasks")
+                }
+                onPress={(e) => {
+                  e?.stopPropagation?.();
+                  onToggleExpand(task);
+                }}
+                hitSlop={8}
+                className="p-1 items-center justify-center rounded web:cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              >
+                {expanded ? (
+                  <ChevronDown
+                    size={isWeb ? 16 : 18}
+                    className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                  />
+                ) : (
+                  <ChevronRight
+                    size={isWeb ? 16 : 18}
+                    className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                  />
+                )}
+              </Pressable>
+            ) : columns && indentGutter ? (
+              <View style={{ width: (isWeb ? 16 : 18) + 8 }} />
+            ) : null}
+          </View>
         </View>
 
-        {Platform.OS === "web" && !isEditing && !selectMode && (
-          <View className="flex-row items-center gap-2">
+        {/* Out of the layout flow: it takes no room until hovered or focused, then covers the meta
+            (with the row's hover background) and repeats the caret so it stays reachable. */}
+        {hoverActions && (
+          <View
+            className={
+              "absolute bottom-0 right-9 top-0 flex-row items-center gap-2 pl-3 opacity-0 group-hover:opacity-100 web:focus-within:opacity-100 " +
+              (focused ? "bg-neutral-100 dark:bg-neutral-800" : "bg-neutral-50 dark:bg-neutral-900")
+            }
+          >
             {onOpen && (
               <Pressable
                 accessibilityRole="button"
@@ -798,7 +844,7 @@ export function TaskRow({
                   e?.stopPropagation?.();
                   onOpen(task);
                 }}
-                className="opacity-0 group-hover:opacity-100 web:focus-visible:opacity-100 web:cursor-pointer"
+                className="web:cursor-pointer"
               >
                 <Info
                   size={16}
@@ -814,12 +860,31 @@ export function TaskRow({
                   e?.stopPropagation?.();
                   onSchedule(task);
                 }}
-                className="opacity-0 group-hover:opacity-100 web:focus-visible:opacity-100 web:cursor-pointer"
+                className="web:cursor-pointer"
               >
                 <CalendarClock
                   size={16}
                   className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
                 />
+              </Pressable>
+            )}
+            {onToggleExpand && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  expanded ? t("task.collapseSubtasks") : t("task.expandSubtasks")
+                }
+                onPress={(e) => {
+                  e?.stopPropagation?.();
+                  onToggleExpand(task);
+                }}
+                className="p-1 rounded web:cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              >
+                {expanded ? (
+                  <ChevronDown size={16} className="text-neutral-400" />
+                ) : (
+                  <ChevronRight size={16} className="text-neutral-400" />
+                )}
               </Pressable>
             )}
           </View>

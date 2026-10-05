@@ -116,6 +116,7 @@ export interface GroupedTaskListProps {
   header?: ReactElement;
   /** Shown when there is nothing at all, as the {@link EmptyState} title (with `emptyIcon` and `emptyHint`). */
   emptyLabel?: string;
+  /** The empty state's icon (default: the inbox tray). */
   emptyIcon?: LucideIcon;
   emptyHint?: string;
   /** Group keys to start collapsed (seeded once on mount); e.g. Completed folds older buckets. */
@@ -151,6 +152,9 @@ export interface GroupedTaskListProps {
   /** Smart dates toggle for FAB quick-add */
   smartDates?: boolean;
 }
+
+/** The widest a web list (toolbar, header and rows) runs, in px. */
+export const LIST_MAX_WIDTH = 860;
 
 interface Section {
   key: string;
@@ -242,6 +246,8 @@ export function GroupedTaskList({
   const isWeb = Platform.OS === "web";
   // The phone shell, native or web: bottom nav plus the add button (see `(drawer)/_layout`).
   const isPhone = !isWide;
+  // Web lists stop at a readable width on wide screens, left-aligned under the page title.
+  const contentWidth = isWeb ? ({ width: "100%", maxWidth: LIST_MAX_WIDTH } as const) : undefined;
   const dynamicBottomPadding =
     editingTaskId !== null
       ? Math.max(keyboardHeight, 300) + 80
@@ -398,6 +404,7 @@ export function GroupedTaskList({
     },
   });
 
+  // Inside the list's capped content, so it centres under the header controls, not the whole pane.
   const emptyView = (
     <EmptyState
       icon={emptyIcon ?? Inbox}
@@ -412,7 +419,7 @@ export function GroupedTaskList({
         accessibilityRole="button"
         accessibilityLabel={t("planDay.entry")}
         onPress={onPlanDay}
-        className="flex-row items-center gap-1.5 rounded-md px-2.5 py-1.5 web:cursor-pointer web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800"
+        className="-ml-2.5 flex-row items-center gap-1.5 rounded-md px-2.5 py-1.5 web:cursor-pointer web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800"
       >
         <CalendarClock size={18} className="text-accent-600 dark:text-accent-400" />
         <Text className="text-sm font-medium text-accent-600 dark:text-accent-400">
@@ -662,6 +669,7 @@ export function GroupedTaskList({
         hasReminder={reminderTaskIds.has(item.id)}
         depth={meta?.depth ?? 0}
         indentGutter={hasSubtasks}
+        showCompletedAt={groupBy === "completed"}
         // Counts every direct subtask, including completed ones kept off screen.
         subtaskProgress={
           childTotal > 0 ? { done: meta!.completedChildCount, total: childTotal } : undefined
@@ -726,12 +734,14 @@ export function GroupedTaskList({
           keeps the bar (and the entry) up even for an empty list. */}
       {showToolbar &&
         (onChangeListPref || planDayLink || (visible.length > 0 && !selection.mode)) && (
-          <ListToolbar
-            canSelect={visible.length > 0 && !selection.mode}
-            listPref={listPref}
-            onChangeListPref={onChangeListPref}
-            leading={planDayLink}
-          />
+          <View style={contentWidth}>
+            <ListToolbar
+              canSelect={visible.length > 0 && !selection.mode}
+              listPref={listPref}
+              onChangeListPref={onChangeListPref}
+              leading={planDayLink}
+            />
+          </View>
         )}
       {canReorder ? (
         <ReorderableList
@@ -758,8 +768,7 @@ export function GroupedTaskList({
               </DragToReorder>
             </AnimatedRow>
           )}
-          contentContainerClassName="web:w-full web:max-w-2xl"
-          contentContainerStyle={{ paddingBottom: dynamicBottomPadding }}
+          contentContainerStyle={[contentWidth, { paddingBottom: dynamicBottomPadding }]}
           onScrollToIndexFailed={handleScrollToIndexFailed}
           style={{ flex: 1 }}
           {...keyboardListProps}
@@ -769,7 +778,6 @@ export function GroupedTaskList({
           ref={sectionListRef}
           sections={sectionListData}
           keyExtractor={(task, i) => task?.id ?? String(i)}
-          contentContainerClassName="web:w-full web:max-w-2xl"
           ListHeaderComponent={header}
           stickySectionHeadersEnabled={false}
           {...keyboardListProps}
@@ -783,7 +791,7 @@ export function GroupedTaskList({
             const showReschedule = s.danger && onRescheduleOverdue && groupTasksData.length > 0;
             const chevronClass = s.danger ? "text-red-500" : "text-neutral-500";
             return (
-              <View className="flex-row items-center justify-between px-3 pb-1 pt-4">
+              <View className="flex-row items-center justify-between px-4 pb-1 pt-4">
                 <Pressable
                   accessibilityRole="button"
                   accessibilityState={{ expanded: !isCollapsed }}
@@ -819,7 +827,7 @@ export function GroupedTaskList({
                     onPress={() => onRescheduleOverdue(groupTasksData)}
                     className="rounded px-2 py-0.5 web:cursor-pointer web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800"
                   >
-                    <Text className="text-xs font-medium text-accent-600">
+                    <Text className="text-xs font-medium text-accent-600 dark:text-accent-400">
                       {t("workspace.rescheduleAllToday")}
                     </Text>
                   </Pressable>
@@ -840,7 +848,7 @@ export function GroupedTaskList({
               )}
             </AnimatedRow>
           )}
-          contentContainerStyle={{ paddingBottom: dynamicBottomPadding }}
+          contentContainerStyle={[contentWidth, { paddingBottom: dynamicBottomPadding }]}
           onScrollToIndexFailed={handleSectionScrollFailed}
           ListEmptyComponent={emptyView}
         />

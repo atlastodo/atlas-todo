@@ -27,13 +27,13 @@ export function ListToolbar({ canSelect, listPref, onChangeListPref, leading }: 
   );
   if (!leading) {
     return (
-      <View className="w-full flex-row items-center justify-end gap-1.5 px-3 pt-2.5 pb-0.5">
+      <View className="w-full flex-row items-center justify-end gap-1.5 px-4 pt-2.5 pb-0.5">
         {controls}
       </View>
     );
   }
   return (
-    <View className="w-full flex-row items-center justify-between gap-1.5 px-3 pt-2.5 pb-0.5">
+    <View className="w-full flex-row items-center justify-between gap-1.5 px-4 pt-2.5 pb-0.5">
       {leading}
       {controls}
     </View>

@@ -18,6 +18,7 @@ import { useToast } from "../data/ToastProvider";
 
 import { ViewTaskList } from "./ViewTaskList";
 import { ListPrefMenu } from "../ui/ListPrefMenu";
+import { SelectButton } from "../ui/SelectButton";
 import { FilterHelp } from "../ui/FilterHelp";
 import { StyleEditor, StyleEditButton } from "../ui/StyleEditor";
 import { CircleAlert, ChevronDown, ChevronRight, Save, Star, Trash2 } from "../ui/icons";
@@ -101,35 +102,76 @@ function FilterEditor({ filterId, onOpenTask, onSaved, onDeleted }: FilterScreen
   }
 
   const header = (
-    <View className="gap-2 px-3 pb-1 pt-2">
+    <View className="gap-2 px-4 pb-1 pt-2">
+      {isNew ? (
+        <View className="flex-row items-center gap-2">
+          <TextInput
+            accessibilityLabel={t("filter.name")}
+            placeholder={t("filter.name")}
+            placeholderTextColor="#a1a1aa"
+            value={name}
+            onChangeText={setName}
+            className="flex-1 rounded-md border border-neutral-200 px-2 py-1.5 text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("common.create")}
+            disabled={!canCreate}
+            onPress={handleCreate}
+            className={
+              "flex-row items-center gap-1 rounded-md bg-accent-600 px-3 py-2 " +
+              (canCreate ? "" : "opacity-40")
+            }
+          >
+            <Save size={16} className="text-white" />
+            <Text className="text-sm font-medium text-white">{t("common.create")}</Text>
+          </Pressable>
+        </View>
+      ) : existing ? null : (
+        <Text className="text-sm text-neutral-400">{t("common.nothingHere")}</Text>
+      )}
+
+      <TextInput
+        accessibilityLabel={t("filter.query")}
+        placeholder={t("filter.queryPlaceholder")}
+        placeholderTextColor="#a1a1aa"
+        value={query}
+        onChangeText={setQuery}
+        onBlur={commitQuery}
+        autoCapitalize="none"
+        autoCorrect={false}
+        className="rounded-md border border-neutral-200 px-2 py-1.5 font-mono text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+      />
+      {query.trim() !== "" && !parsed.ok && (
+        <View className="flex-row items-center gap-1">
+          <CircleAlert size={14} className="text-red-500" />
+          <Text className="text-xs text-red-500">{parsed.error}</Text>
+        </View>
+      )}
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: helpOpen }}
+        onPress={() => setHelpOpen((o) => !o)}
+        className="flex-row items-center gap-1 self-start"
+      >
+        {helpOpen ? (
+          <ChevronDown size={14} className="text-neutral-400" />
+        ) : (
+          <ChevronRight size={14} className="text-neutral-400" />
+        )}
+        <Text className="text-xs text-neutral-400">{t("filter.help")}</Text>
+      </Pressable>
+      {helpOpen && <FilterHelp />}
+
+      {/* One toolbar row: the match count, then Select and the filter's own actions. */}
       <View className="flex-row items-center gap-2">
-        {isNew ? (
+        <Text className="flex-1 text-xs text-neutral-400">
+          {parsed.ok ? t("filter.matching", { count: results.length }) : t("filter.enterValid")}
+        </Text>
+        {results.length > 0 && <SelectButton />}
+        {existing && (
           <>
-            <TextInput
-              accessibilityLabel={t("filter.name")}
-              placeholder={t("filter.name")}
-              placeholderTextColor="#a1a1aa"
-              value={name}
-              onChangeText={setName}
-              className="flex-1 rounded-md border border-neutral-200 px-2 py-1.5 text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("common.create")}
-              disabled={!canCreate}
-              onPress={handleCreate}
-              className={
-                "flex-row items-center gap-1 rounded-md bg-accent-600 px-3 py-2 " +
-                (canCreate ? "" : "opacity-40")
-              }
-            >
-              <Save size={16} className="text-white" />
-              <Text className="text-sm font-medium text-white">{t("common.create")}</Text>
-            </Pressable>
-          </>
-        ) : existing ? (
-          <>
-            <View className="flex-1" />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={
@@ -167,48 +209,9 @@ function FilterEditor({ filterId, onOpenTask, onSaved, onDeleted }: FilterScreen
               <Trash2 size={18} className="text-neutral-400" />
             </Pressable>
           </>
-        ) : (
-          <Text className="flex-1 text-sm text-neutral-400">{t("common.nothingHere")}</Text>
         )}
         <ListPrefMenu value={view.listPref} onChange={view.setListPref} />
       </View>
-
-      <TextInput
-        accessibilityLabel={t("filter.query")}
-        placeholder={t("filter.queryPlaceholder")}
-        placeholderTextColor="#a1a1aa"
-        value={query}
-        onChangeText={setQuery}
-        onBlur={commitQuery}
-        autoCapitalize="none"
-        autoCorrect={false}
-        className="rounded-md border border-neutral-200 px-2 py-1.5 font-mono text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
-      />
-      {query.trim() !== "" && !parsed.ok && (
-        <View className="flex-row items-center gap-1">
-          <CircleAlert size={14} className="text-red-500" />
-          <Text className="text-xs text-red-500">{parsed.error}</Text>
-        </View>
-      )}
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: helpOpen }}
-        onPress={() => setHelpOpen((o) => !o)}
-        className="flex-row items-center gap-1 self-start"
-      >
-        {helpOpen ? (
-          <ChevronDown size={14} className="text-neutral-400" />
-        ) : (
-          <ChevronRight size={14} className="text-neutral-400" />
-        )}
-        <Text className="text-xs text-neutral-400">{t("filter.help")}</Text>
-      </Pressable>
-      {helpOpen && <FilterHelp />}
-
-      <Text className="text-xs text-neutral-400">
-        {parsed.ok ? t("filter.matching", { count: results.length }) : t("filter.enterValid")}
-      </Text>
     </View>
   );
 
@@ -220,6 +223,7 @@ function FilterEditor({ filterId, onOpenTask, onSaved, onDeleted }: FilterScreen
         onOpenTask={onOpenTask}
         emptyLabel={t("filter.empty")}
         header={header}
+        showToolbar={false}
       />
       <StyleEditor
         open={editing && !!existing}
