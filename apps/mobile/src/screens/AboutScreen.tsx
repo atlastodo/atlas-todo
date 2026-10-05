@@ -6,6 +6,7 @@ import { resolveTimeZone } from "@atlas/shared";
 import { copyText } from "../lib/clipboard";
 import { useToast } from "../data/ToastProvider";
 import { usePreferences } from "../hooks/usePreferences";
+import { useIsWide } from "../hooks/useIsWide";
 import { deviceLanguage } from "../i18n";
 import { ScreenFade } from "../ui/ScreenFade";
 import { ThemeScope } from "../theme/ThemeProvider";
@@ -44,6 +45,8 @@ export function AboutScreen() {
   const toast = useToast();
   const { theme, accent, language, timezone } = usePreferences();
   const [tab, setTab] = useState<AboutTab>("overview");
+  // Four icon-and-label tabs do not fit a phone row; there only the active tab keeps its label.
+  const compactTabs = !useIsWide();
   const [reportOpen, setReportOpen] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -116,7 +119,7 @@ export function AboutScreen() {
 
           <View
             accessibilityRole="radiogroup"
-            accessibilityLabel={t("about.title")}
+            accessibilityLabel={t("nav.about")}
             className="mb-6 flex-row rounded-xl bg-neutral-100 p-1 dark:bg-neutral-900"
           >
             {(
@@ -136,7 +139,8 @@ export function AboutScreen() {
                   accessibilityLabel={label}
                   onPress={() => setTab(id)}
                   className={
-                    "flex-1 flex-row items-center justify-center gap-1.5 rounded-lg py-2 " +
+                    "flex-row items-center justify-center gap-1.5 rounded-lg py-2 " +
+                    (compactTabs && !active ? "px-3.5 " : "flex-1 px-2 ") +
                     (active
                       ? "bg-white shadow-sm dark:bg-neutral-800"
                       : "opacity-75 active:opacity-100")
@@ -144,19 +148,25 @@ export function AboutScreen() {
                 >
                   <TabIcon
                     size={16}
-                    className={active ? "text-accent-600 dark:text-accent-400" : "text-neutral-500"}
-                  />
-                  <Text
                     className={
-                      "text-xs font-medium " +
-                      (active
-                        ? "text-neutral-900 dark:text-neutral-100"
-                        : "text-neutral-600 dark:text-neutral-400")
+                      active
+                        ? "text-accent-600 dark:text-accent-400"
+                        : "text-neutral-500 dark:text-neutral-400"
                     }
-                    numberOfLines={1}
-                  >
-                    {label}
-                  </Text>
+                  />
+                  {(active || !compactTabs) && (
+                    <Text
+                      className={
+                        "text-xs font-medium " +
+                        (active
+                          ? "text-neutral-900 dark:text-neutral-100"
+                          : "text-neutral-600 dark:text-neutral-300")
+                      }
+                      numberOfLines={1}
+                    >
+                      {label}
+                    </Text>
+                  )}
                 </Pressable>
               );
             })}
@@ -179,7 +189,7 @@ export function AboutScreen() {
               <DesktopUpdateSection />
 
               <View className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
-                <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                   {t("about.diagnosticsTitle")}
                 </Text>
                 <View className="gap-2.5">

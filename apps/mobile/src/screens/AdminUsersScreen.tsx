@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FlatList, Text, TextInput, View } from "react-native";
+import { FlatList, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { AdminUserView } from "@atlas/client-core";
 import { useAdminUsers } from "../hooks/useAdminUsers";
@@ -9,7 +9,7 @@ import { useToast } from "../data/ToastProvider";
 import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
 import { CircleAlert, Search } from "../ui/icons";
-import { AdminRow } from "../ui/AdminRow";
+import { ADMIN_CARD, AdminBadge, AdminRow } from "../ui/AdminRow";
 import { AdminUserDetail } from "../ui/AdminUserDetail";
 
 /**
@@ -53,7 +53,7 @@ export function AdminUsersScreen() {
   return (
     <View className="flex-1">
       <View className="flex-row items-center gap-2 px-4 py-3">
-        <View className="flex-1 flex-row items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2 dark:border-neutral-800">
+        <View className="flex-1 flex-row items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 dark:border-neutral-700 dark:bg-zinc-900">
           <Search size={16} className="text-neutral-400" />
           <TextInput
             value={searchInput}
@@ -87,10 +87,11 @@ export function AdminUsersScreen() {
         <FlatList
           data={users}
           keyExtractor={(u) => u.id}
-          contentContainerClassName="px-4 pb-16"
-          renderItem={({ item }) => (
+          contentContainerClassName={"mx-4 mb-16 " + ADMIN_CARD}
+          renderItem={({ item, index }) => (
             <UserRow
               user={item}
+              first={index === 0}
               when={format.dateTime(item.created_at_ms)}
               onPress={() => setOpenId(item.id)}
             />
@@ -126,10 +127,12 @@ export function AdminUsersScreen() {
 function UserRow({
   user,
   when,
+  first,
   onPress,
 }: {
   user: AdminUserView;
   when: string;
+  first: boolean;
   onPress: () => void;
 }) {
   const { t } = useTranslation();
@@ -138,24 +141,15 @@ function UserRow({
       title={user.display_name || user.email}
       badges={
         <>
-          {user.is_admin ? (
-            <Text className="text-xs font-medium text-accent-600 dark:text-accent-400">
-              {t("admin.adminBadge")}
-            </Text>
-          ) : null}
-          {user.disabled ? (
-            <Text className="text-xs text-red-600 dark:text-red-400">
-              {t("admin.disabledBadge")}
-            </Text>
-          ) : null}
+          {user.is_admin ? <AdminBadge label={t("admin.adminBadge")} tone="accent" /> : null}
+          {user.disabled ? <AdminBadge label={t("admin.disabledBadge")} tone="red" /> : null}
           {user.deletion_scheduled ? (
-            <Text className="text-xs text-amber-600 dark:text-amber-400">
-              {t("admin.deletionScheduled")}
-            </Text>
+            <AdminBadge label={t("admin.deletionScheduled")} tone="amber" />
           ) : null}
         </>
       }
-      detail={`${user.email} - ${t("admin.joined")} ${when}`}
+      detail={`${user.email} · ${t("admin.joined")} ${when}`}
+      first={first}
       onPress={onPress}
     />
   );

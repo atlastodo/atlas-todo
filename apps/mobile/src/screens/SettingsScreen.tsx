@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+  type TextInputProps,
+} from "react-native";
 import Animated from "react-native-reanimated";
 import { useTranslation } from "react-i18next";
 import { APP_VERSION } from "../lib/appVersion";
@@ -66,6 +74,7 @@ import {
   CalendarClock,
   ChevronDown,
   ChevronUp,
+  CircleAlert,
   Database,
   Download,
   Info,
@@ -87,6 +96,7 @@ import {
   Trash2,
   Upload,
   UserRound,
+  type LucideIcon,
 } from "../ui/icons";
 import { SkeletonRows } from "../ui/Skeleton";
 import { useOnboarding } from "../data/OnboardingContext";
@@ -600,89 +610,86 @@ function DevicesSection() {
   const others = (sessions ?? []).filter((s) => !s.current);
 
   return (
-    <Section icon={Smartphone} title={t("settings.devices")}>
-      {sessions === null ? (
-        failed ? (
-          <Row label={t("settings.devicesLoadFailed")}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("settings.devicesLoadRetry")}
-              onPress={() => void load()}
-              className="flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
-            >
-              <RefreshCw size={18} className="text-neutral-600 dark:text-neutral-300" />
-              <Text className="text-sm text-neutral-600 dark:text-neutral-300">
-                {t("common.retry")}
-              </Text>
-            </Pressable>
-          </Row>
+    <>
+      <Section icon={Smartphone} title={t("settings.devices")}>
+        {sessions === null ? (
+          failed ? (
+            <Row label={t("settings.devicesLoadFailed")}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("settings.devicesLoadRetry")}
+                onPress={() => void load()}
+                className="flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
+              >
+                <RefreshCw size={18} className="text-neutral-600 dark:text-neutral-300" />
+                <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+                  {t("common.retry")}
+                </Text>
+              </Pressable>
+            </Row>
+          ) : (
+            <View className="py-3">
+              <SkeletonRows count={2} />
+            </View>
+          )
         ) : (
-          <View className="py-3">
-            <SkeletonRows count={2} />
-          </View>
-        )
-      ) : (
-        <>
-          {sessions.length === 0
-            ? null
-            : sessions.map((s) => (
-                <Row key={s.device_id} label={deviceName(s)} description={whenPart(s)}>
-                  <View className="flex-row items-center gap-2">
-                    {s.current && (
-                      <Text className="text-xs font-medium text-accent-600 dark:text-accent-400">
-                        {t("settings.devicesThisDevice")}
-                      </Text>
-                    )}
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`${t("settings.devicesRename")} ${deviceName(s)}`}
-                      disabled={busyId !== null}
-                      onPress={() => setRenameTarget(s)}
-                      hitSlop={8}
-                      className="p-1 rounded web:cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                    >
-                      <Pencil size={16} className="text-neutral-500 dark:text-neutral-400" />
-                    </Pressable>
-                    {!s.current && (
+          <>
+            {sessions.length === 0
+              ? null
+              : sessions.map((s) => (
+                  <Row key={s.device_id} label={deviceName(s)} description={whenPart(s)}>
+                    <View className="flex-row items-center gap-2">
+                      {s.current && (
+                        <Text className="text-xs font-medium text-accent-600 dark:text-accent-400">
+                          {t("settings.devicesThisDevice")}
+                        </Text>
+                      )}
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel={`${t("settings.devicesRevoke")} ${deviceName(s)}`}
-                        accessibilityHint={expiresPart(s)}
+                        accessibilityLabel={`${t("settings.devicesRename")} ${deviceName(s)}`}
                         disabled={busyId !== null}
-                        onPress={() => void revoke(s.device_id)}
-                        className="flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
+                        onPress={() => setRenameTarget(s)}
+                        hitSlop={8}
+                        className="p-1 rounded web:cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
                       >
-                        <LogOut size={18} className="text-neutral-600 dark:text-neutral-300" />
-                        <Text className="text-sm text-neutral-600 dark:text-neutral-300">
-                          {t("settings.devicesRevoke")}
-                        </Text>
+                        <Pencil size={16} className="text-neutral-500 dark:text-neutral-400" />
                       </Pressable>
-                    )}
-                  </View>
-                </Row>
-              ))}
+                      {!s.current && (
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`${t("settings.devicesRevoke")} ${deviceName(s)}`}
+                          accessibilityHint={expiresPart(s)}
+                          disabled={busyId !== null}
+                          onPress={() => void revoke(s.device_id)}
+                          className="flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800"
+                        >
+                          <LogOut size={18} className="text-neutral-600 dark:text-neutral-300" />
+                          <Text className="text-sm text-neutral-600 dark:text-neutral-300">
+                            {t("settings.devicesRevoke")}
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </Row>
+                ))}
+          </>
+        )}
+      </Section>
 
+      {sessions !== null && (
+        <DangerZone>
           <Row
             label={t("settings.devicesRevokeOthers")}
             description={t("settings.devicesRevokeOthersDesc")}
           >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("settings.devicesRevokeOthers")}
+            <DangerButton
+              icon={LogOut}
+              label={t("settings.devicesRevokeOthers")}
               disabled={reloading || busyId !== null || others.length === 0}
               onPress={() => setConfirmRevokeOthers(true)}
-              className={
-                "flex-row items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-800 " +
-                (others.length === 0 ? "opacity-60" : "")
-              }
-            >
-              <Smartphone size={18} className="text-neutral-600 dark:text-neutral-300" />
-              <Text className="text-sm text-neutral-600 dark:text-neutral-300">
-                {t("settings.devicesRevokeOthers")}
-              </Text>
-            </Pressable>
+            />
           </Row>
-        </>
+        </DangerZone>
       )}
 
       <ConfirmDialog
@@ -700,7 +707,74 @@ function DevicesSection() {
         onClose={handleCloseRename}
         onRenamed={() => void load()}
       />
-    </Section>
+    </>
+  );
+}
+
+/**
+ * A masked password field for the account forms. No fixed width: a stacked phone row stretches it
+ * to the card's width, a side-by-side row gives it its minimum.
+ */
+function PasswordInput(props: TextInputProps) {
+  return (
+    <TextInput
+      secureTextEntry
+      autoCapitalize="none"
+      autoCorrect={false}
+      placeholderTextColor="#a1a1aa"
+      className="min-w-56 rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 dark:border-neutral-600 dark:bg-zinc-900 dark:text-neutral-100"
+      {...props}
+    />
+  );
+}
+
+/** A section's irreversible actions, in their own red-edged card below the everyday ones. */
+function DangerZone({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
+  return (
+    <View className="mb-6">
+      <View className="mb-2 flex-row items-center gap-2 px-1">
+        <CircleAlert
+          size={Platform.OS === "web" ? 16 : 18}
+          className="text-red-600 dark:text-red-400"
+        />
+        <Text className="text-xs font-semibold uppercase tracking-wider text-red-600 dark:text-red-400">
+          {t("settings.dangerZone")}
+        </Text>
+      </View>
+      <View className="overflow-hidden rounded-2xl border border-red-200 bg-red-50/40 px-4 py-1 dark:border-red-900/60 dark:bg-red-950/20">
+        {children}
+      </View>
+    </View>
+  );
+}
+
+function DangerButton({
+  icon: Icon,
+  label,
+  disabled,
+  onPress,
+}: {
+  icon: LucideIcon;
+  label: string;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      className={
+        "flex-row items-center justify-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-2 active:bg-red-100 dark:border-red-900/50 dark:bg-red-950/30 dark:active:bg-red-950/60 " +
+        (disabled ? "opacity-60" : "")
+      }
+    >
+      <Icon size={18} className="text-red-600 dark:text-red-400" />
+      <Text className="text-sm font-medium text-red-600 dark:text-red-400">{label}</Text>
+    </Pressable>
   );
 }
 
@@ -716,6 +790,7 @@ function SecuritySection() {
   const { t } = useTranslation();
   const { changePassword } = useAuth();
   const toast = useToast();
+  const isWide = useIsWide();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -755,55 +830,50 @@ function SecuritySection() {
   return (
     <Section icon={KeyRound} title={t("settings.changePassword")}>
       <Row label={t("settings.currentPassword")}>
-        <TextInput
+        <PasswordInput
           accessibilityLabel={t("settings.currentPassword")}
           value={current}
           onChangeText={setCurrent}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
-          className="w-44 rounded border border-neutral-200 px-2 py-1 text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+          placeholder={t("settings.currentPasswordPlaceholder")}
         />
       </Row>
       <Row label={t("settings.newPassword")}>
-        <TextInput
+        <PasswordInput
           accessibilityLabel={t("settings.newPassword")}
           value={next}
           onChangeText={setNext}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
           textContentType="newPassword"
-          className="w-44 rounded border border-neutral-200 px-2 py-1 text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+          placeholder={t("settings.newPasswordPlaceholder")}
         />
       </Row>
       <Row label={t("settings.confirmNewPassword")}>
-        <TextInput
+        <PasswordInput
           accessibilityLabel={t("settings.confirmNewPassword")}
           value={confirm}
           onChangeText={setConfirm}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
           textContentType="newPassword"
           onSubmitEditing={() => void submit()}
-          className="w-44 rounded border border-neutral-200 px-2 py-1 text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+          placeholder={t("settings.confirmNewPasswordPlaceholder")}
         />
       </Row>
-      <View className="flex-row items-center gap-3 py-2">
+      <View className={isWide ? "flex-row items-center gap-3 py-3" : "gap-2 py-3"}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t("settings.updatePassword")}
           disabled={busy}
           onPress={() => void submit()}
           className={
-            "rounded-md bg-accent-600 px-3 py-2 active:bg-accent-500 " + (busy ? "opacity-60" : "")
+            "items-center rounded-md bg-accent-600 px-4 py-2.5 active:bg-accent-500 " +
+            (busy ? "opacity-60" : "")
           }
         >
           <Text className="text-sm font-medium text-white">{t("settings.updatePassword")}</Text>
         </Pressable>
         {error !== null && (
-          <Text accessibilityRole="alert" className="flex-1 text-xs text-red-600 dark:text-red-400">
+          <Text
+            accessibilityRole="alert"
+            className={"text-xs text-red-600 dark:text-red-400 " + (isWide ? "flex-1" : "")}
+          >
             {error}
           </Text>
         )}
@@ -820,6 +890,7 @@ function SecuritySection() {
 function RecoveryPhraseSection() {
   const { t } = useTranslation();
   const { replaceRecoveryPhrase } = useAuth();
+  const isWide = useIsWide();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -854,22 +925,19 @@ function RecoveryPhraseSection() {
         {t("settings.newRecoveryPhraseDesc")}
       </Text>
       <Row label={t("settings.newRecoveryPhrasePassword")}>
-        <TextInput
+        <PasswordInput
           accessibilityLabel={t("settings.newRecoveryPhrasePassword")}
           value={password}
           onChangeText={(v) => {
             setPassword(v);
             setError(null);
           }}
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
           textContentType="password"
           onSubmitEditing={() => void submit()}
-          className="w-44 rounded border border-neutral-200 px-2 py-1 text-sm text-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+          placeholder={t("settings.recoveryPasswordPlaceholder")}
         />
       </Row>
-      <View className="flex-row items-center gap-3 py-2">
+      <View className={isWide ? "flex-row items-center gap-3 py-3" : "gap-2 py-3"}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t("settings.newRecoveryPhrase")}
@@ -877,7 +945,7 @@ function RecoveryPhraseSection() {
           disabled={busy}
           onPress={() => void submit()}
           className={
-            "rounded-md border border-neutral-200 px-3 py-2 dark:border-neutral-700 " +
+            "items-center rounded-md border border-neutral-300 px-4 py-2.5 dark:border-neutral-600 " +
             (busy ? "opacity-60" : "")
           }
         >
@@ -886,7 +954,10 @@ function RecoveryPhraseSection() {
           </Text>
         </Pressable>
         {error !== null && (
-          <Text accessibilityRole="alert" className="flex-1 text-xs text-red-600 dark:text-red-400">
+          <Text
+            accessibilityRole="alert"
+            className={"text-xs text-red-600 dark:text-red-400 " + (isWide ? "flex-1" : "")}
+          >
             {error}
           </Text>
         )}
@@ -1365,7 +1436,9 @@ export function SettingsScreen({
               setRemindersEnabled(on);
             }}
           />
-          {remindersEnabled && <NotifyPermissionHint />}
+          {remindersEnabled && (
+            <NotifyPermissionHint className="border-t border-neutral-200/50 py-3.5 dark:border-neutral-800/60" />
+          )}
           <CloseToTrayRow />
         </Section>
         {focusEnabled && (
@@ -1457,22 +1530,21 @@ export function SettingsScreen({
                 {t("common.signOut")}
               </Text>
             </Pressable>
-
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setConfirmDeleteAccount(true)}
-              className="flex-row items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-2 active:bg-red-100 dark:border-red-900/50 dark:bg-red-950/30"
-            >
-              <Trash2 size={18} className="text-red-600 dark:text-red-400" />
-              <Text className="text-sm text-red-600 dark:text-red-400">
-                {t("auth.deleteAccount")}
-              </Text>
-            </Pressable>
           </View>
         </Section>
 
         <SecuritySection />
         <RecoveryPhraseSection />
+
+        <DangerZone>
+          <Row label={t("auth.deleteAccount")} description={t("settings.deleteAccountDesc")}>
+            <DangerButton
+              icon={Trash2}
+              label={t("auth.deleteAccount")}
+              onPress={() => setConfirmDeleteAccount(true)}
+            />
+          </Row>
+        </DangerZone>
       </SettingsPane>
 
       {/* Admin */}
