@@ -34,6 +34,7 @@ export function HabitMonthCalendar({
 }) {
   const { t } = useTranslation();
   const todayKey = dateKeyFromMs(todayMs);
+  const createdKey = habit.created_at > 0 ? dateKeyFromMs(habit.created_at) : "";
   const [offset, setOffset] = useState(0);
 
   const { weeks, monthPrefix, title } = useMemo(() => {
@@ -104,6 +105,10 @@ export function HabitMonthCalendar({
             const state = states.get(day);
             const scheduled = isScheduledOn(habit, day, weekStartsOn);
             const backfilled = state === "done" && isBackfilled(day);
+            const isToday = day === todayKey;
+            // A settled day that was due and not recorded is missed; today and later are still open,
+            // and nobody missed a day before the habit existed.
+            const missed = state === undefined && scheduled && day < todayKey && day >= createdKey;
             const label = t("habits.dayState", {
               date: day,
               state: t(
@@ -111,7 +116,13 @@ export function HabitMonthCalendar({
                   ? "habits.stateDone"
                   : state === "skip"
                     ? "habits.stateSkipped"
-                    : "habits.stateNone",
+                    : missed
+                      ? "habits.stateMissed"
+                      : future
+                        ? "habits.stateUpcoming"
+                        : scheduled
+                          ? "habits.stateNone"
+                          : "habits.stateNotDue",
               ),
             });
             const body = (
@@ -124,9 +135,11 @@ export function HabitMonthCalendar({
                       : ""
                     : state === "skip"
                       ? "border border-neutral-400 dark:border-neutral-500"
-                      : scheduled && !future
-                        ? "bg-neutral-100 dark:bg-neutral-800"
-                        : "")
+                      : missed
+                        ? "bg-neutral-300 dark:bg-neutral-700"
+                        : scheduled
+                          ? "border border-neutral-300 dark:border-neutral-600"
+                          : "")
                 }
                 style={
                   state === "done"
@@ -144,17 +157,24 @@ export function HabitMonthCalendar({
                         ? "text-neutral-800 dark:text-neutral-100"
                         : "font-medium text-white"
                       : outside || future
-                        ? "text-neutral-300 dark:text-neutral-700"
+                        ? "text-neutral-400 dark:text-neutral-500"
                         : "text-neutral-700 dark:text-neutral-200")
                   }
                 >
                   {Number(day.slice(8, 10))}
                 </Text>
+                {/* Today's accent ring, outside the cell so it never hides a done day's fill. */}
+                {isToday && (
+                  <View
+                    pointerEvents="none"
+                    className="absolute -inset-[2px] rounded-lg border-2 border-accent-500 dark:border-accent-400"
+                  />
+                )}
               </View>
             );
             if (future)
               return (
-                <View key={day} className="flex-1">
+                <View key={day} accessible accessibilityLabel={label} className="flex-1">
                   {body}
                 </View>
               );

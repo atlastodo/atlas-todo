@@ -50,6 +50,19 @@ describe("StatsScreen", () => {
     expect(screen.getByLabelText("2 Completed in 30 days")).toBeTruthy();
   });
 
+  it("labels the chart's range and the peak its bars are scaled to", async () => {
+    const store = new LocalStore("test");
+    completed(store, "Ship the release", NOW);
+    completed(store, "Write the changelog", NOW);
+
+    await render(<StatsScreen now={NOW} />, { wrapper: withApp(store) });
+
+    expect(screen.getByText("Peak 2")).toBeTruthy();
+    // The 30-day range runs from 29 days back to today.
+    expect(screen.getByText(/May 19|19 May/)).toBeTruthy();
+    expect(screen.getByText("Today")).toBeTruthy();
+  });
+
   it("counts the streak in the preferred time zone's days, not the device's", async () => {
     // Kiritimati (UTC+14) is ahead of any device clock: these two completions fall on two days
     // there but on one day for the device.
