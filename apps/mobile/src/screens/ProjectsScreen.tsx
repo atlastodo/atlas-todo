@@ -105,7 +105,6 @@ function ProjectRow({
           <Chevron size={14} className="text-neutral-400" />
         )}
       </Pressable>
-      {!folder && <ChevronRight size={isWeb ? 16 : 18} className="text-neutral-300" />}
     </View>
   );
 }
