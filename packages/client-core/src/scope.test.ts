@@ -506,6 +506,36 @@ describe("locked values", () => {
     const pushed = store.unsyncedOps().map((op) => (op.op === "set" ? op.field : op.op));
     expect(pushed.sort()).toEqual(["name", "title"]);
   });
+
+  it("never repairs a field its entity's delete hides, so a repair cannot outlive the delete", () => {
+    const store = new LocalStore(DEVICE, { newId, now: () => 5_000 });
+    const { dek, keyring } = keys();
+    const S = "0190a6f0-0000-7000-8000-00000000e001";
+    const deleted: Operation = {
+      id: newId(),
+      entity: "section",
+      entityId: S,
+      ts: ts(4),
+      op: "delete",
+    };
+    store.applyRemoteBatch([
+      remote("project_member", "0190a6f0-0000-7000-8000-00000000f001", "project_id", P, ts(1)),
+      remote("project_member", "0190a6f0-0000-7000-8000-00000000f001", "user_id", ME, ts(1)),
+      remote("project_member", "0190a6f0-0000-7000-8000-00000000f001", "role", "owner", ts(1)),
+      remote("project_member", "0190a6f0-0000-7000-8000-00000000f001", "state", "active", ts(1)),
+      remote("section", S, "project_id", P, ts(2)),
+      remote("section", S, "name", enc(dek, "Old section"), ts(3)),
+      deleted,
+    ]);
+    expect(store.lockedCount()).toBe(0);
+
+    const result = reviveLockedValues(store, keyring, ME);
+
+    expect(result.repaired).toBe(0);
+    expect(store.unsyncedOps()).toHaveLength(0);
+    expect(store.get("section", S)).toBeNull();
+    expect(store.lockedCount()).toBe(0);
+  });
 });
 
 describe("rescopeTask", () => {
