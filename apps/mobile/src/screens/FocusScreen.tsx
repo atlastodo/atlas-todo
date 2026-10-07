@@ -267,8 +267,8 @@ export function FocusScreen() {
             </View>
           ) : (
             <ListPicker
+              variant="chip"
               label={t("focus.task")}
-              description={t("focus.taskDesc")}
               value={picked}
               options={taskOptions}
               onChange={setPicked}
