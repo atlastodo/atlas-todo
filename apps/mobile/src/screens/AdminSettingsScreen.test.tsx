@@ -49,7 +49,7 @@ describe("AdminSettingsScreen", () => {
     });
 
     await screen.findByText("New invite");
-    expect(screen.queryByLabelText("Copy invite link")).toBeNull();
+    expect(screen.queryByLabelText("Copy link")).toBeNull();
     await fireEvent.press(screen.getByLabelText("Revoke"));
     await waitFor(() => expect(revokeSignupInvite).toHaveBeenCalledWith("i-1"));
   });
@@ -69,12 +69,17 @@ describe("AdminSettingsScreen", () => {
     // the code-bearing body text.
     await screen.findByText(/bbbb/);
     // The dialog's copy button: the only place the code (and so the link) is ever available.
-    const copyButtons = screen.getAllByText("Copy invite link");
+    const copyButtons = screen.getAllByText("Copy link");
     await fireEvent.press(copyButtons[copyButtons.length - 1]!);
     // Off the web the link is built on the server's address: a relative link opens nowhere.
     await waitFor(() =>
       expect(lastCopiedText()).toMatch(/^https?:\/\/[^/]+\/signup\?invite=b{64}$/),
     );
+    // Copying keeps the dialog (and the link) up; "Done" closes it.
+    await screen.findByText("Copied");
+    expect(screen.getByText(/bbbb/)).toBeTruthy();
+    await fireEvent.press(screen.getByText("Done"));
+    await waitFor(() => expect(screen.queryByText(/bbbb/)).toBeNull());
   });
 
   it("builds the invite link on the web app's root when the server URL ends in /api", async () => {
@@ -88,7 +93,7 @@ describe("AdminSettingsScreen", () => {
       });
       await fireEvent.press(await screen.findByText("New invite"));
       await screen.findByText(/cccc/);
-      const copyButtons = screen.getAllByText("Copy invite link");
+      const copyButtons = screen.getAllByText("Copy link");
       await fireEvent.press(copyButtons[copyButtons.length - 1]!);
       await waitFor(() =>
         expect(lastCopiedText()).toBe(`https://todo.example.com/signup?invite=${"c".repeat(64)}`),
