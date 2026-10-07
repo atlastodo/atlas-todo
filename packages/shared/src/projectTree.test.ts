@@ -28,6 +28,7 @@ function p(id: string, over: Partial<Project> = {}): Project {
     is_favorite: true,
     parent_id: null,
     kind: "project",
+    default_view: "list",
     archived_at: null,
     deleted_at: null,
     ...over,

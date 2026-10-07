@@ -13,6 +13,7 @@ function project(over: Partial<Project> = {}): Project {
     is_favorite: false,
     parent_id: null,
     kind: "project",
+    default_view: "list",
     archived_at: null,
     deleted_at: null,
     ...over,
@@ -85,6 +86,14 @@ describe("planProjectDuplicate", () => {
       icon: "rocket",
       sort_order: 5000,
     });
+  });
+
+  it("carries a board default view", () => {
+    const plan = planProjectDuplicate(project({ default_view: "board" }), [], [], {
+      mkId: seqIds(),
+      now: 5000,
+    });
+    expect(materialize(plan.writes)["project:new-1"]?.default_view).toBe("board");
   });
 
   it("remaps section ids and points tasks at the copied sections", () => {

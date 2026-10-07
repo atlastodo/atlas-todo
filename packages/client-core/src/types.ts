@@ -3,6 +3,8 @@
 export type Priority = 1 | 2 | 3 | 4;
 
 export type ProjectKind = "project" | "folder";
+/** How a project opens when the URL does not say: its task list or its board. */
+export type ProjectView = "list" | "board";
 
 export interface Task {
   id: string;
@@ -39,6 +41,7 @@ export interface Project {
   is_favorite: boolean;
   parent_id: string | null;
   kind: ProjectKind;
+  default_view: ProjectView;
   archived_at: number | null;
   deleted_at: number | null;
 }

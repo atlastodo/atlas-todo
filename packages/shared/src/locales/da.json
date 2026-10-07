@@ -1068,6 +1068,11 @@
   },
   "projects": {
     "newFolder": "Ny mappe",
+    "name": "Navn",
+    "folder": "Mappe",
+    "defaultView": "Standardvisning",
+    "namePlaceholder": "Projektnavn",
+    "folderNamePlaceholder": "Mappenavn",
     "newProjectHere": "Nyt projekt her",
     "moveToFolder": "Flyt til mappe",
     "noFolder": "Ingen mappe",

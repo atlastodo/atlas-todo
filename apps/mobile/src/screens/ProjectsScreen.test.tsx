@@ -1,8 +1,20 @@
+import { useState, type ReactElement } from "react";
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlas/client-core";
 import { PREFERENCES_ID, toProject } from "@atlas/shared";
 import { withApp } from "../testutil";
 import { ProjectsScreen } from "./ProjectsScreen";
+
+/** The screen with its header actions rendered above it, as the route's nav header would. */
+function WithHeader({ onCreated }: { onCreated?: (id: string) => void }) {
+  const [actions, setActions] = useState<ReactElement | null>(null);
+  return (
+    <>
+      {actions}
+      <ProjectsScreen onHeaderActions={setActions} onCreated={onCreated} />
+    </>
+  );
+}
 
 // Over a real in-memory `LocalStore`; project rules live in `useProjects` + `@atlas/shared`.
 
@@ -25,12 +37,15 @@ describe("ProjectsScreen", () => {
   it("creates a project with a real UUID id", async () => {
     // A non-UUID entity_id 422s the whole sync push, so this is not cosmetic.
     const s = new LocalStore("test");
-    await render(<ProjectsScreen />, { wrapper: withApp(s) });
+    const onCreated = jest.fn();
+    await render(<WithHeader onCreated={onCreated} />, { wrapper: withApp(s) });
 
-    await fireEvent.changeText(screen.getByLabelText("New project"), "Garden");
-    await fireEvent(screen.getByLabelText("New project"), "submitEditing");
+    await fireEvent.press(screen.getAllByLabelText("New project")[0]!);
+    await fireEvent.changeText(screen.getByLabelText("Name"), "Garden");
+    await fireEvent(screen.getByLabelText("Name"), "submitEditing");
 
     const created = named(s, "Garden");
+    expect(onCreated).toHaveBeenCalledWith(created!.id);
     expect(created).toBeTruthy();
     expect(created!.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
     // A fresh project gets the default icon and a non-blank colour, so it is distinct out of the box.
@@ -78,12 +93,25 @@ describe("ProjectsScreen", () => {
     expect(screen.queryByText("Home reno")).toBeNull();
   });
 
-  it("creates a folder from the same field as a project", async () => {
+  it("creates a project that opens as a board", async () => {
     const s = new LocalStore("test");
-    await render(<ProjectsScreen />, { wrapper: withApp(s) });
+    await render(<WithHeader />, { wrapper: withApp(s) });
 
-    await fireEvent.changeText(screen.getByLabelText("New project"), "Clients");
+    await fireEvent.press(screen.getAllByLabelText("New project")[0]!);
+    await fireEvent.changeText(screen.getByLabelText("Name"), "Sprint");
+    await fireEvent.press(screen.getByText("Board"));
+    await fireEvent.press(screen.getByLabelText("Create"));
+
+    expect(named(s, "Sprint")!.default_view).toBe("board");
+  });
+
+  it("creates a folder from the header", async () => {
+    const s = new LocalStore("test");
+    await render(<WithHeader />, { wrapper: withApp(s) });
+
     await fireEvent.press(screen.getByLabelText("New folder"));
+    await fireEvent.changeText(screen.getByLabelText("Name"), "Clients");
+    await fireEvent.press(screen.getByLabelText("Create"));
 
     const created = named(s, "Clients");
     expect(created!.kind).toBe("folder");
