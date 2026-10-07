@@ -1,11 +1,9 @@
-## v0.1.6
+## v0.1.7
 
 ### Features
-- Centre web lists, projects included
+- Show the invite link in a box; list invite creation dates
+- Centred task chip and picker dialog on Focus
 
 ### Fixes
-- Keep scope links of restored entities through retention
-- Light up a hovered task row as one
-
-### Changes
-- Publish the dev Docker tag from the dev branch
+- No ring on text inputs, no Tab stop on scroll containers
+- Never answer 304 for index.html
