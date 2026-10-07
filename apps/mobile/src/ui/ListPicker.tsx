@@ -13,11 +13,14 @@ import {
 import { useTranslation } from "react-i18next";
 import { ThemeScope } from "../theme/ThemeProvider";
 import { BottomSheet } from "./BottomSheet";
+import { ELEVATED_SURFACE_CLASS, SCRIM_CLASS } from "./useSheetDismiss";
 import { Check, ChevronDown, ChevronUp, Search, X } from "./icons";
 
 /**
  * A single-choice picker: an anchored dropdown on web (with a search box above a threshold, so it
- * does not swallow the viewport), a slide-up sheet with pull-to-dismiss on native.
+ * does not swallow the viewport), a slide-up sheet with pull-to-dismiss on native. The "chip"
+ * variant is a centred pill for a screen's own content (not a settings row) and opens a centred
+ * dialog on web instead of the dropdown.
  */
 
 export interface PickerOption<T extends string> {
@@ -35,6 +38,7 @@ export function ListPicker<T extends string>({
   options,
   onChange,
   className,
+  variant = "row",
 }: {
   label: string;
   description?: string;
@@ -42,7 +46,9 @@ export function ListPicker<T extends string>({
   options: PickerOption<T>[];
   onChange: (value: T) => void;
   className?: string;
+  variant?: "row" | "chip";
 }) {
+  const chip = variant === "chip";
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -184,72 +190,201 @@ export function ListPicker<T extends string>({
     }
   }, [anchor, isWeb, winWidth, winHeight, searchable, options.length]);
 
+  const accessibilityValue = {
+    text: selected?.hint ? `${selected.label}, ${selected.hint}` : (selected?.label ?? ""),
+  };
+
   return (
     <>
-      <View
-        className={
-          "flex-row items-center justify-between gap-4 " +
-          (className !== undefined
-            ? className
-            : "border-t border-neutral-100 py-3.5 dark:border-neutral-900")
-        }
-      >
-        <View className="flex-1 gap-0.5">
-          <Text
-            className={
-              "font-medium text-neutral-900 dark:text-neutral-100 " +
-              (isWeb ? "text-sm" : "text-lg")
-            }
-          >
-            {label}
-          </Text>
-          {description != null && (
-            <Text className={"text-neutral-500 " + (isWeb ? "text-xs" : "text-base")}>
-              {description}
-            </Text>
-          )}
-        </View>
-        <View ref={triggerRef} collapsable={false}>
+      {chip ? (
+        <View className={"items-center " + (className ?? "")}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={label}
-            accessibilityValue={{
-              text: selected?.hint
-                ? `${selected.label}, ${selected.hint}`
-                : (selected?.label ?? ""),
-            }}
+            accessibilityValue={accessibilityValue}
             onPress={toggleOpen}
-            className="max-w-[220px] shrink-0 flex-row items-center justify-between gap-2 rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-800/40"
+            className="max-w-full flex-row items-center gap-2 rounded-full border border-neutral-200 px-4 py-2 web:cursor-pointer web:hover:bg-neutral-100 dark:border-neutral-800 dark:web:hover:bg-neutral-900"
           >
-            <View className="shrink">
-              <Text
-                numberOfLines={1}
-                className={
-                  "text-neutral-900 dark:text-neutral-100 " + (isWeb ? "text-sm" : "text-base")
-                }
-              >
-                {selected?.label ?? ""}
-              </Text>
-              {selected?.hint != null && (
-                // Two lines: in a 220px trigger a one-line hint is cut mid-word ("not counted agai…").
-                <Text
-                  numberOfLines={2}
-                  className={"text-neutral-500 " + (isWeb ? "text-xs" : "text-sm")}
-                >
-                  {selected.hint}
-                </Text>
-              )}
-            </View>
-            {open ? (
-              <ChevronUp size={14} className="text-neutral-400" />
-            ) : (
-              <ChevronDown size={14} className="text-neutral-400" />
-            )}
+            <Text className="text-sm text-neutral-500">{label}</Text>
+            <Text
+              numberOfLines={1}
+              className="shrink text-sm font-medium text-neutral-900 dark:text-neutral-100"
+            >
+              {selected?.label ?? ""}
+            </Text>
+            <ChevronDown size={14} className="text-neutral-400" />
           </Pressable>
         </View>
-      </View>
+      ) : (
+        <View
+          className={
+            "flex-row items-center justify-between gap-4 " +
+            (className !== undefined
+              ? className
+              : "border-t border-neutral-100 py-3.5 dark:border-neutral-900")
+          }
+        >
+          <View className="flex-1 gap-0.5">
+            <Text
+              className={
+                "font-medium text-neutral-900 dark:text-neutral-100 " +
+                (isWeb ? "text-sm" : "text-lg")
+              }
+            >
+              {label}
+            </Text>
+            {description != null && (
+              <Text className={"text-neutral-500 " + (isWeb ? "text-xs" : "text-base")}>
+                {description}
+              </Text>
+            )}
+          </View>
+          <View ref={triggerRef} collapsable={false}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={label}
+              accessibilityValue={accessibilityValue}
+              onPress={toggleOpen}
+              className="max-w-[220px] shrink-0 flex-row items-center justify-between gap-2 rounded-xl border border-neutral-200 bg-neutral-50/50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-800/40"
+            >
+              <View className="shrink">
+                <Text
+                  numberOfLines={1}
+                  className={
+                    "text-neutral-900 dark:text-neutral-100 " + (isWeb ? "text-sm" : "text-base")
+                  }
+                >
+                  {selected?.label ?? ""}
+                </Text>
+                {selected?.hint != null && (
+                  // Two lines: in a 220px trigger a one-line hint is cut mid-word ("not counted agai…").
+                  <Text
+                    numberOfLines={2}
+                    className={"text-neutral-500 " + (isWeb ? "text-xs" : "text-sm")}
+                  >
+                    {selected.hint}
+                  </Text>
+                )}
+              </View>
+              {open ? (
+                <ChevronUp size={14} className="text-neutral-400" />
+              ) : (
+                <ChevronDown size={14} className="text-neutral-400" />
+              )}
+            </Pressable>
+          </View>
+        </View>
+      )}
 
-      {isWeb ? (
+      {isWeb && chip ? (
+        <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
+          <ThemeScope className="absolute inset-0 items-center justify-center p-6">
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("common.close")}
+              onPress={close}
+              className={`absolute inset-0 ${SCRIM_CLASS}`}
+            />
+            <View
+              ref={menuRef}
+              collapsable={false}
+              style={{ maxHeight: Math.min(560, winHeight - 48) }}
+              className={`w-full max-w-md overflow-hidden rounded-2xl ${ELEVATED_SURFACE_CLASS}`}
+            >
+              <View className="flex-row items-center gap-3 px-5 pb-2 pt-4">
+                <Text className="flex-1 text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                  {label}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("common.close")}
+                  onPress={close}
+                  className="rounded-lg p-1 web:cursor-pointer web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800"
+                >
+                  <X size={18} className="text-neutral-500" />
+                </Pressable>
+              </View>
+              {searchable && (
+                <View className="mx-5 mb-2 flex-row items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 dark:border-neutral-800 dark:bg-neutral-800/40">
+                  <Search size={16} className="text-neutral-400" />
+                  <TextInput
+                    accessibilityLabel={t("common.search")}
+                    placeholder={t("common.search")}
+                    placeholderTextColor="#a1a1aa"
+                    value={query}
+                    onChangeText={setQuery}
+                    autoFocus
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    className="flex-1 py-1 text-sm text-neutral-900 dark:text-neutral-100"
+                  />
+                  {query.length > 0 && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t("common.clear")}
+                      onPress={() => setQuery("")}
+                      className="rounded p-0.5"
+                    >
+                      <X size={14} className="text-neutral-400" />
+                    </Pressable>
+                  )}
+                </View>
+              )}
+              <ScrollView keyboardShouldPersistTaps="handled" className="px-2 pb-2">
+                {shown.length === 0 ? (
+                  <Text className="p-4 text-center text-sm text-neutral-400">
+                    {t("common.nothingHere")}
+                  </Text>
+                ) : (
+                  shown.map((item) => {
+                    const active = item.value === value;
+                    return (
+                      <Pressable
+                        key={item.value}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: active }}
+                        accessibilityLabel={item.label}
+                        onPress={() => {
+                          onChange(item.value);
+                          close();
+                        }}
+                        className={
+                          "flex-row items-center gap-3 rounded-lg px-3 py-2.5 web:cursor-pointer " +
+                          (active
+                            ? "bg-accent-50 dark:bg-accent-950/70"
+                            : "hover:bg-neutral-100/80 dark:hover:bg-neutral-800/60")
+                        }
+                      >
+                        <View className="flex-1 gap-0.5">
+                          <Text
+                            className={
+                              "text-sm " +
+                              (active
+                                ? "font-semibold text-accent-700 dark:text-accent-300"
+                                : "text-neutral-800 dark:text-neutral-200")
+                            }
+                          >
+                            {item.label}
+                          </Text>
+                          {item.hint != null && (
+                            <Text className="text-xs text-neutral-500">{item.hint}</Text>
+                          )}
+                        </View>
+                        {active && (
+                          <Check
+                            size={16}
+                            className="shrink-0 text-accent-600 dark:text-accent-400"
+                          />
+                        )}
+                      </Pressable>
+                    );
+                  })
+                )}
+              </ScrollView>
+            </View>
+          </ThemeScope>
+        </Modal>
+      ) : isWeb ? (
         <Modal visible={open} transparent animationType="none" onRequestClose={close}>
           <ThemeScope className="flex-1">
             <Pressable
