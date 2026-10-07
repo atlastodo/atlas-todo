@@ -192,10 +192,18 @@ async fn static_fallback_handler(
                     .await
                     .map(|r| r.map(axum::body::Body::new))
             } else {
-                // Store paths (Nix) carry a fixed 1970 mtime, so a date check would answer 304
-                // with a previous release's index.html. Always send the current bytes.
-                req.headers_mut()
-                    .remove(axum::http::header::IF_MODIFIED_SINCE);
+                // Store paths (Nix) carry a fixed 1970 mtime and index.html keeps its length
+                // across releases, so both a date check and ServeDir's mtime+size ETag would
+                // answer 304 with a previous release's index.html. Always send the current bytes.
+                let headers = req.headers_mut();
+                for name in [
+                    axum::http::header::IF_MODIFIED_SINCE,
+                    axum::http::header::IF_UNMODIFIED_SINCE,
+                    axum::http::header::IF_NONE_MATCH,
+                    axum::http::header::IF_MATCH,
+                ] {
+                    headers.remove(name);
+                }
                 let index_file = static_dir.join("index.html");
                 let with_spa = serve_dir.fallback(tower_http::services::ServeFile::new(index_file));
                 tower::ServiceExt::oneshot(with_spa, req)
@@ -245,6 +253,7 @@ async fn static_fallback_handler(
                 );
             } else {
                 headers.remove(axum::http::header::LAST_MODIFIED);
+                headers.remove(axum::http::header::ETAG);
                 headers.insert(
                     axum::http::header::CACHE_CONTROL,
                     HeaderValue::from_static("no-cache, must-revalidate"),
@@ -643,6 +652,21 @@ mod tests {
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
         assert!(!res.headers().contains_key(header::LAST_MODIFIED));
+
+        // 1c. Nor does an ETag revalidation: the mtime+size ETag is the same for every release.
+        let res = static_app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/")
+                    .header(header::IF_NONE_MATCH, "*")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        assert!(!res.headers().contains_key(header::ETAG));
 
         // 2. Static asset under /assets/ serves with immutable cache
         let res = static_app

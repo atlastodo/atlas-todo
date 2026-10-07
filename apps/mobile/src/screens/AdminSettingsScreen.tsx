@@ -13,7 +13,7 @@ import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Section } from "../ui/Section";
-import { CircleAlert, CircleX, History, Plus, Send, UserPlus } from "../ui/icons";
+import { Check, CircleAlert, CircleX, History, Plus, Send, UserPlus } from "../ui/icons";
 import { copyText } from "../lib/clipboard";
 
 /** The admin panel's instance section: the runtime signup toggle, signup invites, and the audit trail of admin actions. REST-driven (instance state, not a user's replica). */
@@ -25,6 +25,7 @@ export function AdminSettingsScreen() {
   const format = useFormat();
   const toast = useToast();
   const [freshInvite, setFreshInvite] = useState<AdminInviteView | null>(null);
+  const [copied, setCopied] = useState(false);
   const [serverUrl, setServerUrl] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
@@ -41,6 +42,7 @@ export function AdminSettingsScreen() {
   const onCreate = () => {
     void create().then((invite) => {
       if (invite) {
+        setCopied(false);
         setFreshInvite(invite);
         toast.show(t("admin.inviteCreated"));
       } else {
@@ -105,23 +107,38 @@ export function AdminSettingsScreen() {
         </Section>
       </ScrollView>
 
-      {/* The freshly minted invite, with the code to copy. The server hands out the code only in
-          this answer (the list never carries it), so this is the one chance to copy the link. */}
+      {/* The freshly minted invite, with the link to copy. The server hands out the code only in
+          this answer (the list never carries it), so this is the one chance to copy the link.
+          Copying keeps the dialog open; "Done" closes it. */}
       {freshInvite?.code ? (
         <ConfirmDialog
           visible
           title={t("admin.inviteCreatedTitle")}
-          message={`${t("admin.inviteCreatedBody", { code: freshInvite.code })}\n\n${t(
-            "admin.inviteLinkOnce",
-          )}`}
-          confirmLabel={t("admin.copyInvite")}
+          message={t("admin.inviteCreatedBody", {
+            expires: format.date(freshInvite.expires_at_ms),
+          })}
+          confirmLabel={copied ? t("common.copied") : t("admin.copyInvite")}
+          cancelLabel={t("common.done")}
           onConfirm={async () => {
             await copyText(inviteUrl(freshInvite.code!, serverUrl));
+            setCopied(true);
             toast.show(t("admin.inviteCopied"));
-            setFreshInvite(null);
           }}
           onCancel={() => setFreshInvite(null)}
-        />
+        >
+          <View className="flex-row items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 dark:border-neutral-800 dark:bg-zinc-950">
+            <Text
+              selectable
+              className="flex-1 font-mono text-xs text-neutral-800 web:break-all dark:text-neutral-200"
+            >
+              {inviteUrl(freshInvite.code, serverUrl)}
+            </Text>
+            {copied && <Check size={16} className="text-accent-600 dark:text-accent-400" />}
+          </View>
+          <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+            {t("admin.inviteLinkOnce")}
+          </Text>
+        </ConfirmDialog>
       ) : null}
     </View>
   );
@@ -173,7 +190,10 @@ function InviteSection({
           >
             <View className="flex-1">
               <Text numberOfLines={1} className="text-sm text-neutral-900 dark:text-neutral-100">
-                {t("admin.inviteExpires")} {format.date(invite.expires_at_ms)}
+                {t("admin.inviteExpires", {
+                  created: format.date(invite.created_at_ms),
+                  expires: format.date(invite.expires_at_ms),
+                })}
               </Text>
             </View>
             <Pressable
@@ -192,12 +212,10 @@ function InviteSection({
           accessibilityRole="button"
           accessibilityLabel={t("admin.createInvite")}
           onPress={onCreate}
-          className="min-h-10 flex-row items-center justify-center gap-1.5 self-start rounded-md border border-accent-200 bg-accent-50 px-3.5 py-2 active:bg-accent-100 dark:border-accent-800 dark:bg-accent-950/60 dark:active:bg-accent-900"
+          className="min-h-10 flex-row items-center justify-center gap-1.5 self-start rounded-md bg-accent-600 px-3.5 py-2 web:cursor-pointer web:hover:bg-accent-700 active:bg-accent-700"
         >
-          <Plus size={16} className="text-accent-700 dark:text-accent-300" />
-          <Text className="text-sm font-medium text-accent-700 dark:text-accent-300">
-            {t("admin.createInvite")}
-          </Text>
+          <Plus size={16} className="text-white" />
+          <Text className="text-sm font-semibold text-white">{t("admin.createInvite")}</Text>
         </Pressable>
       </View>
     </Section>
