@@ -61,6 +61,7 @@ import { haptics } from "../lib/haptics";
 import { CalendarClock, ChevronDown, ChevronRight, Inbox, type LucideIcon } from "./icons";
 import { EmptyState } from "./EmptyState";
 import { displayTitle } from "../lib/taskTitle";
+import { LIST_WIDTH_STYLE } from "./listWidth";
 
 /**
  * The list surface every smart view is built on: grouping, sorting, multi-select and the empty
@@ -153,9 +154,6 @@ export interface GroupedTaskListProps {
   smartDates?: boolean;
 }
 
-/** The widest a web list (toolbar, header and rows) runs, in px. */
-export const LIST_MAX_WIDTH = 860;
-
 interface Section {
   key: string;
   title: string;
@@ -246,8 +244,7 @@ export function GroupedTaskList({
   const isWeb = Platform.OS === "web";
   // The phone shell, native or web: bottom nav plus the add button (see `(drawer)/_layout`).
   const isPhone = !isWide;
-  // Web lists stop at a readable width on wide screens, left-aligned under the page title.
-  const contentWidth = isWeb ? ({ width: "100%", maxWidth: LIST_MAX_WIDTH } as const) : undefined;
+  const contentWidth = LIST_WIDTH_STYLE;
   const dynamicBottomPadding =
     editingTaskId !== null
       ? Math.max(keyboardHeight, 300) + 80

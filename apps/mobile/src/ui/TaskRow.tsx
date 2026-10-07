@@ -507,7 +507,9 @@ export function TaskRow({
             ? "bg-accent-50 dark:bg-accent-900"
             : focused
               ? "bg-neutral-100 dark:bg-neutral-800"
-              : "web:hover:bg-neutral-50 dark:web:hover:bg-neutral-900")
+              : // `group-hover` too: hovering the drag grip (DraggableTaskRow.web's wrapper, outside
+                // this element) shows the hover actions, whose background must match the row's.
+                "web:hover:bg-neutral-50 dark:web:hover:bg-neutral-900 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900")
         }
       >
         {depth > 0 &&
@@ -833,7 +835,11 @@ export function TaskRow({
           <View
             className={
               "absolute bottom-0 right-9 top-0 flex-row items-center gap-2 pl-3 opacity-0 group-hover:opacity-100 web:focus-within:opacity-100 " +
-              (focused ? "bg-neutral-100 dark:bg-neutral-800" : "bg-neutral-50 dark:bg-neutral-900")
+              // Unfocused, its background is the row's hover colour reached through the same hover
+              // (and global.css's same 250ms fade), so the row lights up as one, not this box first.
+              (focused
+                ? "bg-neutral-100 dark:bg-neutral-800"
+                : "group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900 web:focus-within:bg-neutral-50 dark:web:focus-within:bg-neutral-900")
             }
           >
             {onOpen && (

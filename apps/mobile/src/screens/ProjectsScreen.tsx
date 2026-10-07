@@ -21,6 +21,7 @@ import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { FolderPicker } from "../ui/FolderPicker";
 import { projectIconFor } from "../ui/projectIcons";
 import { EmptyState } from "../ui/EmptyState";
+import { LIST_WIDTH_STYLE } from "../ui/listWidth";
 import {
   Archive,
   ChevronDown,
@@ -196,7 +197,10 @@ export function ProjectsScreen({ onOpenProject, rootId = null }: ProjectsScreenP
 
   return (
     <View className="flex-1 bg-white dark:bg-zinc-950">
-      <View className="flex-row items-center gap-2 border-b border-neutral-100 px-3 py-2 dark:border-neutral-900">
+      <View
+        style={LIST_WIDTH_STYLE}
+        className="flex-row items-center gap-2 border-b border-neutral-100 px-3 py-2 dark:border-neutral-900"
+      >
         <Hash size={isWeb ? 18 : 20} className="text-neutral-400" />
         <TextInput
           ref={escapeDraft.ref}
@@ -236,6 +240,7 @@ export function ProjectsScreen({ onOpenProject, rootId = null }: ProjectsScreenP
 
       <FlatList
         data={rows}
+        contentContainerStyle={LIST_WIDTH_STYLE}
         keyExtractor={(row) => row.project.id}
         // The action focuses the create field above rather than opening a second way to name one.
         ListEmptyComponent={
