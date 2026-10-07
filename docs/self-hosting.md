@@ -47,6 +47,12 @@ In production, pin a version: `ATLAS_IMAGE=ghcr.io/atlastodo/atlas-todo:X.Y.Z`. 
 on Docker Hub as `atlastodo/atlas-todo`. It is built for linux/amd64 and linux/arm64 (a 64-bit OS
 on a Raspberry Pi works; 32-bit ARM does not).
 
+To try unreleased changes, `ATLAS_IMAGE=ghcr.io/atlastodo/atlas-todo:dev` follows the `dev` branch:
+it is rebuilt after every change there that passes CI. Use it with a database you can lose or
+restore. A `dev` image may apply database migrations that no release has yet, and a release image
+refuses to start against a database with a migration it does not know, so going back means waiting
+for the next release that includes it, or restoring a backup taken before switching.
+
 ## NixOS
 
 The repository flake builds the server from source and ships a NixOS module, so a NixOS machine

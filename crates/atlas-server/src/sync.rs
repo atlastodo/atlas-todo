@@ -1699,18 +1699,22 @@ pub(crate) async fn revoke_project(
     state: &AppState,
     user: Uuid,
     project_id: Uuid,
-) -> AppResult<()> {
+) -> AppResult<usize> {
     let mut tx = begin_sync_write(&state.pool).await?;
     let ops = revoke_project_ops(&mut tx, state, user, project_id).await?;
+    if ops.is_empty() {
+        return Ok(0);
+    }
     let batches = apply_to_members(&mut tx, &[user], &ops).await?;
     tx.commit().await?;
     publish_batches(state, batches);
-    Ok(())
+    Ok(ops.len())
 }
 
 /// Once per start, revoke shared projects that earlier leavers' partitions still show. A
 /// candidate has a project tombstone, is still shared, and has no membership for `user`.
-/// Idempotent.
+/// Idempotent; returns how many candidates still needed tombstones, so a fully revoked one
+/// does not count again on every start.
 pub async fn revoke_left_projects(state: &AppState) -> AppResult<usize> {
     let candidates: Vec<(Uuid, Uuid)> = sqlx::query_as(
         "SELECT t.user_id, t.entity_id FROM entity_tombstones t
@@ -1721,10 +1725,13 @@ pub async fn revoke_left_projects(state: &AppState) -> AppResult<usize> {
     )
     .fetch_all(&state.pool)
     .await?;
+    let mut revoked = 0;
     for (user, project_id) in &candidates {
-        revoke_project(state, *user, *project_id).await?;
+        if revoke_project(state, *user, *project_id).await? > 0 {
+            revoked += 1;
+        }
     }
-    Ok(candidates.len())
+    Ok(revoked)
 }
 
 async fn keys_ops_by_key(

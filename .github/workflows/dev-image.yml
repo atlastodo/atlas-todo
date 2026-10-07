@@ -1,0 +1,42 @@
+# The moving `dev` Docker tag: every push to the dev branch runs CI (only the jobs whose files
+# changed, as on main) and, if it passes, publishes the image as `dev` on GHCR and the Docker Hub
+# mirror. Release commits (`chore(release): ...`) are skipped: their tag's release run builds them.
+# Docs-only pushes change nothing in the image and are skipped too.
+name: Dev image
+
+on:
+  push:
+    branches: [dev]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".github/ISSUE_TEMPLATE/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A newer push supersedes the build still going for the previous one.
+  group: dev-image
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+      pull-requests: read
+
+  docker:
+    name: Docker
+    needs: ci
+    uses: ./.github/workflows/docker.yml
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    with:
+      tags: type=raw,value=dev

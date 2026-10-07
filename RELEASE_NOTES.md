@@ -1,7 +1,11 @@
-## v0.1.5
+## v0.1.6
 
 ### Features
-- Local-only mode without an account
+- Centre web lists, projects included
+
+### Fixes
+- Keep scope links of restored entities through retention
+- Light up a hovered task row as one
 
 ### Changes
-- Close issues with Fixes #N in the commit body
+- Publish the dev Docker tag from the dev branch

@@ -250,6 +250,7 @@ async fn seed_newer_than_delete(pool: &PgPool, user: Uuid) -> NewerThanDelete {
     let restored = Uuid::now_v7();
     let tomb_ms = now_ms() - 30 * 86_400_000;
     insert_field(pool, user, "task", restored, "priority", tomb_ms - 1).await;
+    insert_field(pool, user, "task", restored, "project_id", tomb_ms - 1).await;
     insert_field(pool, user, "task", restored, "title", tomb_ms + 1).await;
     insert_tombstone(pool, user, "task", restored, tomb_ms, 30).await;
     // A delete carrying an ancient HLC, received just now.
@@ -273,8 +274,9 @@ async fn assert_newer_than_delete_survived(pool: &PgPool, seeded: &NewerThanDele
     } = *seeded;
     assert_eq!(
         field_names(pool, user, restored).await,
-        vec!["title".to_string()],
-        "the newer field survives; only the field the tombstone hides is purged"
+        vec!["project_id".to_string(), "title".to_string()],
+        "the newer field survives, and so does the hidden project_id clients read its key \
+         scope from; only the other hidden field is purged"
     );
     assert!(
         has_tombstone(pool, user, restored).await,
@@ -326,6 +328,7 @@ async fn enabled_purge_removes_expired_rows_but_keeps_projects_recent_and_fresh_
     let stale_ms = now_ms() - 30 * 86_400_000;
     insert_field(&pool, user, "task", stale, "title", stale_ms - 1).await;
     insert_field(&pool, user, "task", stale, "priority", stale_ms - 2).await;
+    insert_field(&pool, user, "task", stale, "project_id", stale_ms - 2).await;
     insert_tombstone(&pool, user, "task", stale, stale_ms, 30).await;
     let fresh = Uuid::now_v7();
     let fresh_ms = now_ms();

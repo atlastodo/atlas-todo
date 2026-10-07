@@ -933,7 +933,7 @@
     "memberUpdateFailed": "Couldn't update the member",
     "lockedValues_one": "{{count}} locked value",
     "lockedValues_other": "{{count}} locked values",
-    "lockedValuesHint": "Encrypted with a project key this device doesn't have yet. They open once the key arrives.",
+    "lockedValuesHint": "Encrypted values this device can't open. Usually the project key hasn't arrived yet and they open once it does; values left over from deleted items can stay locked.",
     "deferredOps_one": "{{count}} change waiting for a key",
     "deferredOps_other": "{{count}} changes waiting for a key",
     "deferredOpsHint": "Changes to a shared project are held back until this device has the project's key, then sent.",

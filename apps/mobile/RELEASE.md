@@ -153,10 +153,14 @@ tag runs the full suite before anything is built. To cut a pre-release, tag by h
 2. Commit as `chore(release): v0.1.4-rc.1`, `git tag v0.1.4-rc.1`, `git push origin dev v0.1.4-rc.1`.
 
 The same workflow runs, and the `-` in the tag makes it a prerelease: the GitHub Release is marked
-prerelease and is not "latest"; the Docker image gets `0.1.4-rc.1` and a moving `dev` tag, never
-`latest` (Docker Hub included); the AAB goes to the Play **internal** track, with the APK on the
+prerelease and is not "latest"; the Docker image gets `0.1.4-rc.1`, never `latest` (Docker Hub
+included); the AAB goes to the Play **internal** track, with the APK on the
 GitHub prerelease; the desktop tarball is attached without the `-latest` copy. There is no dev
 server. Hosted instances stay on stable releases.
+
+The moving `dev` Docker tag is not tied to rcs: every push to the `dev` branch runs CI for the
+changed paths and, if it passes, publishes the image as `dev` (`dev-image.yml`). Release commits
+and docs-only pushes are skipped.
 
 To ship: `main` only accepts pull requests (merge commits, CI must pass, no bypass). On `dev`, run
 `version:bump 0.1.4` and commit `chore(release): v0.1.4`; open a PR from `dev` to `main` and merge

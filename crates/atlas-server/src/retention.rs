@@ -77,7 +77,10 @@ pub struct PurgeStats {
 ///
 /// A stale tombstone takes the fields it hides with it (HLC not newer than the delete) and is
 /// itself removed only when no field of the key is newer; a newer field means the entity was
-/// restored and must survive. Age is the server's receipt time, never the client's HLC.
+/// restored and must survive. A restored entity keeps its hidden scope links (`project_id`, `task_id`):
+/// clients pick the key a field opens with from them (client-core `resolveScope`, which reads
+/// hidden fields too), so purging one would lock the surviving encrypted fields.
+/// Age is the server's receipt time, never the client's HLC.
 pub async fn purge_once(pool: &PgPool, days: i64) -> AppResult<PurgeStats> {
     if days <= 0 {
         return Ok(PurgeStats::default());
@@ -111,7 +114,7 @@ pub async fn purge_once(pool: &PgPool, days: i64) -> AppResult<PurgeStats> {
     .await?;
 
     // `stale` is materialized once so both deletes act on the same keys, and only picks
-    // tombstones with work left so kept ones cannot starve the batch. It runs under the
+    // tombstones with work left (a kept scope link is none) so kept ones cannot starve the batch. It runs under the
     // sync-write lock: a push landing mid-statement could resurrect the entity.
     let mut tx = crate::sync::begin_sync_write(pool).await?;
     let tombstones = sqlx::query(
@@ -124,7 +127,8 @@ pub async fn purge_once(pool: &PgPool, days: i64) -> AppResult<PurgeStats> {
                                          > (t.hlc_wall_ms, t.hlc_counter, t.hlc_node)), FALSE)
                               AS has_newer,
                           COALESCE(bool_or((f.hlc_wall_ms, f.hlc_counter, f.hlc_node)
-                                        <= (t.hlc_wall_ms, t.hlc_counter, t.hlc_node)), FALSE)
+                                        <= (t.hlc_wall_ms, t.hlc_counter, t.hlc_node)
+                                       AND f.field NOT IN ('project_id', 'task_id')), FALSE)
                               AS has_hidden
                      FROM entity_fields f
                     WHERE f.user_id = t.user_id AND f.entity = t.entity
@@ -140,6 +144,7 @@ pub async fn purge_once(pool: &PgPool, days: i64) -> AppResult<PurgeStats> {
               WHERE f.user_id = s.user_id AND f.entity = s.entity AND f.entity_id = s.entity_id
                 AND (f.hlc_wall_ms, f.hlc_counter, f.hlc_node)
                  <= (s.hlc_wall_ms, s.hlc_counter, s.hlc_node)
+                AND (s.purgeable OR f.field NOT IN ('project_id', 'task_id'))
          )
          DELETE FROM entity_tombstones t USING stale s
           WHERE s.purgeable

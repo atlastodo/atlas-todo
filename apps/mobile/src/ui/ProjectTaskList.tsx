@@ -28,6 +28,7 @@ import { useDragPan } from "../hooks/useDragPan";
 import { useLabels } from "../hooks/useLabels";
 import { useProjects } from "../hooks/useProjects";
 import { useAllSections } from "../hooks/useAllSections";
+import { LIST_WIDTH_STYLE } from "./listWidth";
 import type { MenuPos } from "../hooks/useContextMenu";
 import { resolveSectionReorder, type SectionRow } from "../lib/sectionReorder";
 import { dragReleaseAction } from "../lib/dragRelease";
@@ -984,7 +985,7 @@ export function ProjectTaskList({
   );
 
   const addSectionRow = (
-    <View className="flex-row items-center gap-1 px-3 py-3">
+    <View style={LIST_WIDTH_STYLE} className="flex-row items-center gap-1 px-3 py-3">
       <Plus size={isWeb ? 16 : 18} className="text-neutral-400" />
       <TextInput
         accessibilityLabel={t("board.addSection")}
@@ -1102,7 +1103,7 @@ export function ProjectTaskList({
             ListHeaderComponent={header}
             ListFooterComponent={doneFooter}
             renderItem={renderRow}
-            contentContainerStyle={{ paddingBottom: dynamicBottomPadding }}
+            contentContainerStyle={[LIST_WIDTH_STYLE, { paddingBottom: dynamicBottomPadding }]}
             onScrollToIndexFailed={handleScrollToIndexFailed}
             style={{ flex: 1 }}
             {...keyboardListProps}
@@ -1116,7 +1117,7 @@ export function ProjectTaskList({
             ListHeaderComponent={header}
             ListFooterComponent={doneFooter}
             renderItem={renderRow}
-            contentContainerStyle={{ paddingBottom: dynamicBottomPadding }}
+            contentContainerStyle={[LIST_WIDTH_STYLE, { paddingBottom: dynamicBottomPadding }]}
             onScrollToIndexFailed={handleScrollToIndexFailed}
             panGesture={dragPan}
             dragEnabled={!selection.mode}
@@ -1145,7 +1146,7 @@ export function ProjectTaskList({
           ListFooterComponent={doneFooter}
           ListEmptyComponent={empty}
           renderItem={({ item }) => renderTask(item)}
-          contentContainerStyle={{ paddingBottom: dynamicBottomPadding }}
+          contentContainerStyle={[LIST_WIDTH_STYLE, { paddingBottom: dynamicBottomPadding }]}
           onScrollToIndexFailed={handleScrollToIndexFailed}
           style={{ flex: 1 }}
           {...keyboardListProps}
@@ -1159,7 +1160,7 @@ export function ProjectTaskList({
           ListHeaderComponent={header}
           ListFooterComponent={doneFooter}
           ListEmptyComponent={empty}
-          contentContainerStyle={{ paddingBottom: dynamicBottomPadding }}
+          contentContainerStyle={[LIST_WIDTH_STYLE, { paddingBottom: dynamicBottomPadding }]}
           onScrollToIndexFailed={handleScrollToIndexFailed}
           panGesture={dragPan}
           dragEnabled={!selection.mode}

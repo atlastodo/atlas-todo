@@ -700,16 +700,23 @@ async fn the_sweep_revokes_what_earlier_leavers_kept() {
         &items[2]
     ));
 
-    atlas_server::sync::revoke_left_projects(&state)
-        .await
-        .unwrap();
+    // At least this one: other tests share the database.
+    assert!(
+        atlas_server::sync::revoke_left_projects(&state)
+            .await
+            .unwrap()
+            >= 1
+    );
     project_revoked(&partition_ops(&control, &bob).await, &items);
 
-    // A second run finds nothing left to revoke.
+    // A second run finds nothing left to revoke, and says so.
     let before = partition_ops(&control, &bob).await.len();
-    atlas_server::sync::revoke_left_projects(&state)
-        .await
-        .unwrap();
+    assert_eq!(
+        atlas_server::sync::revoke_left_projects(&state)
+            .await
+            .unwrap(),
+        0
+    );
     assert_eq!(partition_ops(&control, &bob).await.len(), before);
 }
 

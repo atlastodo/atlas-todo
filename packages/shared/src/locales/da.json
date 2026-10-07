@@ -933,7 +933,7 @@
     "memberUpdateFailed": "Kunne ikke opdatere medlemmet",
     "lockedValues_one": "{{count}} låst værdi",
     "lockedValues_other": "{{count}} låste værdier",
-    "lockedValuesHint": "Krypteret med en projektnøgle, som denne enhed ikke har endnu. De åbnes, når nøglen kommer.",
+    "lockedValuesHint": "Krypterede værdier, som denne enhed ikke kan åbne. Som regel er projektnøglen ikke kommet endnu, og de åbnes, når den gør; rester af slettede elementer kan forblive låste.",
     "deferredOps_one": "{{count}} ændring venter på en nøgle",
     "deferredOps_other": "{{count}} ændringer venter på en nøgle",
     "deferredOpsHint": "Ændringer i et delt projekt holdes tilbage, indtil denne enhed har projektets nøgle, og sendes derefter.",
