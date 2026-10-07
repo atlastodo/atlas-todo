@@ -19,3 +19,12 @@ thiserror = "2"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Every signup and login in the server's integration tests hashes a password with Argon2, which is
+# many times slower unoptimized: optimizing just the hash crates cuts the suite by about 4x, while
+# optimizing every dependency gains little more.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
