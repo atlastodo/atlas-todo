@@ -4,6 +4,8 @@ import "../src/lib/polyfillCrypto";
 import "../src/lib/nativePbkdf2";
 // Registers the platform's Argon2id: WebAssembly on web and desktop, the native module on Android.
 import "../src/lib/argon2id";
+// Web: Tab skips the scroll containers Firefox makes focusable. See `skipScrollerFocus.web`.
+import "../src/lib/skipScrollerFocus";
 import { configureReanimatedLogger, ReanimatedLogLevel } from "react-native-reanimated";
 
 configureReanimatedLogger({
