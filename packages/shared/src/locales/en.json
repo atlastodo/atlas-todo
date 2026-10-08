@@ -1425,8 +1425,7 @@
     "restart": "Restart to Apply",
     "whatsNew": "Release notes",
     "dismiss": "Dismiss",
-    "managed": "Updates are managed by your system package manager ({{manager}}). Use 'nix flake update' to update.",
-    "managedGeneric": "Updates are managed by your system package manager.",
+    "managedGeneric": "Automatic updates are off because your package manager handles updates. Update Atlas Todo through it.",
     "error": "Update error: {{error}}"
   },
   "empty": {

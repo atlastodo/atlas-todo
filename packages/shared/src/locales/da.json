@@ -1425,8 +1425,7 @@
     "restart": "Genstart for at anvende",
     "whatsNew": "Udgivelsesnoter",
     "dismiss": "Afvis",
-    "managed": "Opdateringer administreres af din pakkehåndtering ({{manager}}). Brug 'nix flake update' for at opdatere.",
-    "managedGeneric": "Opdateringer administreres af din pakkehåndtering.",
+    "managedGeneric": "Automatiske opdateringer er slået fra, fordi din pakkehåndtering står for opdateringer. Opdater Atlas Todo gennem den.",
     "error": "Opdateringsfejl: {{error}}"
   },
   "empty": {

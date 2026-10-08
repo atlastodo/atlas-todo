@@ -47,7 +47,7 @@ describe("DesktopUpdateSection", () => {
     expect(screen.queryByText("Desktop Updates")).toBeNull();
   });
 
-  it("shows managed message when updates are disabled for NixOS", async () => {
+  it("shows one package-manager message whatever the manager", async () => {
     const bridge = installUpdatesBridge({
       disabled: true,
       disableReason: "nixos",
@@ -60,7 +60,7 @@ describe("DesktopUpdateSection", () => {
     expect(screen.getByText("NixOS")).toBeTruthy();
     expect(
       screen.getByText(
-        "Updates are managed by your system package manager (NixOS). Use 'nix flake update' to update.",
+        "Automatic updates are off because your package manager handles updates. Update Atlas Todo through it.",
       ),
     ).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Check for updates" })).toBeNull();

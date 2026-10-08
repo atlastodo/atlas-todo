@@ -36,9 +36,7 @@ export function DesktopUpdateSection() {
       {state.disabled ? (
         <View className="gap-2">
           <Text className="text-sm text-neutral-600 dark:text-neutral-400">
-            {state.manager
-              ? t("desktopUpdate.managed", { manager: state.manager })
-              : t("desktopUpdate.managedGeneric")}
+            {t("desktopUpdate.managedGeneric")}
           </Text>
         </View>
       ) : (
