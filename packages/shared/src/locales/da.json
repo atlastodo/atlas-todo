@@ -562,6 +562,7 @@
     "moveHere": "Flyt hertil",
     "moveHereTo": "Flyt kortet til {{name}}",
     "movingCard": "Flytter \"{{title}}\" — tryk på Flyt hertil i en anden sektion",
+    "movingCards": "Flytter {{count}} kort — tryk på Flyt hertil i en anden sektion",
     "moveToColumn": "Flyt til sektion",
     "moveLeft": "Flyt til venstre",
     "moveRight": "Flyt til højre",

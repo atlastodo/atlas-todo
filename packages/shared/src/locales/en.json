@@ -562,6 +562,7 @@
     "moveHere": "Move here",
     "moveHereTo": "Move the card to {{name}}",
     "movingCard": "Moving \"{{title}}\" — tap Move here on another section",
+    "movingCards": "Moving {{count}} cards — tap Move here on another section",
     "moveToColumn": "Move to section",
     "moveLeft": "Move left",
     "moveRight": "Move right",

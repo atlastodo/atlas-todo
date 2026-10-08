@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { PRIORITY_COLOR, isOverdue } from "@atlas/shared";
 import type { Label, Task } from "@atlas/client-core";
 import { useContextMenu, type MenuPos } from "../hooks/useContextMenu";
+import { useSelectionOptional } from "../data/SelectionProvider";
 import { haptics } from "../lib/haptics";
 import { defaultFormatDue } from "../lib/dueFormat";
 import { LabelChips } from "./LabelChips";
@@ -68,6 +69,10 @@ export function BoardCard({
   const nested = !readOnly && subtasks.length > 0;
   const overdue = task.due_at !== null && isOverdue(task, now);
   const pressPos = useRef<MenuPos>({ x: 0, y: 0 });
+  // In select mode the board's press toggles the card; it is not dragged and shows as selected.
+  const selection = useSelectionOptional();
+  const selectMode = !preview && (selection?.mode ?? false);
+  const selected = selectMode && selection!.has(task.id);
 
   const contextRef = useContextMenu((pos) => onContextMenu?.(task, pos));
   const pos = (e?: GestureResponderEvent): MenuPos => {
@@ -104,7 +109,7 @@ export function BoardCard({
 
   // An undecryptable task shows a placeholder and is neither completed nor dragged: a write built from its "" title would overwrite what others read.
   const locked = task.locked === true;
-  const canDrag = !readOnly && !locked && Boolean(drag);
+  const canDrag = !readOnly && !locked && !selectMode && Boolean(drag);
 
   return (
     <Pressable
@@ -130,13 +135,19 @@ export function BoardCard({
       delayLongPress={canDrag ? 200 : 250}
       disabled={!onOpen && !longPressMenu && !canDrag}
       style={CARD_SHADOW}
+      // A press on a card never counts as outside the tasks (`useOutsidePressExit`).
+      dataSet={selectMode ? { selectionKeep: "" } : undefined}
+      accessibilityState={selectMode ? { selected } : undefined}
       className={
-        "mb-2 rounded-lg border bg-white p-2.5 dark:bg-zinc-900 " +
+        "mb-2 rounded-lg border p-2.5 " +
+        (selected ? "" : "bg-white dark:bg-zinc-900 ") +
         (preview
           ? "border-accent-500 ring-1 ring-accent-500 dark:border-accent-400 dark:ring-accent-400 "
-          : focused
-            ? "border-accent-400 dark:border-accent-600 "
-            : "border-neutral-200 dark:border-neutral-800 web:hover:border-neutral-300 dark:web:hover:border-neutral-700 ") +
+          : selected
+            ? "border-accent-400 bg-accent-50 dark:border-accent-600 dark:bg-accent-900 "
+            : focused
+              ? "border-accent-400 dark:border-accent-600 "
+              : "border-neutral-200 dark:border-neutral-800 web:hover:border-neutral-300 dark:web:hover:border-neutral-700 ") +
         (onOpen ? "web:cursor-pointer " : "")
       }
     >

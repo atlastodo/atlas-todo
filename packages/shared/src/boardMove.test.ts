@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Task } from "@atlas/client-core";
-import { columnCards, columnMoveWrites, columnRoots } from "./boardMove";
+import { columnCards, columnMoveManyWrites, columnMoveWrites, columnRoots } from "./boardMove";
 
 const NOW = 1_700_000_000_000;
 function task(overrides: Partial<Task>): Task {
@@ -150,5 +150,25 @@ describe("columnRoots", () => {
       task({ id: "q", section_id: "s1", sort_order: 1 }),
     ];
     expect(columnRoots(tasks, "s1", "p").map((t) => t.id)).toEqual(["q"]);
+  });
+});
+
+describe("columnMoveManyWrites", () => {
+  it("appends the cards to the column in order, carrying their subtasks", () => {
+    const tasks = [
+      task({ id: "x", section_id: "b", sort_order: 1 }),
+      task({ id: "a", section_id: "a", sort_order: 1 }),
+      task({ id: "a1", section_id: "a", parent_id: "a", sort_order: 1 }),
+      task({ id: "c", section_id: null, sort_order: 2 }),
+    ];
+    const writes = columnMoveManyWrites(tasks, ["a", "c"], "b");
+    const byId = new Map(writes.map((w) => [w.id, w]));
+    expect(byId.get("a")?.section_id).toBe("b");
+    expect(byId.get("c")?.section_id).toBe("b");
+    expect(byId.get("a1")).toEqual({ id: "a1", section_id: "b" });
+    const order = (id: string) =>
+      byId.get(id)?.sort_order ?? tasks.find((t) => t.id === id)!.sort_order;
+    expect(order("x")).toBeLessThan(order("a"));
+    expect(order("a")).toBeLessThan(order("c"));
   });
 });
