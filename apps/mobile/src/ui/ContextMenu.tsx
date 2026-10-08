@@ -14,6 +14,7 @@ import type { LucideIcon } from "./icons";
 import type { MenuPos } from "../hooks/useContextMenu";
 import { clampMenuPosition, type Size } from "../lib/menuPosition";
 import { useBackdropSwitch } from "../hooks/useBackdropSwitch";
+import { ThemeScope } from "../theme/ThemeProvider";
 import { useIsWide } from "../hooks/useIsWide";
 
 /**
@@ -75,43 +76,45 @@ export function ContextMenu({ items, pos, onClose, align = "left" }: ContextMenu
 
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        ref={backdropRef}
-        accessibilityLabel={t("common.close")}
-        onPress={onClose}
-        className="absolute inset-0"
-      />
-      <View
-        accessibilityLabel={t("context.actions")}
-        onLayout={onLayout}
-        style={{
-          position: "absolute",
-          left: placed.x,
-          top: placed.y,
-          maxHeight: height - 8,
-          opacity: size ? 1 : 0,
-        }}
-        className={"w-56 " + MENU_SURFACE}
-      >
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {items.map((item) => {
-            return (
-              <View key={item.key}>
-                {item.separatorBefore && (
-                  <View className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
-                )}
-                <MenuItem
-                  icon={item.icon}
-                  label={item.label}
-                  danger={item.danger}
-                  onPress={item.onPress}
-                  onClose={onClose}
-                />
-              </View>
-            );
-          })}
-        </ScrollView>
-      </View>
+      <ThemeScope className="flex-1">
+        <Pressable
+          ref={backdropRef}
+          accessibilityLabel={t("common.close")}
+          onPress={onClose}
+          className="absolute inset-0"
+        />
+        <View
+          accessibilityLabel={t("context.actions")}
+          onLayout={onLayout}
+          style={{
+            position: "absolute",
+            left: placed.x,
+            top: placed.y,
+            maxHeight: height - 8,
+            opacity: size ? 1 : 0,
+          }}
+          className={"w-56 " + MENU_SURFACE}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {items.map((item) => {
+              return (
+                <View key={item.key}>
+                  {item.separatorBefore && (
+                    <View className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
+                  )}
+                  <MenuItem
+                    icon={item.icon}
+                    label={item.label}
+                    danger={item.danger}
+                    onPress={item.onPress}
+                    onClose={onClose}
+                  />
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </ThemeScope>
     </Modal>
   );
 }
