@@ -461,6 +461,10 @@
     url = "https://registry.npmjs.org/@expo/env/-/env-2.4.3.tgz";
     hash = "sha512-M1NXeZCA1mkMkYOyIe7PlyRX0/jqFtMoJgyblnlq/vpCRfmueFT7RnGSQG8uEFDF5WHOFGijAQ3fogPh3/n5Ng==";
   };
+  "@expo/env@2.5.1" = fetchurl {
+    url = "https://registry.npmjs.org/@expo/env/-/env-2.5.1.tgz";
+    hash = "sha512-FXr7sJtusDKrrtfxenRdAwbqARTasYY1+3vL3FjnlvwiWzvItnSBRbcspF6AI45jIBLbi2GHDIAorzAXhmA1+Q==";
+  };
   "@expo/expo-modules-macros-plugin@0.6.1" = fetchurl {
     url = "https://registry.npmjs.org/@expo/expo-modules-macros-plugin/-/expo-modules-macros-plugin-0.6.1.tgz";
     hash = "sha512-cpsLZE4rqkc1Y3eZTkxB98jrqY1YXgetmtxFt8q89jBRmk3quRuk1BZo+VcnCSObZardjg99r1k5xijEMONFGA==";
@@ -524,6 +528,10 @@
   "@expo/require-utils@57.0.5" = fetchurl {
     url = "https://registry.npmjs.org/@expo/require-utils/-/require-utils-57.0.5.tgz";
     hash = "sha512-kTAXj9lDFEIPMsbAOGCGbjBbMF0oi7CqkYM79KOX0DDD9wSwXmlKL1z2h8OwsrBf7mbOo2DjlRvZu4BEjrIxGw==";
+  };
+  "@expo/require-utils@58.0.3" = fetchurl {
+    url = "https://registry.npmjs.org/@expo/require-utils/-/require-utils-58.0.3.tgz";
+    hash = "sha512-WsYe9AAB5dtGrA5zbVKDNsbhaTm9x7oPslBTwtdUPuV9TKTICO6IR01KtW2RtkmMU30A27AMr71t0/mHl9iXWg==";
   };
   "@expo/router-server@57.0.11" = fetchurl {
     url = "https://registry.npmjs.org/@expo/router-server/-/router-server-57.0.11.tgz";
@@ -2109,6 +2117,10 @@
     url = "https://registry.npmjs.org/expo-constants/-/expo-constants-57.0.20.tgz";
     hash = "sha512-WycPVvBgbluSa6yAh6DKnX646ZHrae0gV2ZLum5fioNkR+DiWyulq1+UfS++Jc6yfAh/l55NOirv6mt5cnQhSw==";
   };
+  "expo-constants@58.0.10" = fetchurl {
+    url = "https://registry.npmjs.org/expo-constants/-/expo-constants-58.0.10.tgz";
+    hash = "sha512-5Gf/xZov/y4TBNi7rMyV9AUisPlR6bdCOR4oXV85st4U8YGjZGRbSIGbojV3C8pFuy3ytZjcgq2N735vcOUsig==";
+  };
   "expo-crypto@57.0.3" = fetchurl {
     url = "https://registry.npmjs.org/expo-crypto/-/expo-crypto-57.0.3.tgz";
     hash = "sha512-SAWqEfF37nc8ot7bXsVmu9AFYwQdC2kGvH/eNAHiR3bmlcf1Vv8wu9AnGKT+a90r3T8YfwMpZP4QAYlo4vCn9w==";
@@ -2148,6 +2160,10 @@
   "expo-linking@57.0.11" = fetchurl {
     url = "https://registry.npmjs.org/expo-linking/-/expo-linking-57.0.11.tgz";
     hash = "sha512-bfTyiPb8szacs8XkGowXt5ssH/vbF26vFG8WUWQar8CcRpQcIzXY980ZkP7pK7Pcdy5MattwFdujrWOxwv5s3Q==";
+  };
+  "expo-linking@58.0.10" = fetchurl {
+    url = "https://registry.npmjs.org/expo-linking/-/expo-linking-58.0.10.tgz";
+    hash = "sha512-i4Pewp1woKPfevUAvlZFx7OT16W7VvYmN2Rv9SNUQQMoHn6Mn4Ug1lgMB63fejVuhjcNxy9nLsV2LEnU1mW3DA==";
   };
   "expo-localization@57.0.2" = fetchurl {
     url = "https://registry.npmjs.org/expo-localization/-/expo-localization-57.0.2.tgz";
