@@ -31,15 +31,15 @@ sqlx = { version = "0.8", default-features = false, features = [
     "json",
     "migrate",
 ] }
-argon2 = "0.5"
+argon2 = "0.6"
 jsonwebtoken = "9"
 rand = "0.8"
-sha2 = "0.10"
+sha2 = "0.11"
 hex = "0.4"
-hmac = "0.12"
-hkdf = "0.12"
+hmac = "0.13"
+hkdf = "0.13"
 aes-gcm = "0.10"
-x25519-dalek = { version = "2", features = ["static_secrets"] }
+x25519-dalek = { version = "3", features = ["static_secrets"] }
 base64 = "0.22"
 futures-util = { version = "0.3", default-features = false, features = ["sink"] }
 object_store = { version = "0.14.2", default-features = false, features = ["aws"] }
