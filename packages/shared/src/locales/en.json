@@ -350,6 +350,7 @@
     "storageAskAgain": "Ask again",
     "serverUrlHint": "The Atlas Todo server this app syncs with.",
     "serverUrlSaved": "Saved. Reopen the app for it to take effect.",
+    "desktop": "Desktop app",
     "devices": "Devices & sessions",
     "devicesThisDevice": "This device",
     "devicesDeviceLabel": "Device {{id}}",
@@ -561,6 +562,7 @@
     "moveHere": "Move here",
     "moveHereTo": "Move the card to {{name}}",
     "movingCard": "Moving \"{{title}}\" — tap Move here on another section",
+    "movingCards": "Moving {{count}} cards — tap Move here on another section",
     "moveToColumn": "Move to section",
     "moveLeft": "Move left",
     "moveRight": "Move right",
@@ -1068,6 +1070,11 @@
   },
   "projects": {
     "newFolder": "New folder",
+    "name": "Name",
+    "folder": "Folder",
+    "defaultView": "Default view",
+    "namePlaceholder": "Project name",
+    "folderNamePlaceholder": "Folder name",
     "newProjectHere": "New project here",
     "moveToFolder": "Move to folder",
     "noFolder": "No folder",
@@ -1419,8 +1426,7 @@
     "restart": "Restart to Apply",
     "whatsNew": "Release notes",
     "dismiss": "Dismiss",
-    "managed": "Updates are managed by your system package manager ({{manager}}). Use 'nix flake update' to update.",
-    "managedGeneric": "Updates are managed by your system package manager.",
+    "managedGeneric": "Automatic updates are off because your package manager handles updates. Update Atlas Todo through it.",
     "error": "Update error: {{error}}"
   },
   "empty": {
@@ -1440,5 +1446,20 @@
       "title": "Nothing is assigned to you.",
       "hint": "When someone in a shared project assigns you a task, it shows up here."
     }
+  },
+  "relativeTime": {
+    "justNow": "just now",
+    "past": "{{amount}} ago",
+    "future": "in {{amount}}",
+    "minute_one": "{{count}} minute",
+    "minute_other": "{{count}} minutes",
+    "hour_one": "{{count}} hour",
+    "hour_other": "{{count}} hours",
+    "day_one": "{{count}} day",
+    "day_other": "{{count}} days",
+    "month_one": "{{count}} month",
+    "month_other": "{{count}} months",
+    "year_one": "{{count}} year",
+    "year_other": "{{count}} years"
   }
 }

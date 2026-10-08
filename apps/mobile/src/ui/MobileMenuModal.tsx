@@ -36,8 +36,15 @@ export function MobileMenuModal({
 }: MobileMenuModalProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { isWeb, dismiss, animatedStyle, headerPanGesture, scrollHandler, composedGesture } =
-    useSheetDismiss(onClose, visible);
+  const {
+    isWeb,
+    dismiss,
+    animatedStyle,
+    headerPanGesture,
+    scrollHandler,
+    composedGesture,
+    scrollAnimatedProps,
+  } = useSheetDismiss(onClose, visible);
 
   const handleItemPress = (item: SidebarItem) => {
     if (item.onToggle) {
@@ -149,6 +156,7 @@ export function MobileMenuModal({
                   keyboardShouldPersistTaps="handled"
                   scrollEventThrottle={16}
                   onScroll={scrollHandler}
+                  animatedProps={scrollAnimatedProps}
                 >
                   {sections.map((section, idx) => {
                     const title = sectionTitle(section.key);

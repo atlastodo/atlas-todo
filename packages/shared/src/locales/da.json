@@ -350,6 +350,7 @@
     "storageAskAgain": "Spørg igen",
     "serverUrlHint": "Atlas Todo-serveren denne app synkroniserer med.",
     "serverUrlSaved": "Gemt. Genåbn appen for at det træder i kraft.",
+    "desktop": "Skrivebordsapp",
     "devices": "Enheder & sessioner",
     "devicesThisDevice": "Denne enhed",
     "devicesDeviceLabel": "Enhed {{id}}",
@@ -561,6 +562,7 @@
     "moveHere": "Flyt hertil",
     "moveHereTo": "Flyt kortet til {{name}}",
     "movingCard": "Flytter \"{{title}}\" — tryk på Flyt hertil i en anden sektion",
+    "movingCards": "Flytter {{count}} kort — tryk på Flyt hertil i en anden sektion",
     "moveToColumn": "Flyt til sektion",
     "moveLeft": "Flyt til venstre",
     "moveRight": "Flyt til højre",
@@ -1068,6 +1070,11 @@
   },
   "projects": {
     "newFolder": "Ny mappe",
+    "name": "Navn",
+    "folder": "Mappe",
+    "defaultView": "Standardvisning",
+    "namePlaceholder": "Projektnavn",
+    "folderNamePlaceholder": "Mappenavn",
     "newProjectHere": "Nyt projekt her",
     "moveToFolder": "Flyt til mappe",
     "noFolder": "Ingen mappe",
@@ -1419,8 +1426,7 @@
     "restart": "Genstart for at anvende",
     "whatsNew": "Udgivelsesnoter",
     "dismiss": "Afvis",
-    "managed": "Opdateringer administreres af din pakkehåndtering ({{manager}}). Brug 'nix flake update' for at opdatere.",
-    "managedGeneric": "Opdateringer administreres af din pakkehåndtering.",
+    "managedGeneric": "Automatiske opdateringer er slået fra, fordi din pakkehåndtering står for opdateringer. Opdater Atlas Todo gennem den.",
     "error": "Opdateringsfejl: {{error}}"
   },
   "empty": {
@@ -1440,5 +1446,20 @@
       "title": "Intet er tildelt dig.",
       "hint": "Når nogen i et delt projekt tildeler dig en opgave, vises den her."
     }
+  },
+  "relativeTime": {
+    "justNow": "lige nu",
+    "past": "for {{amount}} siden",
+    "future": "om {{amount}}",
+    "minute_one": "{{count}} minut",
+    "minute_other": "{{count}} minutter",
+    "hour_one": "{{count}} time",
+    "hour_other": "{{count}} timer",
+    "day_one": "{{count}} dag",
+    "day_other": "{{count}} dage",
+    "month_one": "{{count}} måned",
+    "month_other": "{{count}} måneder",
+    "year_one": "{{count}} år",
+    "year_other": "{{count}} år"
   }
 }

@@ -430,6 +430,7 @@ export function TaskDetailScreen({
         contentContainerStyle={isWeb ? WEB_CONTENT : NATIVE_CONTENT}
         scrollEventThrottle={16}
         onScroll={sheetScroll?.scrollHandler}
+        animatedProps={sheetScroll?.scrollAnimatedProps}
       >
         <View
           ref={rootRef}
@@ -1208,6 +1209,7 @@ export function TaskDetailScreen({
       keyboardShouldPersistTaps="handled"
       scrollEventThrottle={16}
       onScroll={sheetScroll?.scrollHandler}
+      animatedProps={sheetScroll?.scrollAnimatedProps}
     >
       <View
         ref={rootRef}

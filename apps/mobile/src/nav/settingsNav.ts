@@ -4,6 +4,7 @@ import {
   LifeBuoy,
   ListChecks,
   Menu,
+  Monitor,
   Palette,
   Server,
   ShieldCheck,
@@ -33,6 +34,7 @@ export type SettingsSectionId =
   | "data"
   | "server"
   | "devices"
+  | "desktop"
   | "help"
   | "account"
   | "admin";
@@ -53,6 +55,7 @@ const ALL_SECTIONS: SettingsSection[] = [
   { id: "data", labelKey: "settings.data", icon: Database },
   { id: "server", labelKey: "settings.server", icon: Server },
   { id: "devices", labelKey: "settings.devices", icon: Smartphone },
+  { id: "desktop", labelKey: "settings.desktop", icon: Monitor },
   { id: "help", labelKey: "settings.help", icon: LifeBuoy },
   { id: "account", labelKey: "settings.account", icon: UserRound },
   { id: "admin", labelKey: "settings.admin", icon: ShieldCheck },
@@ -62,13 +65,14 @@ const ALL_SECTIONS: SettingsSection[] = [
  * The sections this user can open. Admin is only listed for an administrator (`isAdmin`, a UI hint
  * -- the server re-checks every `/admin/*` request). Server section is hidden when using the app
  * online via web, as the app defaults to the active website URL. Local-only mode has no server and
- * no sessions, so neither Server nor Devices.
+ * no sessions, so neither Server nor Devices. Desktop app only shows inside the desktop app.
  */
 export function settingsSections(admin: boolean, localOnly = false): SettingsSection[] {
   return ALL_SECTIONS.filter((s) => {
     if (s.id === "admin" && !admin) return false;
     if (s.id === "server" && (localOnly || isOnlineWeb())) return false;
     if (s.id === "devices" && localOnly) return false;
+    if (s.id === "desktop" && !isDesktopApp()) return false;
     return true;
   });
 }
@@ -83,4 +87,12 @@ export function resolveSettingsSection(
 ): SettingsSectionId {
   const id = Array.isArray(raw) ? raw[0] : raw;
   return sections.find((s) => s.id === id)?.id ?? sections[0]!.id;
+}
+
+/** Running inside the Electron desktop app, whose preload exposes `window.atlasDesktop`. */
+function isDesktopApp(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    (window as unknown as { atlasDesktop?: unknown }).atlasDesktop != null
+  );
 }

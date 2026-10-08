@@ -44,4 +44,11 @@ describe("SelectionToolbar", () => {
     await fireEvent.press(screen.getByLabelText("Delete"));
     expect(props.onDelete).toHaveBeenCalledTimes(1);
   });
+
+  it("offers Reopen instead of Complete when every selected task is done", async () => {
+    const props = await renderToolbar({ allCompleted: true });
+    expect(screen.queryByLabelText("Complete task")).toBeNull();
+    await fireEvent.press(screen.getByLabelText("Reopen task"));
+    expect(props.onComplete).toHaveBeenCalledTimes(1);
+  });
 });

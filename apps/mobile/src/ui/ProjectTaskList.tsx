@@ -19,6 +19,7 @@ import {
 } from "@atlas/shared";
 import { useSelection } from "../data/SelectionProvider";
 import { useSelectionSource } from "../hooks/useSelectionSource";
+import { useOutsidePressExit } from "../hooks/useOutsidePressExit";
 import { useRegisterSelectionActions } from "../data/SelectionActionsProvider";
 import { useCursorList } from "../data/CursorProvider";
 import { useReminderTaskIds } from "../hooks/useReminders";
@@ -418,6 +419,7 @@ export function ProjectTaskList({
   );
   // Prune against every task in the project: collapsing a section or a sync frame must not deselect its rows.
   useSelectionSource(visible, tasks);
+  const outsidePress = useOutsidePressExit();
 
   const reminderTaskIds = useReminderTaskIds();
 
@@ -817,6 +819,25 @@ export function ProjectTaskList({
   );
 
   const ids = () => [...selection.selected];
+  const selectedTasks = () => visible.filter((task) => selection.has(task.id));
+  const allSelectedCompleted = () => {
+    const chosen = selectedTasks();
+    return chosen.length > 0 && chosen.every((task) => task.is_completed);
+  };
+  // Complete the selection, or reopen it when every selected task is already done.
+  const toggleSelected = () => {
+    const chosen = selectedTasks();
+    if (allSelectedCompleted()) {
+      for (const task of chosen) onToggle(task);
+    } else if (onBulkComplete) {
+      onBulkComplete(chosen.map((task) => task.id));
+    } else {
+      for (const task of chosen) onToggle(task);
+    }
+  };
+  // Right-clicking a task inside a multi-task selection opens the menu on the whole selection.
+  const menuOnSelection =
+    menu != null && selection.mode && selection.has(menu.task.id) && selection.count > 1;
   const toolbar = selection.mode ? (
     <SelectionToolbar
       count={selection.count}
@@ -824,14 +845,8 @@ export function ProjectTaskList({
       timeZone={timeZone}
       onSelectAll={() => selection.selectAll()}
       // Bulk actions keep the selection for a run of actions; completed/deleted rows fall out via the prune.
-      onComplete={() => {
-        const selectedIds = visible.filter((task) => selection.has(task.id)).map((task) => task.id);
-        if (onBulkComplete) {
-          onBulkComplete(selectedIds);
-        } else {
-          for (const task of visible) if (selection.has(task.id)) onToggle(task);
-        }
-      }}
+      allCompleted={allSelectedCompleted()}
+      onComplete={toggleSelected}
       onSetPriority={(p) => onBulkSetPriority(ids(), p)}
       onSetDue={(dueAt) => onBulkSetDue(ids(), dueAt)}
       onCopy={() => void copySelected()}
@@ -866,6 +881,21 @@ export function ProjectTaskList({
       onOutdent={onReparent ? (task) => outdentTask(task, menuSiblings) : undefined}
       canIndent={indentTarget(menuSiblings, menu.task.id, tasks) !== null}
       canOutdent={outdentTarget(menuSiblings, menu.task.id) !== null}
+      bulk={
+        menuOnSelection
+          ? {
+              tasks: selectedTasks(),
+              onToggle: toggleSelected,
+              onSetPriority: (p) => onBulkSetPriority(ids(), p),
+              onSetDue: (dueAt) => onBulkSetDue(ids(), dueAt),
+              onCopy: () => void copySelected(),
+              onDuplicate: () => onBulkDuplicate(ids()),
+              onDelete: () => onBulkDelete(ids()),
+              onMove: () => setMoving({ kind: "tasks", ids: ids() }),
+              onLabels: () => setLabeling(ids()),
+            }
+          : undefined
+      }
     />
   ) : null;
 
@@ -1094,7 +1124,7 @@ export function ProjectTaskList({
 
   if (sections.length > 0) {
     return (
-      <View className="flex-1">
+      <View className="flex-1" {...outsidePress}>
         {dragDisabled ? (
           <FlatList
             ref={rowListRef}
@@ -1136,7 +1166,7 @@ export function ProjectTaskList({
   }
 
   return (
-    <View className="flex-1">
+    <View className="flex-1" {...outsidePress}>
       {dragDisabled ? (
         <FlatList
           ref={taskListRef}

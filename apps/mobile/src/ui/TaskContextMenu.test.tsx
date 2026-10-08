@@ -52,6 +52,21 @@ async function renderMenu(overrides: Partial<React.ComponentProps<typeof TaskCon
 }
 
 describe("TaskContextMenu", () => {
+  it("marks the due preset matching the task's due day as current", async () => {
+    await renderMenu({
+      task: task({ due_at: Date.parse("2026-07-18T15:00:00Z") }),
+      timeZone: "UTC",
+    });
+    expect(screen.getByLabelText("Tomorrow").props.accessibilityState?.selected).toBe(true);
+    expect(screen.getByLabelText("Today").props.accessibilityState?.selected).toBeFalsy();
+    expect(screen.getByLabelText("No date").props.accessibilityState?.selected).toBeFalsy();
+  });
+
+  it("marks No date as current for an undated task", async () => {
+    await renderMenu();
+    expect(screen.getByLabelText("No date").props.accessibilityState?.selected).toBe(true);
+  });
+
   it("completes the task and closes", async () => {
     const props = await renderMenu();
     await fireEvent.press(screen.getByLabelText("Complete task"));
@@ -147,5 +162,66 @@ describe("TaskContextMenu", () => {
     }
     await fireEvent.press(screen.getByRole("menuitem", { name: "Select" }));
     expect(props.onSelect).toHaveBeenCalledWith(props.task);
+  });
+
+  describe("on a multi-task selection", () => {
+    function bulk(tasks: Task[]) {
+      return {
+        tasks,
+        onToggle: jest.fn(),
+        onSetPriority: jest.fn(),
+        onSetDue: jest.fn(),
+        onCopy: jest.fn(),
+        onDuplicate: jest.fn(),
+        onDelete: jest.fn(),
+        onMove: jest.fn(),
+        onLabels: jest.fn(),
+      };
+    }
+
+    it("applies every action to the whole selection", async () => {
+      const b = bulk([task(), task({ id: "t2" })]);
+      const props = await renderMenu({ bulk: b });
+      expect(screen.getByText("2 selected")).toBeTruthy();
+
+      await fireEvent.press(screen.getByLabelText("Complete task"));
+      expect(b.onToggle).toHaveBeenCalledTimes(1);
+      expect(props.onToggle).not.toHaveBeenCalled();
+
+      await fireEvent.press(screen.getByLabelText("Priority 1"));
+      expect(b.onSetPriority).toHaveBeenCalledWith(1);
+      await fireEvent.press(screen.getByLabelText("No date"));
+      expect(b.onSetDue).toHaveBeenCalledWith(null);
+      await fireEvent.press(screen.getByLabelText("Move to"));
+      expect(b.onMove).toHaveBeenCalledTimes(1);
+      await fireEvent.press(screen.getByLabelText("Labels"));
+      expect(b.onLabels).toHaveBeenCalledTimes(1);
+      await fireEvent.press(screen.getByLabelText("Delete"));
+      expect(b.onDelete).toHaveBeenCalledTimes(1);
+      expect(props.onDelete).not.toHaveBeenCalled();
+    });
+
+    it("hides the single-task items", async () => {
+      await renderMenu({
+        bulk: bulk([task(), task({ id: "t2" })]),
+        canIndent: true,
+        onIndent: jest.fn(),
+      });
+      expect(screen.queryByLabelText("Select")).toBeNull();
+      expect(screen.queryByText(/Indent/)).toBeNull();
+    });
+
+    it("offers Reopen when all are done and marks only shared values", async () => {
+      await renderMenu({
+        bulk: bulk([
+          task({ is_completed: true, priority: 1 }),
+          task({ id: "t2", is_completed: true, priority: 2 }),
+        ]),
+      });
+      expect(screen.getByLabelText("Reopen task")).toBeTruthy();
+      expect(screen.getByLabelText("Priority 1").props.accessibilityState?.selected).toBeFalsy();
+      // Both undated: No date is shared, so it is marked.
+      expect(screen.getByLabelText("No date").props.accessibilityState?.selected).toBe(true);
+    });
   });
 });

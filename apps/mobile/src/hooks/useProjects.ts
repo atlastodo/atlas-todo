@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import type { Project } from "@atlas/client-core";
+import type { Project, ProjectView } from "@atlas/client-core";
 import {
   DEFAULT_FOLDER_ICON,
   DEFAULT_PROJECT_ICON,
@@ -35,13 +35,22 @@ export interface UseProjects {
   folders: Project[];
   /** Projects and folders archived in their own right (not merely inside an archived folder). */
   archivedProjects: Project[];
-  createProject: (name: string, opts?: { parentId?: string | null }) => string;
+  createProject: (
+    name: string,
+    opts?: { parentId?: string | null; icon?: string; color?: string; defaultView?: ProjectView },
+  ) => string;
   /** Create a folder: a project entity that holds other projects instead of tasks. */
-  createFolder: (name: string, opts?: { parentId?: string | null }) => string;
+  createFolder: (
+    name: string,
+    opts?: { parentId?: string | null; icon?: string; color?: string },
+  ) => string;
   renameProject: (id: string, name: string) => void;
   /** Deep-duplicate a project (its sections + open tasks); returns the new id + an undo that removes it. */
   duplicateProject: (id: string) => { newId: string; undo: () => void };
-  updateProject: (id: string, patch: { icon?: string; color?: string }) => void;
+  updateProject: (
+    id: string,
+    patch: { icon?: string; color?: string; default_view?: ProjectView },
+  ) => void;
   /**
    * Move a project or folder into `parentId` (`null` = top level). Returns an undo closure, or
    * **`null` when the move was refused** because it would put a folder inside its own subtree.
@@ -84,7 +93,11 @@ export function useProjects(): UseProjects {
   );
 
   const create = useCallback(
-    (name: string, kind: "project" | "folder", parentId: string | null) => {
+    (
+      name: string,
+      kind: "project" | "folder",
+      opts: { parentId?: string | null; icon?: string; color?: string; defaultView?: ProjectView },
+    ) => {
       // The store's generator, never `crypto.randomUUID()` (Hermes has none; non-UUIDs 422 the push).
       const id = store.newEntityId();
       // Colour rotates by the live count so back-to-back creates stay distinct.
@@ -94,9 +107,10 @@ export function useProjects(): UseProjects {
       const fields = projectCreateFields({
         name,
         kind,
-        parent_id: parentId,
-        icon: kind === "folder" ? DEFAULT_FOLDER_ICON : DEFAULT_PROJECT_ICON,
-        color: defaultColorForIndex(count),
+        parent_id: opts.parentId ?? null,
+        icon: opts.icon || (kind === "folder" ? DEFAULT_FOLDER_ICON : DEFAULT_PROJECT_ICON),
+        color: opts.color || defaultColorForIndex(count),
+        default_view: kind === "project" ? opts.defaultView : undefined,
         sort_order: Date.now(),
       });
       for (const [field, value] of Object.entries(fields)) store.set("project", id, field, value);
@@ -107,14 +121,16 @@ export function useProjects(): UseProjects {
   );
 
   const createProject = useCallback(
-    (name: string, opts?: { parentId?: string | null }) =>
-      create(name, "project", opts?.parentId ?? null),
+    (
+      name: string,
+      opts?: { parentId?: string | null; icon?: string; color?: string; defaultView?: ProjectView },
+    ) => create(name, "project", opts ?? {}),
     [create],
   );
 
   const createFolder = useCallback(
-    (name: string, opts?: { parentId?: string | null }) =>
-      create(name, "folder", opts?.parentId ?? null),
+    (name: string, opts?: { parentId?: string | null; icon?: string; color?: string }) =>
+      create(name, "folder", opts ?? {}),
     [create],
   );
 
@@ -155,9 +171,12 @@ export function useProjects(): UseProjects {
   );
 
   const updateProject = useCallback(
-    (id: string, patch: { icon?: string; color?: string }) => {
+    (id: string, patch: { icon?: string; color?: string; default_view?: ProjectView }) => {
       if (patch.icon !== undefined) store.set("project", id, "icon", patch.icon);
       if (patch.color !== undefined) store.set("project", id, "color", patch.color);
+      if (patch.default_view !== undefined) {
+        store.set("project", id, "default_view", patch.default_view);
+      }
       kick();
     },
     [store, kick],

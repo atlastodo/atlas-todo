@@ -1,4 +1,4 @@
-import type { Project, ProjectKind } from "@atlas/client-core";
+import type { Project, ProjectKind, ProjectView } from "@atlas/client-core";
 
 /**
  * Map a store entity to a typed {@link Project} and build the fields written on creation, like
@@ -27,6 +27,7 @@ export function toProject(id: string, fields: Record<string, unknown>): Project 
     is_favorite: fields.is_favorite === true,
     parent_id: typeof fields.parent_id === "string" ? fields.parent_id : null,
     kind,
+    default_view: fields.default_view === "board" ? "board" : "list",
     archived_at: typeof fields.archived_at === "number" ? fields.archived_at : null,
     deleted_at: typeof fields.deleted_at === "number" ? fields.deleted_at : null,
   };
@@ -43,8 +44,11 @@ export function projectCreateFields(input: {
   sort_order?: number;
   kind?: ProjectKind;
   parent_id?: string | null;
+  default_view?: ProjectView;
 }): Record<string, unknown> {
   return {
+    // Only when chosen: an unset view reads as "list".
+    ...(input.default_view ? { default_view: input.default_view } : {}),
     name: input.name,
     color: input.color ?? "",
     icon: input.icon ?? "",

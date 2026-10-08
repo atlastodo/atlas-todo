@@ -388,7 +388,8 @@ in
     fi
 
     echo ">> Launching Atlas Todo desktop app..."
-    (cd apps/electron && "${pkgs.electron}/bin/electron" dist/main.js --dev "$@")
+    # devenv's LD_LIBRARY_PATH points Electron at libraries built against another glibc.
+    (cd apps/electron && env -u LD_LIBRARY_PATH "${pkgs.electron}/bin/electron" dist/main.js --dev "$@")
   '';
 
   scripts."desktop:start".exec = ''
@@ -398,7 +399,8 @@ in
     echo ">> Building @atlas/electron..."
     (cd apps/electron && bun run build)
     echo ">> Starting Atlas Todo desktop..."
-    (cd apps/electron && "${pkgs.electron}/bin/electron" dist/main.js "$@")
+    # devenv's LD_LIBRARY_PATH points Electron at libraries built against another glibc.
+    (cd apps/electron && env -u LD_LIBRARY_PATH "${pkgs.electron}/bin/electron" dist/main.js "$@")
   '';
   scripts."desktop:package".exec = ''bash "$DEVENV_ROOT/scripts/package-desktop.sh" "$@"'';
   # Refresh nix/flake.desktop.lock, the nixpkgs pin shipped inside the desktop tarball's flake.

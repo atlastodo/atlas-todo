@@ -67,3 +67,26 @@ function descendants(tasks: Task[], id: string): Task[] {
   }
   return out;
 }
+
+/**
+ * Move several cards to the end of one column, in the given order: {@link columnMoveWrites} per
+ * card against a running copy, so each lands after the previous one. The last write per task wins.
+ */
+export function columnMoveManyWrites(
+  tasks: Task[],
+  ids: string[],
+  toSection: string | null,
+): BoardMoveWrite[] {
+  let current = tasks;
+  const byId = new Map<string, BoardMoveWrite>();
+  for (const id of ids) {
+    const writes = columnMoveWrites(current, id, toSection, Number.MAX_SAFE_INTEGER);
+    const patch = new Map(writes.map((w) => [w.id, w]));
+    current = current.map((t) => {
+      const w = patch.get(t.id);
+      return w ? { ...t, section_id: w.section_id, sort_order: w.sort_order ?? t.sort_order } : t;
+    });
+    for (const w of writes) byId.set(w.id, { ...byId.get(w.id), ...w });
+  }
+  return [...byId.values()];
+}

@@ -1,8 +1,9 @@
-import { ScrollView, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { Project } from "@atlas/client-core";
 import { DEFAULT_FOLDER_ICON, flattenProjectTree, resolveProjectColor } from "@atlas/shared";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { projectIconFor } from "./projectIcons";
 import { Check, Folder } from "./icons";
 import { haptics } from "../lib/haptics";
@@ -44,7 +45,7 @@ export function FolderPicker({
         <Text className="pb-2 text-base font-semibold text-neutral-900 dark:text-neutral-50">
           {t("projects.moveToFolder")}
         </Text>
-        <ScrollView>
+        <SheetScrollView>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("projects.noFolder")}
@@ -77,7 +78,7 @@ export function FolderPicker({
               </Pressable>
             );
           })}
-        </ScrollView>
+        </SheetScrollView>
       </View>
     </BottomSheet>
   );

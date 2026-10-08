@@ -73,6 +73,7 @@ export function planProjectDuplicate(
   projPush("sort_order", now);
   if (project.color) projPush("color", project.color);
   if (project.icon) projPush("icon", project.icon);
+  if (project.default_view === "board") projPush("default_view", "board");
 
   const sectionIdMap = new Map<string, string>();
   for (const section of sections) {

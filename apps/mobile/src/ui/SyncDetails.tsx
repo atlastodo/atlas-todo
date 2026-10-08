@@ -1,5 +1,5 @@
 import { useContext, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { batchLinksOf, resolveScope } from "@atlas/client-core";
 import { AuthContext } from "../auth/AuthContext";
@@ -8,6 +8,7 @@ import { useOnline } from "../hooks/useOnline";
 import { useFormat } from "../hooks/useFormat";
 import { effectiveSyncStatus } from "../lib/syncStatus";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Field } from "./Field";
 import { RefreshCw, RotateCcw } from "./icons";
@@ -85,7 +86,7 @@ export function SyncDetails({ open, onClose }: { open: boolean; onClose: () => v
   return (
     <BottomSheet visible={open} onClose={onClose} title={t("sync.detailsTitle")}>
       <View className="gap-3">
-        <ScrollView className="max-h-96">
+        <SheetScrollView className="max-h-96">
           <Field label={t("sync.status")} value={statusLabel} />
           <Field
             label={t("sync.lastSynced")}
@@ -254,7 +255,7 @@ export function SyncDetails({ open, onClose }: { open: boolean; onClose: () => v
               ))}
             </View>
           )}
-        </ScrollView>
+        </SheetScrollView>
       </View>
 
       {confirmingResync && (

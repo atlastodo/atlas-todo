@@ -8,6 +8,12 @@ describe("toProject", () => {
     expect(f.parent_id).toBe("f0");
   });
 
+  it("reads the default view, degrading anything but board to list", () => {
+    expect(toProject("p1", { name: "Work", default_view: "board" }).default_view).toBe("board");
+    expect(toProject("p1", { name: "Work", default_view: 3 }).default_view).toBe("list");
+    expect(toProject("p1", { name: "Work" }).default_view).toBe("list");
+  });
+
   it("degrades an unknown kind or a non-string parent to a root project", () => {
     // These arrive over sync from another client and can be any shape.
     const p = toProject("p1", { name: "Work", kind: 42, parent_id: 7 });
@@ -27,5 +33,10 @@ describe("projectCreateFields", () => {
     const fields = projectCreateFields({ name: "Clients", kind: "folder", parent_id: "f0" });
     expect(fields.kind).toBe("folder");
     expect(fields.parent_id).toBe("f0");
+  });
+
+  it("writes the default view only when one is chosen", () => {
+    expect(projectCreateFields({ name: "Work" })).not.toHaveProperty("default_view");
+    expect(projectCreateFields({ name: "Work", default_view: "board" }).default_view).toBe("board");
   });
 });

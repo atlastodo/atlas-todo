@@ -38,7 +38,12 @@ export default function ProjectRoute() {
   if (folder) {
     return (
       <ScreenFocusBoundary>
-        <ProjectsScreen rootId={id} onOpenProject={(p) => router.push(`/project/${p.id}`)} />
+        <ProjectsScreen
+          rootId={id}
+          onOpenProject={(p) => router.push(`/project/${p.id}`)}
+          onCreated={(newId) => router.push(`/project/${newId}`)}
+          onHeaderActions={setHeaderRight}
+        />
       </ScreenFocusBoundary>
     );
   }
@@ -52,7 +57,8 @@ export default function ProjectRoute() {
         onLeave={() => router.replace("/today")}
         // Board/List lives in the URL (?mode=board), so a refresh stays on the board instead of
         // resetting to the List view. setParams updates the current route's query in place.
-        mode={mode === "board" ? "board" : "list"}
+        // Without one, the project's own default view.
+        mode={mode === "board" || mode === "list" ? mode : (project?.default_view ?? "list")}
         onSetMode={(m) => router.setParams({ mode: m })}
         onHeaderActions={setHeaderRight}
       />

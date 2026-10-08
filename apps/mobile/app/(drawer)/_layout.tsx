@@ -43,6 +43,7 @@ import { ConfirmDialog } from "../../src/ui/ConfirmDialog";
 import { SyncStatusBadge } from "../../src/ui/SyncStatusBadge";
 import { SidebarToggle } from "../../src/ui/SidebarToggle";
 import { FolderPicker } from "../../src/ui/FolderPicker";
+import { CreateProjectSheet } from "../../src/ui/CreateProjectSheet";
 import { projectIconFor } from "../../src/ui/projectIcons";
 import { drawerThemeOptions, headerThemeOptions } from "../../src/theme/navTheme";
 import { Platform, Pressable, type ViewStyle } from "react-native";
@@ -96,7 +97,6 @@ export default function DrawerLayout() {
   const {
     projects,
     folders,
-    createProject,
     duplicateProject,
     setProjectArchived,
     setProjectParent,
@@ -117,6 +117,8 @@ export default function DrawerLayout() {
   } = usePreferences();
   // The project/folder whose "Move to folder" picker is open, or null.
   const [movingId, setMovingId] = useState<string | null>(null);
+  // The folder a sidebar "New project here" was picked on; `undefined` while the sheet is closed.
+  const [creatingIn, setCreatingIn] = useState<string | undefined>(undefined);
   const [menuModalOpen, setMenuModalOpen] = useState(false);
   // The shared project/folder whose leave confirm is open, or null. Leaving is a member's only way
   // out (see `projectMenus`): the server turns the removal into a tombstone every device receives.
@@ -163,10 +165,7 @@ export default function DrawerLayout() {
           },
         });
       },
-      onNewProjectHere: (folderId) => {
-        const newId = createProject(t("workspace.newProject"), { parentId: folderId });
-        router.push(`/project/${newId}`);
-      },
+      onNewProjectHere: (folderId) => setCreatingIn(folderId),
       onMoveToFolder: (id) => setMovingId(id),
       onArchive: ({ id, name }) => {
         setProjectArchived(id, true);
@@ -195,7 +194,6 @@ export default function DrawerLayout() {
       isFavorite,
       toggleFavorite,
       duplicateProject,
-      createProject,
       setProjectArchived,
       removeProject,
       pathname,
@@ -680,6 +678,12 @@ export default function DrawerLayout() {
       )}
 
       {/* Outside the Drawer, whose children must be Screens. */}
+      <CreateProjectSheet
+        visible={creatingIn !== undefined}
+        parentId={creatingIn ?? null}
+        onClose={() => setCreatingIn(undefined)}
+        onCreated={(id) => router.push(`/project/${id}`)}
+      />
       <FolderPicker
         visible={moving != null}
         folders={folders}

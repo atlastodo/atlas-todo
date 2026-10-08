@@ -13,13 +13,12 @@ import { randomUUID } from "expo-crypto";
 import { AppSkeleton } from "../ui/AppSkeleton";
 import { SkeletonGate } from "../ui/Skeleton";
 import { useAuth } from "./AuthContext";
-import { readInviteFromLink } from "./inviteLink";
 
 /**
  * Local-only mode: using Atlas without an account. With no session the app runs on a store kept
- * only on this device (the `atlas-local` database), with no server, no sync and no keys. The sign-in
- * screen shows only when asked for (onboarding's account step, Settings), or when the server ended
- * a session with a notice to read.
+ * only on this device (the `atlas-local` database), with no server, no sync and no keys. The standalone
+ * sign-in screen shows only when asked for (Settings), or when the server ended a session with a
+ * notice to read; a first run signs in or signs up inside the welcome wizard.
  *
  * Someone who used an account keeps seeing the sign-in screen after the session ends (signing out,
  * an expired or revoked session), across restarts, until they choose "Continue without an
@@ -46,8 +45,8 @@ export interface LocalModeValue {
   deviceId: string;
   /** The sign-in screen the user asked for, or null to show the app. */
   authScreen: AuthScreen | null;
-  /** Show the sign-in screen. `resumeOnboarding` continues the wizard after a new account's signup. */
-  openAuth: (screen: AuthScreen, opts?: { resumeOnboarding?: boolean }) => void;
+  /** Show the standalone sign-in screen. */
+  openAuth: (screen: AuthScreen) => void;
   /** Back to the local app from the sign-in screen. */
   closeAuth: () => void;
   /**
@@ -55,8 +54,12 @@ export interface LocalModeValue {
    * the local data whole; an existing one is asked first and never takes local settings.
    */
   upgradeIntent: AuthScreen | null;
-  /** Record the intent; signing in to an existing account also stops onboarding from resuming. */
-  setUpgradeIntent: (intent: AuthScreen) => void;
+  /**
+   * Record the intent. `resumeOnboarding` (the wizard's own form, signing up) carries the wizard on
+   * past its account steps once the new account's app mounts: the session swaps the whole app tree,
+   * the wizard with it.
+   */
+  setUpgradeIntent: (intent: AuthScreen, opts?: { resumeOnboarding?: boolean }) => void;
   /** Forget the intent once the move has read it, so a later sign-in is asked afresh. */
   clearUpgradeIntent: () => void;
   /** Whether onboarding should continue after the account step once the new account's app mounts. */
@@ -88,10 +91,8 @@ async function loadDeviceId(): Promise<string> {
 export function LocalModeProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth();
   const [deviceId, setDeviceId] = useState<string | null>(null);
-  // An admin's invite link opens on signup, as it always has.
-  const [authScreen, setAuthScreen] = useState<AuthScreen | null>(() =>
-    readInviteFromLink() ? "signup" : null,
-  );
+  // An admin's invite link opens the welcome wizard's signup form (`OnboardingProvider`).
+  const [authScreen, setAuthScreen] = useState<AuthScreen | null>(null);
   const [upgradeIntent, setUpgradeIntent] = useState<AuthScreen | null>(null);
   const [resumeOnboarding, setResumeOnboarding] = useState(false);
 
@@ -130,9 +131,9 @@ export function LocalModeProvider({ children }: { children: ReactNode }) {
     write.catch((err) => console.warn("[atlas] could not record the sign-in screen:", err));
   }, [userId]);
 
-  const openAuth = useCallback((screen: AuthScreen, opts?: { resumeOnboarding?: boolean }) => {
+  const openAuth = useCallback((screen: AuthScreen) => {
     setAuthScreen(screen);
-    setResumeOnboarding(opts?.resumeOnboarding === true);
+    setResumeOnboarding(false);
   }, []);
   const closeAuth = useCallback(() => {
     setAuthScreen(null);
@@ -142,11 +143,14 @@ export function LocalModeProvider({ children }: { children: ReactNode }) {
     );
   }, []);
   const clearResumeOnboarding = useCallback(() => setResumeOnboarding(false), []);
-  const recordUpgradeIntent = useCallback((intent: AuthScreen) => {
-    setUpgradeIntent(intent);
-    // The wizard resumes for a new account only: an existing one is already set up.
-    if (intent !== "signup") setResumeOnboarding(false);
-  }, []);
+  const recordUpgradeIntent = useCallback(
+    (intent: AuthScreen, opts?: { resumeOnboarding?: boolean }) => {
+      setUpgradeIntent(intent);
+      // The wizard resumes for a new account only: an existing one is already set up.
+      setResumeOnboarding(intent === "signup" && opts?.resumeOnboarding === true);
+    },
+    [],
+  );
   const clearUpgradeIntent = useCallback(() => setUpgradeIntent(null), []);
 
   const value = useMemo<LocalModeValue | null>(
