@@ -52,6 +52,21 @@ async function renderMenu(overrides: Partial<React.ComponentProps<typeof TaskCon
 }
 
 describe("TaskContextMenu", () => {
+  it("marks the due preset matching the task's due day as current", async () => {
+    await renderMenu({
+      task: task({ due_at: Date.parse("2026-07-18T15:00:00Z") }),
+      timeZone: "UTC",
+    });
+    expect(screen.getByLabelText("Tomorrow").props.accessibilityState?.selected).toBe(true);
+    expect(screen.getByLabelText("Today").props.accessibilityState?.selected).toBeFalsy();
+    expect(screen.getByLabelText("No date").props.accessibilityState?.selected).toBeFalsy();
+  });
+
+  it("marks No date as current for an undated task", async () => {
+    await renderMenu();
+    expect(screen.getByLabelText("No date").props.accessibilityState?.selected).toBe(true);
+  });
+
   it("completes the task and closes", async () => {
     const props = await renderMenu();
     await fireEvent.press(screen.getByLabelText("Complete task"));
