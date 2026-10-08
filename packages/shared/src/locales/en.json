@@ -350,6 +350,7 @@
     "storageAskAgain": "Ask again",
     "serverUrlHint": "The Atlas Todo server this app syncs with.",
     "serverUrlSaved": "Saved. Reopen the app for it to take effect.",
+    "desktop": "Desktop app",
     "devices": "Devices & sessions",
     "devicesThisDevice": "This device",
     "devicesDeviceLabel": "Device {{id}}",

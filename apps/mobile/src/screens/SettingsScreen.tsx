@@ -104,6 +104,7 @@ import { useOnboarding } from "../data/OnboardingContext";
 import { useLocalMode } from "../auth/localMode";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { CloseToTrayRow } from "../ui/CloseToTrayRow";
+import { DesktopUpdateSection } from "../ui/DesktopUpdateSection";
 import { PersistentStorageRow } from "../ui/PersistentStorageRow";
 import { useSignOut } from "../auth/useSignOut";
 
@@ -1492,7 +1493,6 @@ export function SettingsScreen({
           {remindersEnabled && (
             <NotifyPermissionHint className="border-t border-neutral-200/50 py-3.5 dark:border-neutral-800/60" />
           )}
-          <CloseToTrayRow />
         </Section>
         {focusEnabled && (
           <Section icon={SlidersHorizontal} title={t("settings.pomodoro")}>
@@ -1550,6 +1550,12 @@ export function SettingsScreen({
       {/* Devices & sessions */}
       <SettingsPane id="devices" active={active}>
         <DevicesSection />
+      </SettingsPane>
+
+      {/* Desktop app: only listed inside the desktop app */}
+      <SettingsPane id="desktop" active={active}>
+        <CloseToTrayRow />
+        <DesktopUpdateSection />
       </SettingsPane>
 
       {/* Help & Feedback */}

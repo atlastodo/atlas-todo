@@ -350,6 +350,7 @@
     "storageAskAgain": "Spørg igen",
     "serverUrlHint": "Atlas Todo-serveren denne app synkroniserer med.",
     "serverUrlSaved": "Gemt. Genåbn appen for at det træder i kraft.",
+    "desktop": "Skrivebordsapp",
     "devices": "Enheder & sessioner",
     "devicesThisDevice": "Denne enhed",
     "devicesDeviceLabel": "Enhed {{id}}",
