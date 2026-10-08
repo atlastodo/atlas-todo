@@ -59,7 +59,13 @@
           "enforceContrast": false
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#6366f1"
+        }
+      ],
       [
         "expo-audio",
         {
