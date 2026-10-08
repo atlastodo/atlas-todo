@@ -72,9 +72,10 @@ function ProjectRow({
   const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
+    // The whole row highlights on hover, as task rows do, not just the pressable label.
     <View
       ref={contextRef}
-      className="flex-row items-center gap-3 border-b border-neutral-100 px-4 py-3 dark:border-neutral-900"
+      className="flex-row items-center gap-3 border-b border-neutral-100 px-4 py-3 dark:border-neutral-900 web:hover:bg-neutral-50 dark:web:hover:bg-neutral-900"
     >
       <View style={{ width: depth * 16 }} />
       <Pressable
