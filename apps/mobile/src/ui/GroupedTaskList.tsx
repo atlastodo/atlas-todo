@@ -378,6 +378,25 @@ export function GroupedTaskList({
   });
 
   const ids = () => [...selection.selected];
+  const selectedTasks = () => visible.filter((task) => selection.has(task.id));
+  const allSelectedCompleted = () => {
+    const chosen = selectedTasks();
+    return chosen.length > 0 && chosen.every((task) => task.is_completed);
+  };
+  // Complete the selection, or reopen it when every selected task is already done.
+  const toggleSelected = () => {
+    const chosen = selectedTasks();
+    if (allSelectedCompleted()) {
+      for (const task of chosen) onToggle(task);
+    } else if (onBulkComplete) {
+      onBulkComplete(chosen.map((task) => task.id));
+    } else {
+      for (const task of chosen) onToggle(task);
+    }
+  };
+  // Right-clicking a task inside a multi-task selection opens the menu on the whole selection.
+  const menuOnSelection =
+    menu != null && selection.mode && selection.has(menu.task.id) && selection.count > 1;
 
   const dragPan = useDragPan();
   const onDragRelease = useCallback(
@@ -862,19 +881,11 @@ export function GroupedTaskList({
           timeZone={timeZone}
           onSelectAll={() => selection.selectAll()}
           // Bulk actions keep the selection so several can run in a row; completed/deleted rows fall out via the prune.
-          onComplete={() => {
-            const selectedIds = visible
-              .filter((task) => selection.has(task.id))
-              .map((task) => task.id);
-            if (onBulkComplete) {
-              onBulkComplete(selectedIds);
-            } else {
-              for (const task of visible) if (selection.has(task.id)) onToggle(task);
-            }
-          }}
+          allCompleted={allSelectedCompleted()}
+          onComplete={toggleSelected}
           onSetPriority={(p) => onBulkSetPriority(ids(), p)}
           onSetDue={(dueAt) => onBulkSetDue(ids(), dueAt)}
-          onCopy={() => void copyTasks(visible.filter((task) => selection.has(task.id)))}
+          onCopy={() => void copyTasks(selectedTasks())}
           onDuplicate={() => onBulkDuplicate(ids())}
           onMove={() => setMoving(ids())}
           onLabel={() => setLabeling(ids())}
@@ -939,6 +950,21 @@ export function GroupedTaskList({
           onOutdent={onReparent ? (task) => outdentTask(task, menuSiblings) : undefined}
           canIndent={indentTarget(menuSiblings, menu.task.id, nestingSet) !== null}
           canOutdent={outdentTarget(menuSiblings, menu.task.id) !== null}
+          bulk={
+            menuOnSelection
+              ? {
+                  tasks: selectedTasks(),
+                  onToggle: toggleSelected,
+                  onSetPriority: (p) => onBulkSetPriority(ids(), p),
+                  onSetDue: (dueAt) => onBulkSetDue(ids(), dueAt),
+                  onCopy: () => void copyTasks(selectedTasks()),
+                  onDuplicate: () => onBulkDuplicate(ids()),
+                  onDelete: () => onBulkDelete(ids()),
+                  onMove: () => setMoving(ids()),
+                  onLabels: () => setLabeling(ids()),
+                }
+              : undefined
+          }
         />
       )}
 

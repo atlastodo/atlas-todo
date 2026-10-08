@@ -11,6 +11,7 @@ import {
   Flag,
   FolderInput,
   ListTodo,
+  RotateCcw,
   Tag,
   Trash2,
   X,
@@ -35,6 +36,8 @@ const DUE_LABEL: Record<QuickScheduleOption["key"], string> = {
 
 export interface SelectionToolbarProps {
   count: number;
+  /** Every selected task is completed: Complete becomes Reopen. */
+  allCompleted?: boolean;
   now: number;
   timeZone?: string;
   onSelectAll: () => void;
@@ -53,6 +56,7 @@ type Panel = "priority" | "due" | null;
 
 export function SelectionToolbar({
   count,
+  allCompleted = false,
   now,
   timeZone,
   onSelectAll,
@@ -146,7 +150,11 @@ export function SelectionToolbar({
         <View className="flex-1" />
 
         <Action label={t("selection.selectAll")} icon={ListTodo} onPress={onSelectAll} />
-        <Action label={t("task.complete")} icon={CircleCheckBig} onPress={onComplete} />
+        <Action
+          label={allCompleted ? t("task.reopen") : t("task.complete")}
+          icon={allCompleted ? RotateCcw : CircleCheckBig}
+          onPress={onComplete}
+        />
         <Action
           label={t("context.priority")}
           icon={Flag}
