@@ -25,8 +25,10 @@ import {
   Copy,
   CopyPlus,
   Flag,
+  FolderInput,
   ListChecks,
   SkipForward,
+  Tag,
   Trash2,
   X,
 } from "./icons";
@@ -81,6 +83,26 @@ export interface TaskContextMenuProps {
   canOutdent?: boolean;
   /** Start moving the card to another board column (tap-to-move for touch, where cards can't be dragged across columns). */
   onMoveToColumn?: (task: Task) => void;
+  /**
+   * The menu was opened on a task inside a multi-task selection: every action applies to the whole
+   * selection, and the single-task items (Select, Indent/Outdent, Skip) are hidden.
+   */
+  bulk?: TaskContextMenuBulk;
+}
+
+/** Selection-wide actions for {@link TaskContextMenuProps.bulk}; the same handlers the selection toolbar uses. */
+export interface TaskContextMenuBulk {
+  tasks: Task[];
+  /** Complete them all, or reopen them all when every one is completed. */
+  onToggle: () => void;
+  onSetPriority: (p: Priority) => void;
+  onSetDue: (dueAt: number | null) => void;
+  onCopy: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onMove?: () => void;
+  onLabels?: () => void;
+  onMoveToColumn?: () => void;
 }
 
 export function TaskContextMenu({
@@ -103,6 +125,7 @@ export function TaskContextMenu({
   onOutdent,
   canOutdent = false,
   onMoveToColumn,
+  bulk,
 }: TaskContextMenuProps) {
   const { t } = useTranslation();
   const { width, height } = useWindowDimensions();
@@ -111,8 +134,32 @@ export function TaskContextMenu({
   const hint = (...args: Parameters<typeof hotkeyHint>) =>
     touch ? undefined : hotkeyHint(...args);
   const rescheduleHint = hint("rescheduleCursor");
-  // The due preset (or No date) matching the task's current due day, marked like the current priority.
-  const dueDay = task.due_at != null ? dayKey(task.due_at, timeZone) : null;
+  // The current priority and due day (preset or No date) are marked; across a selection, only
+  // when every task shares them (`undefined` marks nothing).
+  const tasks = bulk?.tasks ?? [task];
+  const allCompleted = tasks.every((x) => x.is_completed);
+  const currentPriority = tasks.every((x) => x.priority === task.priority)
+    ? task.priority
+    : undefined;
+  const dueDays = new Set(tasks.map((x) => (x.due_at != null ? dayKey(x.due_at, timeZone) : null)));
+  const dueDay = dueDays.size === 1 ? [...dueDays][0] : undefined;
+  const run = bulk
+    ? {
+        toggle: bulk.onToggle,
+        setPriority: bulk.onSetPriority,
+        setDue: bulk.onSetDue,
+        copy: bulk.onCopy,
+        duplicate: bulk.onDuplicate,
+        remove: bulk.onDelete,
+      }
+    : {
+        toggle: () => onToggle(task),
+        setPriority: (p: Priority) => onSetPriority(task, p),
+        setDue: (dueAt: number | null) => onSetDue(task, dueAt),
+        copy: () => onCopy(task),
+        duplicate: () => onDuplicate(task),
+        remove: () => onDelete(task),
+      };
 
   // Web only. Guarded on a real DOM `window`: the RN runtime and jest may expose a partial `window` without `addEventListener`.
   useEffect(() => {
@@ -131,7 +178,7 @@ export function TaskContextMenu({
   // On web a right-click on the backdrop routes to the task row beneath, so the menu switches in one click.
   const backdropRef = useBackdropSwitch(onClose);
 
-  if (task.locked) {
+  if (task.locked && !bulk) {
     // An undecryptable task is read-only: every other action writes it (Copy would copy a blank).
     return (
       <Modal transparent visible animationType="fade" onRequestClose={onClose}>
@@ -191,17 +238,22 @@ export function TaskContextMenu({
           className={"w-60 " + MENU_SURFACE}
         >
           <ScrollView showsVerticalScrollIndicator={false}>
+            {bulk && (
+              <Text className="px-2 pb-1 pt-0.5 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                {t("selection.count", { count: tasks.length })}
+              </Text>
+            )}
             <MenuItem
               icon={CircleCheckBig}
-              label={task.is_completed ? t("task.reopen") : t("task.complete")}
-              shortcut={hint("completeCursor")}
-              onPress={() => onToggle(task)}
+              label={allCompleted ? t("task.reopen") : t("task.complete")}
+              shortcut={bulk ? undefined : hint("completeCursor")}
+              onPress={run.toggle}
               onClose={onClose}
             />
 
             {/* Skip this occurrence: push the due date to the series' next slot without completing --
               the instance-scoped recurring action, distinct from the Complete above. */}
-            {onSkip && !task.is_completed && task.recurrence && task.due_at != null && (
+            {!bulk && onSkip && !task.is_completed && task.recurrence && task.due_at != null && (
               <MenuItem
                 icon={SkipForward}
                 label={t("task.skipOccurrence")}
@@ -210,7 +262,7 @@ export function TaskContextMenu({
               />
             )}
 
-            {onSelect && (
+            {!bulk && onSelect && (
               <MenuItem
                 icon={ListChecks}
                 label={t("selection.select")}
@@ -221,7 +273,7 @@ export function TaskContextMenu({
 
             {/* Indent / outdent: the touch path to nesting (the reliable complement to the drag
               indent), shown only where the list supports subtasks. */}
-            {onIndent && canIndent && (
+            {!bulk && onIndent && canIndent && (
               <MenuItem
                 icon={ChevronRight}
                 label={t("task.indent")}
@@ -229,7 +281,7 @@ export function TaskContextMenu({
                 onClose={onClose}
               />
             )}
-            {onOutdent && canOutdent && (
+            {!bulk && onOutdent && canOutdent && (
               <MenuItem
                 icon={ChevronLeft}
                 label={t("task.outdent")}
@@ -238,11 +290,38 @@ export function TaskContextMenu({
               />
             )}
 
-            {onMoveToColumn && !task.is_completed && (
+            {bulk
+              ? bulk.onMoveToColumn &&
+                !allCompleted && (
+                  <MenuItem
+                    icon={ArrowRightLeft}
+                    label={t("board.moveToColumn")}
+                    onPress={bulk.onMoveToColumn}
+                    onClose={onClose}
+                  />
+                )
+              : onMoveToColumn &&
+                !task.is_completed && (
+                  <MenuItem
+                    icon={ArrowRightLeft}
+                    label={t("board.moveToColumn")}
+                    onPress={() => onMoveToColumn(task)}
+                    onClose={onClose}
+                  />
+                )}
+            {bulk?.onMove && (
               <MenuItem
-                icon={ArrowRightLeft}
-                label={t("board.moveToColumn")}
-                onPress={() => onMoveToColumn(task)}
+                icon={FolderInput}
+                label={t("selection.moveTo")}
+                onPress={bulk.onMove}
+                onClose={onClose}
+              />
+            )}
+            {bulk?.onLabels && (
+              <MenuItem
+                icon={Tag}
+                label={t("selection.labels")}
+                onPress={bulk.onLabels}
                 onClose={onClose}
               />
             )}
@@ -255,7 +334,7 @@ export function TaskContextMenu({
               the selected fill, as the current due row does. */}
             <View className="flex-row gap-1 px-1 pb-1">
               {PRIORITIES.map((p) => {
-                const current = task.priority === p;
+                const current = currentPriority === p;
                 return (
                   <Pressable
                     key={p}
@@ -265,7 +344,7 @@ export function TaskContextMenu({
                     }
                     accessibilityState={{ selected: current }}
                     onPress={() => {
-                      onSetPriority(task, p);
+                      run.setPriority(p);
                       onClose();
                     }}
                     className={
@@ -299,7 +378,7 @@ export function TaskContextMenu({
             {/* T opens the full reschedule picker for the cursor task; the presets below are its shortcuts. */}
             <View className="flex-row items-center justify-between px-2 pb-1">
               <Text className="text-xs font-medium text-neutral-400">{t("context.due")}</Text>
-              {rescheduleHint != null && <ShortcutHint keys={rescheduleHint} />}
+              {!bulk && rescheduleHint != null && <ShortcutHint keys={rescheduleHint} />}
             </View>
             {quickScheduleOptions(now, timeZone).map((o) => (
               <MenuItem
@@ -307,7 +386,7 @@ export function TaskContextMenu({
                 icon={CalendarDays}
                 label={t(SCHEDULE_LABEL[o.key])}
                 selected={dueDay === dayKey(o.dueAt, timeZone)}
-                onPress={() => onSetDue(task, o.dueAt)}
+                onPress={() => run.setDue(o.dueAt)}
                 onClose={onClose}
               />
             ))}
@@ -315,7 +394,7 @@ export function TaskContextMenu({
               icon={X}
               label={t("task.scheduleNoDate")}
               selected={dueDay === null}
-              onPress={() => onSetDue(task, null)}
+              onPress={() => run.setDue(null)}
               onClose={onClose}
             />
 
@@ -324,14 +403,14 @@ export function TaskContextMenu({
               icon={Copy}
               label={t("selection.copy")}
               shortcut={hint("copySelection")}
-              onPress={() => onCopy(task)}
+              onPress={run.copy}
               onClose={onClose}
             />
             <MenuItem
               icon={CopyPlus}
               label={t("common.duplicate")}
               shortcut={hint("duplicateSelection")}
-              onPress={() => onDuplicate(task)}
+              onPress={run.duplicate}
               onClose={onClose}
             />
             <MenuItem
@@ -339,7 +418,7 @@ export function TaskContextMenu({
               label={t("common.delete")}
               shortcut={hint("deleteCursor", "Del")}
               danger
-              onPress={() => onDelete(task)}
+              onPress={run.remove}
               onClose={onClose}
             />
           </ScrollView>
