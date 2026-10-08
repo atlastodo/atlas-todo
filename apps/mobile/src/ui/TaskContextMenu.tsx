@@ -10,7 +10,12 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { Priority, Task } from "@atlas/client-core";
-import { PRIORITY_COLOR, quickScheduleOptions, type QuickScheduleOption } from "@atlas/shared";
+import {
+  dayKey,
+  PRIORITY_COLOR,
+  quickScheduleOptions,
+  type QuickScheduleOption,
+} from "@atlas/shared";
 import {
   ArrowRightLeft,
   CalendarDays,
@@ -26,7 +31,14 @@ import {
   X,
 } from "./icons";
 import { clampMenuPosition, type Size } from "../lib/menuPosition";
-import { MENU_SURFACE, MenuItem, ShortcutHint, useTouchMenu } from "./ContextMenu";
+import {
+  MENU_SELECTED_CLASS,
+  MENU_SELECTED_TEXT_CLASS,
+  MENU_SURFACE,
+  MenuItem,
+  ShortcutHint,
+  useTouchMenu,
+} from "./ContextMenu";
 import { hotkeyHint } from "../lib/hotkeyHint";
 import { useBackdropSwitch } from "../hooks/useBackdropSwitch";
 import { ThemeScope } from "../theme/ThemeProvider";
@@ -99,6 +111,8 @@ export function TaskContextMenu({
   const hint = (...args: Parameters<typeof hotkeyHint>) =>
     touch ? undefined : hotkeyHint(...args);
   const rescheduleHint = hint("rescheduleCursor");
+  // The due preset (or No date) matching the task's current due day, marked like the current priority.
+  const dueDay = task.due_at != null ? dayKey(task.due_at, timeZone) : null;
 
   // Web only. Guarded on a real DOM `window`: the RN runtime and jest may expose a partial `window` without `addEventListener`.
   useEffect(() => {
@@ -238,7 +252,7 @@ export function TaskContextMenu({
               {t("context.priority")}
             </Text>
             {/* Each flag carries its P1–P3/None label (as the task detail does); the current one gets
-              an accent ring, so it doesn't read as a hovered tile. */}
+              the selected fill, as the current due row does. */}
             <View className="flex-row gap-1 px-1 pb-1">
               {PRIORITIES.map((p) => {
                 const current = task.priority === p;
@@ -255,11 +269,11 @@ export function TaskContextMenu({
                       onClose();
                     }}
                     className={
-                      "flex-1 flex-row items-center justify-center gap-1 rounded border web:cursor-pointer " +
+                      "flex-1 flex-row items-center justify-center gap-1 rounded web:cursor-pointer " +
                       (touch ? "min-h-[44px] " : "py-1 ") +
                       (current
-                        ? "border-accent-500 bg-accent-50 dark:border-accent-400 dark:bg-accent-950/70"
-                        : "border-transparent web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800")
+                        ? MENU_SELECTED_CLASS
+                        : "web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800")
                     }
                   >
                     <Flag
@@ -270,7 +284,7 @@ export function TaskContextMenu({
                       className={
                         "text-xs " +
                         (current
-                          ? "font-semibold text-accent-700 dark:text-accent-200"
+                          ? MENU_SELECTED_TEXT_CLASS
                           : "text-neutral-600 dark:text-neutral-300")
                       }
                     >
@@ -292,6 +306,7 @@ export function TaskContextMenu({
                 key={o.key}
                 icon={CalendarDays}
                 label={t(SCHEDULE_LABEL[o.key])}
+                selected={dueDay === dayKey(o.dueAt, timeZone)}
                 onPress={() => onSetDue(task, o.dueAt)}
                 onClose={onClose}
               />
@@ -299,6 +314,7 @@ export function TaskContextMenu({
             <MenuItem
               icon={X}
               label={t("task.scheduleNoDate")}
+              selected={dueDay === null}
               onPress={() => onSetDue(task, null)}
               onClose={onClose}
             />
