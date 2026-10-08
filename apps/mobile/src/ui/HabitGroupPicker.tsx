@@ -1,7 +1,8 @@
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { Habit } from "@atlas/shared";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { Check } from "./icons";
 import { projectIconFor } from "./projectIcons";
 import { haptics } from "../lib/haptics";
@@ -36,7 +37,7 @@ export function HabitGroupPicker({
         <Text className="text-base font-semibold text-neutral-900 dark:text-neutral-50">
           {t("habits.moveToGroup")}
         </Text>
-        <ScrollView className="max-h-80">
+        <SheetScrollView className="max-h-80">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("habits.noGroup")}
@@ -73,7 +74,7 @@ export function HabitGroupPicker({
           {groups.length === 0 && (
             <Text className="px-2 py-3 text-sm text-neutral-400">{t("habits.noGroupsYet")}</Text>
           )}
-        </ScrollView>
+        </SheetScrollView>
       </View>
     </BottomSheet>
   );

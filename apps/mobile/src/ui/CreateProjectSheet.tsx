@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { ProjectView } from "@atlas/client-core";
 import {
@@ -13,6 +13,7 @@ import { useCancelOnEscape } from "../hooks/useCancelOnEscape";
 import { haptics } from "../lib/haptics";
 import { KEEP_FOCUS_SUBMIT } from "../lib/submitBehavior";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { ListPicker } from "./ListPicker";
 import { Segmented } from "./Segmented";
 import { StylePicker } from "./StylePicker";
@@ -95,7 +96,7 @@ export function CreateProjectSheet({
       onClose={onClose}
       title={folder ? t("projects.newFolder") : t("workspace.newProject")}
     >
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="gap-5 pb-1">
+      <SheetScrollView showsVerticalScrollIndicator={false} contentContainerClassName="gap-5 pb-1">
         <TextInput
           ref={escape.ref}
           accessibilityLabel={t("projects.name")}
@@ -178,7 +179,7 @@ export function CreateProjectSheet({
             </Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </SheetScrollView>
     </BottomSheet>
   );
 }

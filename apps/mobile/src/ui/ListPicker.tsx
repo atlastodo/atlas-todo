@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  FlatList,
   Modal,
   Platform,
   Pressable,
@@ -13,6 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { ThemeScope } from "../theme/ThemeProvider";
 import { BottomSheet } from "./BottomSheet";
+import { SheetFlatList } from "./SheetScroll";
 import { ELEVATED_SURFACE_CLASS, SCRIM_CLASS } from "./useSheetDismiss";
 import { Check, ChevronDown, ChevronUp, Search, X } from "./icons";
 
@@ -527,7 +527,7 @@ export function ListPicker<T extends string>({
               </View>
             )}
 
-            <FlatList
+            <SheetFlatList
               data={shown}
               keyExtractor={(o: PickerOption<T>) => o.value}
               keyboardShouldPersistTaps="handled"

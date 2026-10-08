@@ -8,6 +8,7 @@ import { ThemeScope } from "../theme/ThemeProvider";
 import { useKeyboardHeight } from "../hooks/useKeyboardHeight";
 import { useIsWide } from "../hooks/useIsWide";
 import { X } from "./icons";
+import { SheetScrollProvider } from "./SheetScroll";
 import {
   ELEVATED_SURFACE_CLASS,
   SCRIM_CLASS,
@@ -100,7 +101,16 @@ export function BottomSheet({
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const isWide = useIsWide();
-  const { isWeb, dismiss, animatedStyle, headerPanGesture } = useSheetDismiss(onClose, visible);
+  const {
+    isWeb,
+    dismiss,
+    animatedStyle,
+    headerPanGesture,
+    contentPanGesture,
+    scrollHandler,
+    nativeScrollGesture,
+    scrollAnimatedProps,
+  } = useSheetDismiss(onClose, visible);
   const centered = isWeb && isWide;
 
   const handleBackdropPress = () => {
@@ -124,45 +134,59 @@ export function BottomSheet({
             onPress={handleBackdropPress}
             style={StyleSheet.absoluteFill}
           />
-          <GestureDetector gesture={headerPanGesture}>
-            <Animated.View
-              style={[
+          <Animated.View
+            style={[
+              centered
+                ? { width: "100%", maxWidth: DIALOG_MAX_WIDTH[size], maxHeight: "85%" }
+                : { width: "100%", maxHeight: "92%" },
+              animatedStyle,
+            ]}
+          >
+            {/* Plain View: NativeWind ignores `className` on Animated.View. */}
+            <View
+              style={{
+                flexShrink: 1,
+                paddingBottom: centered ? 20 : Math.max(insets.bottom, 20),
+              }}
+              className={
                 centered
-                  ? { width: "100%", maxWidth: DIALOG_MAX_WIDTH[size], maxHeight: "85%" }
-                  : { width: "100%", maxHeight: "92%" },
-                animatedStyle,
-              ]}
+                  ? `w-full flex-col rounded-2xl px-5 pt-4 ${ELEVATED_SURFACE_CLASS}`
+                  : "w-full flex-col rounded-t-3xl border-t border-neutral-200 bg-white px-5 pt-3 shadow-2xl dark:border-neutral-700 dark:bg-zinc-900"
+              }
             >
-              {/* Plain View: NativeWind ignores `className` on Animated.View. */}
-              <View
-                style={{
-                  flexShrink: 1,
-                  paddingBottom: centered ? 20 : Math.max(insets.bottom, 20),
-                }}
-                className={
-                  centered
-                    ? `w-full flex-col rounded-2xl px-5 pt-4 ${ELEVATED_SURFACE_CLASS}`
-                    : "w-full flex-col rounded-t-3xl border-t border-neutral-200 bg-white px-5 pt-3 shadow-2xl dark:border-neutral-700 dark:bg-zinc-900"
-                }
-              >
-                {!isWeb && (
-                  <View className="mb-2 items-center py-1">
-                    <View className="h-1.5 w-12 rounded-full bg-neutral-300 dark:bg-neutral-600" />
-                  </View>
-                )}
-                {title != null && (
-                  <SheetHeader
-                    title={title}
-                    subtitle={subtitle}
-                    icon={icon}
-                    action={headerAction}
-                    onClose={dismiss}
-                  />
-                )}
-                {children}
-              </View>
-            </Animated.View>
-          </GestureDetector>
+              {/* The handle and header always drag; the body drags only from the top of its
+                  scroll view (`SheetScrollView`), so a pull inside a scrolled list scrolls it. */}
+              <GestureDetector gesture={headerPanGesture}>
+                <View>
+                  {!isWeb && (
+                    <View className="mb-2 items-center py-1">
+                      <View className="h-1.5 w-12 rounded-full bg-neutral-300 dark:bg-neutral-600" />
+                    </View>
+                  )}
+                  {title != null && (
+                    <SheetHeader
+                      title={title}
+                      subtitle={subtitle}
+                      icon={icon}
+                      action={headerAction}
+                      onClose={dismiss}
+                    />
+                  )}
+                </View>
+              </GestureDetector>
+              <GestureDetector gesture={contentPanGesture}>
+                <View style={{ flexShrink: 1 }}>
+                  <SheetScrollProvider
+                    value={
+                      isWeb ? null : { scrollHandler, nativeScrollGesture, scrollAnimatedProps }
+                    }
+                  >
+                    {children}
+                  </SheetScrollProvider>
+                </View>
+              </GestureDetector>
+            </View>
+          </Animated.View>
         </ThemeScope>
       </GestureHandlerRootView>
     </Modal>

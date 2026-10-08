@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { Task } from "@atlas/client-core";
 import {
@@ -12,6 +12,7 @@ import {
   type PlanDayWrite,
 } from "@atlas/shared";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { EmptyState } from "./EmptyState";
 import { CalendarClock, Plus, X } from "./icons";
 import { haptics } from "../lib/haptics";
@@ -215,7 +216,7 @@ export function PlanDaySheet({
             />
           </View>
         ) : (
-          <ScrollView style={{ maxHeight: 460 }} keyboardShouldPersistTaps="handled">
+          <SheetScrollView style={{ maxHeight: 460 }} keyboardShouldPersistTaps="handled">
             <View className="gap-2">
               {review.map((item) => {
                 const decision = decisions[item.task.id];
@@ -299,7 +300,7 @@ export function PlanDaySheet({
                 );
               })}
             </View>
-          </ScrollView>
+          </SheetScrollView>
         )}
 
         {(pickerOpen || review.length > 0) && (
