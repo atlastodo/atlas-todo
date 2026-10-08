@@ -16,7 +16,7 @@ use aes_gcm::{Aes256Gcm, Nonce};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use hkdf::Hkdf;
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit as HmacKeyInit, Mac};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -147,8 +147,8 @@ pub fn response_matches(secret: &[u8], token: &str, response_hex: &str) -> bool 
 }
 
 fn nonce_mac(secret: &[u8], token: &str) -> Hmac<Sha256> {
-    let mut mac =
-        <Hmac<Sha256> as Mac>::new_from_slice(secret).expect("HMAC accepts keys of any length");
+    let mut mac = <Hmac<Sha256> as HmacKeyInit>::new_from_slice(secret)
+        .expect("HMAC accepts keys of any length");
     mac.update(NONCE_DOMAIN);
     mac.update(token.as_bytes());
     mac

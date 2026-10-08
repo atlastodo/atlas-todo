@@ -4,15 +4,12 @@
 //! constant-time via the argon2 crate. Parameters use the crate defaults, which are a sensible
 //! interactive-login baseline.
 
-use argon2::password_hash::{
-    rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString,
-};
+use argon2::password_hash::{phc::PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::Argon2;
 
-/// Hash a plaintext password, returning a PHC string suitable for storage.
+/// Hash a plaintext password with a fresh random salt, returning a PHC string suitable for storage.
 pub fn hash_password(plaintext: &str) -> Result<String, argon2::password_hash::Error> {
-    let salt = SaltString::generate(&mut OsRng);
-    let hash = Argon2::default().hash_password(plaintext.as_bytes(), &salt)?;
+    let hash: PasswordHash = Argon2::default().hash_password(plaintext.as_bytes())?;
     Ok(hash.to_string())
 }
 
@@ -25,7 +22,7 @@ pub fn verify_password(
     let parsed = PasswordHash::new(phc_hash)?;
     match Argon2::default().verify_password(plaintext.as_bytes(), &parsed) {
         Ok(()) => Ok(true),
-        Err(argon2::password_hash::Error::Password) => Ok(false),
+        Err(argon2::password_hash::Error::PasswordInvalid) => Ok(false),
         Err(e) => Err(e),
     }
 }
