@@ -31,6 +31,7 @@ import { useStore } from "../data/StoreProvider";
 import { usePreferences } from "../hooks/usePreferences";
 import { useOnboarding } from "../data/OnboardingContext";
 import { useLocalMode } from "../auth/localMode";
+import { AuthForm, useAuthForm, type AuthFormState } from "../auth/AuthForm";
 import { deviceLanguage } from "../i18n";
 import { ThemeScope } from "../theme/ThemeProvider";
 import { ensureNotifyPermission } from "../lib/notify";
@@ -85,12 +86,18 @@ const DATE_OPTIONS: { value: DateFormatPref; labelKey: string }[] = [
  * The wizard's steps. Local-only mode adds the account step after Welcome: create an account to
  * sync and share, sign in to an existing one, or carry on with this device only. It comes before
  * any setting is chosen, so signing in to an existing account never overwrites its settings.
+ *
+ * Creating an account or signing in moves on to the form step ("auth", the shared `AuthForm`);
+ * "this device only" skips it. A new account carries on at Appearance once its app mounts (the
+ * session swaps the app tree, so `setUpgradeIntent` asks the next wizard to resume); signing in to
+ * an existing account ends the wizard, after `LocalUpgradeGate` asks about any local data.
  */
-type StepKey = "welcome" | "account" | "appearance" | "defaults" | "features" | "ready";
+type StepKey = "welcome" | "account" | "auth" | "appearance" | "defaults" | "features" | "ready";
 const ACCOUNT_STEPS: StepKey[] = ["welcome", "appearance", "defaults", "features", "ready"];
 const LOCAL_STEPS: StepKey[] = [
   "welcome",
   "account",
+  "auth",
   "appearance",
   "defaults",
   "features",
@@ -205,12 +212,35 @@ function OnboardingToggleItem({
 }
 
 export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
+  const { localOnly } = useStore();
+  const local = useLocalMode();
+  return localOnly && local ? (
+    <LocalOnboarding onFinish={onFinish} />
+  ) : (
+    <Wizard onFinish={onFinish} authForm={null} />
+  );
+}
+
+/** Local-only mode's wizard, which holds the account form's state across its steps. */
+function LocalOnboarding({ onFinish }: { onFinish?: () => void }) {
+  // Kept above the steps, not in the form step, so stepping Back and forth keeps what was typed.
+  const authForm = useAuthForm({ resumeOnboardingOnSignup: true });
+  return <Wizard onFinish={onFinish} authForm={authForm} />;
+}
+
+function Wizard({
+  onFinish,
+  authForm,
+}: {
+  onFinish?: () => void;
+  /** The account form's state in local-only mode, which has the account steps; else null. */
+  authForm: AuthFormState | null;
+}) {
   const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { store, kick, localOnly } = useStore();
+  const { store, kick } = useStore();
   const { isOpen, startAt, closeOnboarding } = useOnboarding();
-  const local = useLocalMode();
-  const steps = localOnly && local ? LOCAL_STEPS : ACCOUNT_STEPS;
+  const steps = authForm ? LOCAL_STEPS : ACCOUNT_STEPS;
   const {
     theme,
     setTheme,
@@ -343,9 +373,18 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
     }
   };
 
+  const goTo = (key: StepKey) => {
+    haptics.selection();
+    setStep(steps.indexOf(key) + 1);
+  };
+
   const handleBack = () => {
     haptics.selection();
-    if (step > 1) {
+    // The form step is only reached by choosing an account: Back from it, and from the step after
+    // it, returns to the choices.
+    if (current === "auth" || (current === "appearance" && steps.includes("auth"))) {
+      setStep(steps.indexOf("account") + 1);
+    } else if (step > 1) {
       setStep(step - 1);
     }
   };
@@ -489,7 +528,7 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
           )}
 
           {/* Account: sync and collaborate, or this device only (local-only mode) */}
-          {current === "account" && local && (
+          {current === "account" && authForm && (
             <View className="gap-6">
               <View>
                 <Text className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
@@ -504,7 +543,10 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
                   icon={UserPlus}
                   title={t("localMode.createAccount")}
                   description={t("localMode.createAccountDesc")}
-                  onPress={() => local.openAuth("signup", { resumeOnboarding: true })}
+                  onPress={() => {
+                    authForm.setMode("signup");
+                    goTo("auth");
+                  }}
                   primary
                   accentHex={currentAccentHex}
                 />
@@ -512,16 +554,44 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
                   icon={UserRound}
                   title={t("localMode.signIn")}
                   description={t("localMode.signInDesc")}
-                  onPress={() => local.openAuth("login")}
+                  onPress={() => {
+                    authForm.setMode("login");
+                    goTo("auth");
+                  }}
                   accentHex={currentAccentHex}
                 />
                 <AccountChoice
                   icon={Smartphone}
                   title={t("localMode.continueLocal")}
                   description={t("localMode.continueLocalDesc")}
-                  onPress={handleNext}
+                  onPress={() => goTo("appearance")}
                   accentHex={currentAccentHex}
                 />
+              </View>
+            </View>
+          )}
+
+          {/* Account form: create an account, sign in, or recover one (local-only mode) */}
+          {current === "auth" && authForm && (
+            <View className="gap-6">
+              <View>
+                <Text className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
+                  {authForm.mode === "signup"
+                    ? t("localMode.createAccount")
+                    : authForm.mode === "login"
+                      ? t("localMode.signIn")
+                      : t("auth.resetAndRecover")}
+                </Text>
+                {authForm.mode !== "recover" && (
+                  <Text className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                    {authForm.mode === "signup"
+                      ? t("localMode.createAccountDesc")
+                      : t("localMode.signInDesc")}
+                  </Text>
+                )}
+              </View>
+              <View>
+                <AuthForm form={authForm} />
               </View>
             </View>
           )}
@@ -1017,8 +1087,8 @@ export function OnboardingModal({ onFinish }: { onFinish?: () => void }) {
             <View className="w-16" />
           )}
 
-          {current === "account" ? (
-            // The step's own choices move on; "This device only" is the plain Next.
+          {current === "account" || current === "auth" ? (
+            // The step's own choices (or the form's submit) move on.
             <View className="w-16" />
           ) : step < TOTAL_STEPS ? (
             <Pressable
