@@ -1446,5 +1446,20 @@
       "title": "Intet er tildelt dig.",
       "hint": "Når nogen i et delt projekt tildeler dig en opgave, vises den her."
     }
+  },
+  "relativeTime": {
+    "justNow": "lige nu",
+    "past": "for {{amount}} siden",
+    "future": "om {{amount}}",
+    "minute_one": "{{count}} minut",
+    "minute_other": "{{count}} minutter",
+    "hour_one": "{{count}} time",
+    "hour_other": "{{count}} timer",
+    "day_one": "{{count}} dag",
+    "day_other": "{{count}} dage",
+    "month_one": "{{count}} måned",
+    "month_other": "{{count}} måneder",
+    "year_one": "{{count}} år",
+    "year_other": "{{count}} år"
   }
 }

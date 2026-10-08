@@ -1446,5 +1446,20 @@
       "title": "Nothing is assigned to you.",
       "hint": "When someone in a shared project assigns you a task, it shows up here."
     }
+  },
+  "relativeTime": {
+    "justNow": "just now",
+    "past": "{{amount}} ago",
+    "future": "in {{amount}}",
+    "minute_one": "{{count}} minute",
+    "minute_other": "{{count}} minutes",
+    "hour_one": "{{count}} hour",
+    "hour_other": "{{count}} hours",
+    "day_one": "{{count}} day",
+    "day_other": "{{count}} days",
+    "month_one": "{{count}} month",
+    "month_other": "{{count}} months",
+    "year_one": "{{count}} year",
+    "year_other": "{{count}} years"
   }
 }

@@ -510,7 +510,7 @@ describe("relativeLabel", () => {
   // old implementation "fell back" by re-running the same missing constructor in its catch block,
   // so `undefined cannot be used as a constructor` escaped and crashed the whole Settings screen
   // (DevicesSection render via the session rows). These pin the missing-Intl path: no throw, same
-  // coarse-unit shape, plain-English output.
+  // coarse-unit shape, translated output.
   it("degrades gracefully without Intl.RelativeTimeFormat", async () => {
     const Original = Intl.RelativeTimeFormat;
     Object.defineProperty(Intl, "RelativeTimeFormat", { value: undefined, configurable: true });
@@ -525,6 +525,24 @@ describe("relativeLabel", () => {
     } finally {
       Object.defineProperty(Intl, "RelativeTimeFormat", { value: Original, configurable: true });
     }
+  });
+
+  it("translates the fallback into the app language", async () => {
+    const Original = Intl.RelativeTimeFormat;
+    Object.defineProperty(Intl, "RelativeTimeFormat", { value: undefined, configurable: true });
+    try {
+      const now = Date.UTC(2026, 8, 22, 12, 0, 0);
+      expect(relativeLabel(now - 2 * 60 * 60_000, now, "da")).toBe("for 2 timer siden");
+      expect(relativeLabel(now + 1 * 60 * 24 * 60_000, now, "da")).toBe("om 1 dag");
+      expect(relativeLabel(now, now, "da")).toBe("lige nu");
+    } finally {
+      Object.defineProperty(Intl, "RelativeTimeFormat", { value: Original, configurable: true });
+    }
+  });
+
+  it("formats in the given app language with Intl", async () => {
+    const now = Date.UTC(2026, 8, 22, 12, 0, 0);
+    expect(relativeLabel(now - 2 * 60 * 60_000, now, "da")).not.toContain("ago");
   });
 
   it("hides the server section from settingsSections on online web", async () => {
