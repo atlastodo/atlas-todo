@@ -23,6 +23,33 @@ const PHONE = {
   hasTouch: true,
 };
 
+/**
+ * Runs in the page before the app loads. Headless Chromium still reports a fine pointer even with
+ * touch emulation, and the app treats `(pointer: fine)` as a desktop (sidebar layout at any width),
+ * so the phone shots would not get the bottom navigation. Report a coarse, hover-less touch pointer.
+ */
+function coarsePointer() {
+  const real = window.matchMedia.bind(window);
+  const answers = [
+    [/\(\s*(any-)?pointer\s*:\s*fine\s*\)/, false],
+    [/\(\s*(any-)?pointer\s*:\s*coarse\s*\)/, true],
+    [/\(\s*(any-)?hover\s*:\s*none\s*\)/, true],
+    [/\(\s*(any-)?hover\s*:\s*hover\s*\)/, false],
+  ];
+  window.matchMedia = (query) => {
+    const mql = real(query);
+    const hit = answers.find(([re]) => re.test(query));
+    if (!hit) return mql;
+    return new Proxy(mql, {
+      get(target, key) {
+        if (key === "matches") return hit[1];
+        const value = Reflect.get(target, key, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+  };
+}
+
 /** A browser on the shared profile, so the session and local store carry over between layouts. */
 async function open(layout, colorScheme = "light") {
   const ctx = await chromium.launchPersistentContext(PROFILE, {
@@ -32,6 +59,7 @@ async function open(layout, colorScheme = "light") {
     args: ["--no-sandbox"],
     ...layout,
   });
+  if (layout === PHONE) await ctx.addInitScript(coarsePointer);
   return { ctx, page: ctx.pages()[0] ?? (await ctx.newPage()) };
 }
 
@@ -57,7 +85,9 @@ async function addTasks(page, field, titles) {
 
 async function signUp(page) {
   await page.goto(BASE);
-  await page.getByText("Need an account? Sign up").click();
+  // First run opens the onboarding wizard in local mode; the account step is behind its Welcome.
+  await page.getByLabel("Continue", { exact: true }).click();
+  await page.getByLabel("Create an account").click();
   await page.getByLabel("Name").fill(ACCOUNT.name);
   await page.getByLabel("Email").fill(ACCOUNT.email);
   await page.getByLabel("Password", { exact: true }).fill(ACCOUNT.password);
@@ -68,18 +98,14 @@ async function signUp(page) {
 
 /** Projects, sections and tasks, typed through quick add so its date and priority parsing does the work. */
 async function seedProjects(page) {
-  await page.goto(`${BASE}/projects`);
-  for (const name of ["Website relaunch", "Home", "Reading list"]) {
-    await page.getByPlaceholder("New project").click();
-    await page.keyboard.type(name);
-    await page.keyboard.press("Enter");
-    await pause(page, 600);
-  }
-  await page.keyboard.press("Escape");
   const urls = {};
   for (const name of ["Website relaunch", "Home", "Reading list"]) {
-    await page.getByLabel(name, { exact: true }).first().click();
-    await pause(page, 1200);
+    // The New project button opens a sheet; creating there opens the new project.
+    await page.goto(`${BASE}/projects`);
+    await page.getByLabel("New project", { exact: true }).click();
+    await page.keyboard.type(name);
+    await page.keyboard.press("Enter");
+    await pause(page, 1500);
     urls[name] = page.url();
   }
 
