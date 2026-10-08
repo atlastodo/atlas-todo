@@ -1,9 +1,12 @@
-## v0.1.7
+## v0.1.8-rc.1
 
 ### Features
-- Show the invite link in a box; list invite creation dates
-- Centred task chip and picker dialog on Focus
+- Keep the desktop layout in a narrow desktop window
+- Create projects in a dialog with icon, colour, folder and view
 
 ### Fixes
-- No ring on text inputs, no Tab stop on scroll containers
-- Never answer 304 for index.html
+- Drop the chevron on project rows
+
+### Changes
+- Keep the Rust cache key stable, and save Rust caches from dev
+- Optimize the Argon2 crates in dev and test builds
