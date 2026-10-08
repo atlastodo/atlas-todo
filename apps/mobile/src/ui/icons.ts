@@ -71,6 +71,7 @@ import Lock from "lucide-react-native/icons/lock";
 import LogOut from "lucide-react-native/icons/log-out";
 import MessageSquare from "lucide-react-native/icons/message-square";
 import Menu from "lucide-react-native/icons/menu";
+import Monitor from "lucide-react-native/icons/monitor";
 import Palette from "lucide-react-native/icons/palette";
 import Minus from "lucide-react-native/icons/minus";
 import PanelLeftClose from "lucide-react-native/icons/panel-left-close";
@@ -174,6 +175,7 @@ const ICONS = {
   LogOut,
   MessageSquare,
   Menu,
+  Monitor,
   Palette,
   Paperclip,
   PanelLeftClose,
@@ -272,6 +274,7 @@ export {
   LogOut,
   MessageSquare,
   Menu,
+  Monitor,
   Palette,
   Paperclip,
   Minus,

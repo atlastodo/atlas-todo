@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Toggle } from "./Toggle";
+import { Section } from "./Section";
+import { Monitor } from "./icons";
 
 /**
- * Settings → Features' desktop-only "Close to tray" switch: whether closing the Electron window
- * hides it to the tray or quits (the default). The choice lives in the desktop shell
+ * Settings → Desktop app's "Close to tray" switch, in its own section: whether closing the Electron window
+ * hides it to the tray (the default) or quits. The choice lives in the desktop shell
  * (`apps/electron/src/desktopSettings.ts`), not the synced preferences, since it belongs to this
  * install. Shown only where the preload bridge reports a tray (not on macOS or a Linux session
  * without a tray host).
@@ -61,11 +63,13 @@ export function CloseToTrayRow() {
   };
 
   return (
-    <Toggle
-      label={t("settings.closeToTray")}
-      description={t("settings.closeToTrayDesc")}
-      value={state.enabled}
-      onValueChange={change}
-    />
+    <Section icon={Monitor} title={t("settings.desktop")}>
+      <Toggle
+        label={t("settings.closeToTray")}
+        description={t("settings.closeToTrayDesc")}
+        value={state.enabled}
+        onValueChange={change}
+      />
+    </Section>
   );
 }
