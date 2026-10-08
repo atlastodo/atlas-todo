@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { StylePicker } from "./StylePicker";
 import { SlidersHorizontal, Star, X, type LucideIcon } from "./icons";
 
@@ -103,7 +104,10 @@ export function StyleEditor({
           </Pressable>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="gap-5 py-1">
+        <SheetScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="gap-5 py-1"
+        >
           {onToggleFavorite && (
             <Pressable
               accessibilityRole="button"
@@ -145,7 +149,7 @@ export function StyleEditor({
             onSetColor={onSetColor}
           />
           {extra}
-        </ScrollView>
+        </SheetScrollView>
 
         {footer && (
           <View className="flex-row gap-2 border-t border-neutral-100 pt-4 dark:border-neutral-800">

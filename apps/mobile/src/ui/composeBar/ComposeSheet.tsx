@@ -137,6 +137,7 @@ export function ComposeSheet({
                   showsVerticalScrollIndicator={false}
                   scrollEventThrottle={16}
                   onScroll={anim.scrollHandler}
+                  animatedProps={anim.scrollAnimatedProps}
                 >
                   {children}
                 </Animated.ScrollView>

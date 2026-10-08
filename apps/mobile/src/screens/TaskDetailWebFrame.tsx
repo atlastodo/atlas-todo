@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import type { Gesture } from "react-native-gesture-handler";
 import { GestureDetector } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import type { useAnimatedScrollHandler } from "react-native-reanimated";
+import type { useAnimatedProps, useAnimatedScrollHandler } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { Archive, ChevronDown, CopyPlus, Ellipsis, SkipForward, Trash2, X } from "../ui/icons";
@@ -15,6 +15,8 @@ import { useSheetDismiss } from "../ui/useSheetDismiss";
 export interface SheetScrollContextValue {
   scrollHandler: ReturnType<typeof useAnimatedScrollHandler>;
   composedGesture?: ReturnType<typeof Gesture.Simultaneous>;
+  /** Freezes the scroll view while a pull drives the sheet. */
+  scrollAnimatedProps?: ReturnType<typeof useAnimatedProps>;
 }
 
 const SheetScrollContext = createContext<SheetScrollContextValue | null>(null);
@@ -59,8 +61,15 @@ export function TaskDetailWebFrame({
   const insets = useSafeAreaInsets();
   const detectedWide = useIsWide();
   const isWide = propIsWide ?? detectedWide;
-  const { isWeb, dismiss, animatedStyle, headerPanGesture, scrollHandler, composedGesture } =
-    useSheetDismiss(onClose);
+  const {
+    isWeb,
+    dismiss,
+    animatedStyle,
+    headerPanGesture,
+    scrollHandler,
+    composedGesture,
+    scrollAnimatedProps,
+  } = useSheetDismiss(onClose);
 
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
@@ -315,7 +324,9 @@ export function TaskDetailWebFrame({
             </View>
           </View>
 
-          <SheetScrollContext.Provider value={{ scrollHandler, composedGesture }}>
+          <SheetScrollContext.Provider
+            value={{ scrollHandler, composedGesture, scrollAnimatedProps }}
+          >
             <View style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>{children}</View>
           </SheetScrollContext.Provider>
         </View>
@@ -406,7 +417,9 @@ export function TaskDetailWebFrame({
             </View>
           </GestureDetector>
 
-          <SheetScrollContext.Provider value={{ scrollHandler, composedGesture }}>
+          <SheetScrollContext.Provider
+            value={{ scrollHandler, composedGesture, scrollAnimatedProps }}
+          >
             <View style={{ flex: 1 }}>{children}</View>
           </SheetScrollContext.Provider>
         </View>

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { Project, Section } from "@atlas/client-core";
 import { DEFAULT_FOLDER_ICON, flattenProjectTree, resolveProjectColor } from "@atlas/shared";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { Check, ChevronLeft, ChevronRight, Inbox, X } from "./icons";
 import { projectIconFor } from "./projectIcons";
 
@@ -113,7 +114,7 @@ export function MoveToPicker({
           </Pressable>
         </View>
 
-        <ScrollView className="max-h-96">
+        <SheetScrollView className="max-h-96">
           {!step && (
             <>
               {mode === "task" && (
@@ -175,7 +176,7 @@ export function MoveToPicker({
               ))}
             </>
           )}
-        </ScrollView>
+        </SheetScrollView>
       </View>
     </BottomSheet>
   );

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { BugReportView } from "@atlas/client-core";
 import { useAuth } from "../auth/AuthContext";
 import { useFormat } from "../hooks/useFormat";
 import { copyText } from "../lib/clipboard";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DetailButton } from "./DetailButton";
 import { Field } from "./Field";
@@ -67,7 +68,7 @@ export function AdminReportDetail({
         ) : !report ? (
           <SkeletonRows count={5} />
         ) : (
-          <ScrollView className="max-h-96">
+          <SheetScrollView className="max-h-96">
             <Text className="pb-2 text-sm text-neutral-900 dark:text-neutral-100">
               {report.message}
             </Text>
@@ -113,7 +114,7 @@ export function AdminReportDetail({
                 ))}
               </>
             ) : null}
-          </ScrollView>
+          </SheetScrollView>
         )}
 
         <View className="flex-row gap-2">
