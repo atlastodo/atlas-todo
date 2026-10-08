@@ -10,10 +10,11 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { LucideIcon } from "./icons";
+import { Check, type LucideIcon } from "./icons";
 import type { MenuPos } from "../hooks/useContextMenu";
 import { clampMenuPosition, type Size } from "../lib/menuPosition";
 import { useBackdropSwitch } from "../hooks/useBackdropSwitch";
+import { ThemeScope } from "../theme/ThemeProvider";
 import { useIsWide } from "../hooks/useIsWide";
 
 /**
@@ -75,43 +76,45 @@ export function ContextMenu({ items, pos, onClose, align = "left" }: ContextMenu
 
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        ref={backdropRef}
-        accessibilityLabel={t("common.close")}
-        onPress={onClose}
-        className="absolute inset-0"
-      />
-      <View
-        accessibilityLabel={t("context.actions")}
-        onLayout={onLayout}
-        style={{
-          position: "absolute",
-          left: placed.x,
-          top: placed.y,
-          maxHeight: height - 8,
-          opacity: size ? 1 : 0,
-        }}
-        className={"w-56 " + MENU_SURFACE}
-      >
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {items.map((item) => {
-            return (
-              <View key={item.key}>
-                {item.separatorBefore && (
-                  <View className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
-                )}
-                <MenuItem
-                  icon={item.icon}
-                  label={item.label}
-                  danger={item.danger}
-                  onPress={item.onPress}
-                  onClose={onClose}
-                />
-              </View>
-            );
-          })}
-        </ScrollView>
-      </View>
+      <ThemeScope className="flex-1">
+        <Pressable
+          ref={backdropRef}
+          accessibilityLabel={t("common.close")}
+          onPress={onClose}
+          className="absolute inset-0"
+        />
+        <View
+          accessibilityLabel={t("context.actions")}
+          onLayout={onLayout}
+          style={{
+            position: "absolute",
+            left: placed.x,
+            top: placed.y,
+            maxHeight: height - 8,
+            opacity: size ? 1 : 0,
+          }}
+          className={"w-56 " + MENU_SURFACE}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {items.map((item) => {
+              return (
+                <View key={item.key}>
+                  {item.separatorBefore && (
+                    <View className="my-1 border-t border-neutral-100 dark:border-neutral-800" />
+                  )}
+                  <MenuItem
+                    icon={item.icon}
+                    label={item.label}
+                    danger={item.danger}
+                    onPress={item.onPress}
+                    onClose={onClose}
+                  />
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </ThemeScope>
     </Modal>
   );
 }
@@ -122,15 +125,21 @@ export function useTouchMenu(): boolean {
   return Platform.OS !== "web" || !isWide;
 }
 
+/** The current value in a menu: a soft accent fill, no ring. Shared by rows and the priority chips. */
+export const MENU_SELECTED_CLASS = "bg-accent-50 dark:bg-accent-950/70";
+export const MENU_SELECTED_TEXT_CLASS = "font-semibold text-accent-700 dark:text-accent-200";
+
 /**
  * One menu row: runs `onPress`, then closes the menu. Shared with `TaskContextMenu`. `shortcut` is a
- * right-aligned key hint for the same action.
+ * right-aligned key hint for the same action. `selected` marks the row as the current value (the
+ * task's due date) with the selected fill and a check.
  */
 export function MenuItem({
   icon: Icon,
   label,
   danger,
   shortcut,
+  selected = false,
   onPress,
   onClose,
 }: {
@@ -138,6 +147,7 @@ export function MenuItem({
   label: string;
   danger?: boolean;
   shortcut?: string;
+  selected?: boolean;
   onPress: () => void;
   onClose: () => void;
 }) {
@@ -146,25 +156,43 @@ export function MenuItem({
     <Pressable
       accessibilityRole="menuitem"
       accessibilityLabel={label}
+      accessibilityState={selected ? { selected } : undefined}
       onPress={() => {
         onPress();
         onClose();
       }}
       className={
-        "flex-row items-center gap-2 rounded px-2 web:cursor-pointer web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800 " +
+        "flex-row items-center gap-2 rounded px-2 web:cursor-pointer " +
+        (selected
+          ? MENU_SELECTED_CLASS + " "
+          : "web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800 ") +
         (touch ? "min-h-[44px] py-2.5" : "py-1.5")
       }
     >
-      <Icon size={16} className={danger ? "text-red-500" : "text-neutral-400"} />
+      <Icon
+        size={16}
+        className={
+          danger
+            ? "text-red-500"
+            : selected
+              ? "text-accent-600 dark:text-accent-300"
+              : "text-neutral-400"
+        }
+      />
       <Text
         className={
           "flex-1 " +
           (touch ? "text-base " : "text-sm ") +
-          (danger ? "text-red-500" : "text-neutral-700 dark:text-neutral-200")
+          (danger
+            ? "text-red-500"
+            : selected
+              ? MENU_SELECTED_TEXT_CLASS
+              : "text-neutral-700 dark:text-neutral-200")
         }
       >
         {label}
       </Text>
+      {selected && <Check size={16} className="text-accent-600 dark:text-accent-300" />}
       {shortcut != null && <ShortcutHint keys={shortcut} />}
     </Pressable>
   );

@@ -33,7 +33,8 @@ import {
   headerLayoutFor,
   type HeaderLayout,
 } from "../ui/ProjectHeaderActions";
-import { Archive, CircleAlert, CopyPlus, LogOut, Trash2 } from "../ui/icons";
+import { Archive, CircleAlert, CopyPlus, Kanban, ListTodo, LogOut, Trash2 } from "../ui/icons";
+import { Segmented } from "../ui/Segmented";
 import { BoardScreen } from "./BoardScreen";
 
 /**
@@ -232,15 +233,31 @@ export function ProjectScreen({
       onSetColor={(color) => updateProject(project.id, { color })}
       onClose={() => setEditing(false)}
       extra={
-        <View className="flex-row items-center justify-between">
-          <Text className="text-sm text-neutral-700 dark:text-neutral-200">
-            {t("board.showCompleted")}
-          </Text>
-          <Switch
-            accessibilityLabel={t("board.showCompleted")}
-            value={showDone}
-            onValueChange={(v) => setShowDone(project.id, v)}
-          />
+        <View className="gap-4">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-sm text-neutral-700 dark:text-neutral-200">
+              {t("board.showCompleted")}
+            </Text>
+            <Switch
+              accessibilityLabel={t("board.showCompleted")}
+              value={showDone}
+              onValueChange={(v) => setShowDone(project.id, v)}
+            />
+          </View>
+          <View className="flex-row items-center justify-between gap-4">
+            <Text className="text-sm text-neutral-700 dark:text-neutral-200">
+              {t("projects.defaultView")}
+            </Text>
+            <Segmented
+              value={project.default_view}
+              options={[
+                { value: "list", label: t("board.viewList"), icon: ListTodo },
+                { value: "board", label: t("board.viewBoard"), icon: Kanban },
+              ]}
+              onChange={(default_view) => updateProject(project.id, { default_view })}
+              label={t("projects.defaultView")}
+            />
+          </View>
         </View>
       }
       footer={(close) => (

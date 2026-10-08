@@ -14,7 +14,6 @@ import { ThemeScope } from "../theme/ThemeProvider";
 import { ReportProblemSheet } from "../ui/ReportProblemSheet";
 import { ShortcutsTable } from "../ui/ShortcutsHelp";
 import { SyncDetails } from "../ui/SyncDetails";
-import { DesktopUpdateSection } from "../ui/DesktopUpdateSection";
 import {
   Bug,
   Check,
@@ -188,8 +187,6 @@ export function AboutScreen() {
                   {t("about.missionDescription")}
                 </Text>
               </View>
-
-              <DesktopUpdateSection />
 
               <View className="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
                 <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { FlatList, Platform, Pressable, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
+import { FlatList, Platform, Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
   DEFAULT_FOLDER_ICON,
@@ -19,6 +19,7 @@ import { useToast } from "../data/ToastProvider";
 import { StyleEditor, StyleAction } from "../ui/StyleEditor";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { FolderPicker } from "../ui/FolderPicker";
+import { CreateProjectSheet } from "../ui/CreateProjectSheet";
 import { projectIconFor } from "../ui/projectIcons";
 import { EmptyState } from "../ui/EmptyState";
 import { LIST_WIDTH_STYLE } from "../ui/listWidth";
@@ -35,13 +36,12 @@ import {
   Plus,
   Trash2,
 } from "../ui/icons";
-import { KEEP_FOCUS_SUBMIT } from "../lib/submitBehavior";
 import { haptics } from "../lib/haptics";
-import { useCancelOnEscape } from "../hooks/useCancelOnEscape";
 import { useContextMenu } from "../hooks/useContextMenu";
 
 /**
- * Projects: the list of projects with icon and colour, a create field, and per-project edit
+ * Projects: the list of projects with icon and colour, header buttons that open the create sheet,
+ * and per-project edit
  * (icon/colour/rename/archive/delete). Tapping a project opens it (`onOpenProject`); long-press
  * opens the style sheet. A blank colour falls back to a stable id-hashed one.
  */
@@ -72,9 +72,10 @@ function ProjectRow({
   const Chevron = expanded ? ChevronDown : ChevronRight;
 
   return (
+    // The whole row highlights on hover, as task rows do, not just the pressable label.
     <View
       ref={contextRef}
-      className="flex-row items-center gap-3 border-b border-neutral-100 px-4 py-3 dark:border-neutral-900"
+      className="flex-row items-center gap-3 border-b border-neutral-100 px-4 py-3 dark:border-neutral-900 web:hover:bg-neutral-50 dark:web:hover:bg-neutral-900"
     >
       <View style={{ width: depth * 16 }} />
       <Pressable
@@ -105,23 +106,29 @@ function ProjectRow({
           <Chevron size={14} className="text-neutral-400" />
         )}
       </Pressable>
-      {!folder && <ChevronRight size={isWeb ? 16 : 18} className="text-neutral-300" />}
     </View>
   );
 }
 
 export interface ProjectsScreenProps {
   onOpenProject?: (project: Project) => void;
+  /** Opens a project just created here (the route supplies navigation). */
+  onCreated?: (id: string) => void;
   rootId?: string | null;
+  /** Receives the New folder / New project buttons (`null` on unmount) for the nav header's `headerRight`. */
+  onHeaderActions?: (actions: ReactElement | null) => void;
 }
 
-export function ProjectsScreen({ onOpenProject, rootId = null }: ProjectsScreenProps = {}) {
+export function ProjectsScreen({
+  onOpenProject,
+  onCreated,
+  rootId = null,
+  onHeaderActions,
+}: ProjectsScreenProps = {}) {
   const { t } = useTranslation();
   const {
     projects,
     folders,
-    createProject,
-    createFolder,
     renameProject,
     updateProject,
     duplicateProject,
@@ -134,8 +141,7 @@ export function ProjectsScreen({ onOpenProject, rootId = null }: ProjectsScreenP
   const { kick } = useStore();
   const toast = useToast();
   const { folderExpanded, setFolderExpanded, isFavorite, toggleFavorite } = usePreferences();
-  const isWeb = Platform.OS === "web";
-  const [draft, setDraft] = useState("");
+  const [creating, setCreating] = useState<"project" | "folder" | null>(null);
   const [editing, setEditing] = useState<Project | null>(null);
   const [moving, setMoving] = useState<Project | null>(null);
   const [leavingProject, setLeavingProject] = useState<Project | null>(null);
@@ -163,14 +169,35 @@ export function ProjectsScreen({ onOpenProject, rootId = null }: ProjectsScreenP
     return flattenProjectTree(scoped, collapsed);
   }, [all, folders, folderExpanded, rootId]);
 
-  const create = (kind: "project" | "folder") => {
-    const name = draft.trim();
-    if (name === "") return;
-    const make = kind === "folder" ? createFolder : createProject;
-    make(name, { parentId: rootId });
-    setDraft("");
-  };
-  const escapeDraft = useCancelOnEscape(() => setDraft(""));
+  const headerActions = useMemo(
+    () => (
+      <View className="shrink-0 flex-row items-center gap-1 pr-3">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("projects.newFolder")}
+          onPress={() => setCreating("folder")}
+          hitSlop={8}
+          className="rounded-md p-1.5 web:cursor-pointer web:hover:bg-neutral-100 dark:web:hover:bg-neutral-900"
+        >
+          <FolderPlus size={18} className="text-neutral-500" />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("workspace.newProject")}
+          onPress={() => setCreating("project")}
+          className="flex-row items-center gap-1 rounded-md bg-accent-600 px-2.5 py-1.5 web:cursor-pointer web:hover:bg-accent-700"
+        >
+          <Plus size={16} className="text-white" />
+          <Text className="text-sm font-semibold text-white">{t("workspace.newProject")}</Text>
+        </Pressable>
+      </View>
+    ),
+    [t],
+  );
+  useEffect(() => {
+    onHeaderActions?.(headerActions);
+    return () => onHeaderActions?.(null);
+  }, [onHeaderActions, headerActions]);
 
   const moveToFolder = (project: Project, parentId: string | null) => {
     const undo = setProjectParent(project.id, parentId);
@@ -197,52 +224,10 @@ export function ProjectsScreen({ onOpenProject, rootId = null }: ProjectsScreenP
 
   return (
     <View className="flex-1 bg-white dark:bg-zinc-950">
-      <View
-        style={LIST_WIDTH_STYLE}
-        className="flex-row items-center gap-2 border-b border-neutral-100 px-3 py-2 dark:border-neutral-900"
-      >
-        <Hash size={isWeb ? 18 : 20} className="text-neutral-400" />
-        <TextInput
-          ref={escapeDraft.ref}
-          accessibilityLabel={t("workspace.newProject")}
-          value={draft}
-          onChangeText={setDraft}
-          onSubmitEditing={() => create("project")}
-          onKeyPress={escapeDraft.onKeyPress}
-          placeholder={t("workspace.newProject")}
-          placeholderTextColor="#a1a1aa"
-          returnKeyType="done"
-          {...KEEP_FOCUS_SUBMIT}
-          className={
-            "flex-1 py-1 text-neutral-900 dark:text-neutral-100 " + (isWeb ? "text-sm" : "text-lg")
-          }
-        />
-        {draft.trim() !== "" && (
-          <>
-            {/* One draft field, two destinations -- no mode state to get out of sync. */}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("projects.newFolder")}
-              onPress={() => create("folder")}
-            >
-              <FolderPlus size={20} className="text-neutral-500" />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("common.create")}
-              onPress={() => create("project")}
-            >
-              <Plus size={20} className="text-accent-600" />
-            </Pressable>
-          </>
-        )}
-      </View>
-
       <FlatList
         data={rows}
         contentContainerStyle={LIST_WIDTH_STYLE}
         keyExtractor={(row) => row.project.id}
-        // The action focuses the create field above rather than opening a second way to name one.
         ListEmptyComponent={
           <EmptyState
             icon={rootId === null ? Hash : Folder}
@@ -251,7 +236,7 @@ export function ProjectsScreen({ onOpenProject, rootId = null }: ProjectsScreenP
             actions={[
               {
                 label: t("workspace.newProject"),
-                onPress: () => escapeDraft.ref.current?.focus(),
+                onPress: () => setCreating("project"),
                 primary: true,
               },
             ]}
@@ -269,6 +254,16 @@ export function ProjectsScreen({ onOpenProject, rootId = null }: ProjectsScreenP
             onEdit={() => setEditing(item.project)}
           />
         )}
+      />
+
+      <CreateProjectSheet
+        visible={creating !== null}
+        kind={creating ?? "project"}
+        parentId={rootId}
+        onClose={() => setCreating(null)}
+        onCreated={(id) => {
+          if (creating === "project") onCreated?.(id);
+        }}
       />
 
       <StyleEditor

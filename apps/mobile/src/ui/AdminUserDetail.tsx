@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { AdminUserView } from "@atlas/client-core";
 import { useFormat } from "../hooks/useFormat";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DetailButton } from "./DetailButton";
 import { Field } from "./Field";
@@ -63,7 +64,7 @@ export function AdminUserDetail({
           {user.display_name || user.email}
         </Text>
 
-        <ScrollView className="max-h-72">
+        <SheetScrollView className="max-h-72">
           <Field label={t("admin.emailLabel")} value={user.email} />
           <Field label={t("admin.joined")} value={format.dateTime(user.created_at_ms)} />
           <Field
@@ -86,7 +87,7 @@ export function AdminUserDetail({
                     : t("admin.active")
             }
           />
-        </ScrollView>
+        </SheetScrollView>
 
         {user.managed_by_env ? (
           <Text className="text-xs text-neutral-500">{t("admin.managedByEnv")}</Text>

@@ -16,6 +16,7 @@ import {
   columnCards,
   columnRoots,
   flattenTree,
+  columnMoveManyWrites,
   columnMoveWrites,
   openTasks,
   rankBetween,
@@ -43,7 +44,12 @@ import { useCursorList } from "../data/CursorProvider";
 import { BoardCard } from "../ui/BoardCard";
 import { DragToReorder } from "../ui/DragToReorder";
 import { ContextMenu, type ContextMenuItem } from "../ui/ContextMenu";
-import { TaskContextMenu } from "../ui/TaskContextMenu";
+import { TaskContextMenu, type TaskContextMenuBulk } from "../ui/TaskContextMenu";
+import { SelectionToolbar } from "../ui/SelectionToolbar";
+import { BulkLabelSheet } from "../ui/BulkLabelSheet";
+import { useSelection } from "../data/SelectionProvider";
+import { useSelectionSource } from "../hooks/useSelectionSource";
+import { useOutsidePressExit } from "../hooks/useOutsidePressExit";
 import { MoveToPicker } from "../ui/MoveToPicker";
 import { QuickRescheduleSheet } from "../ui/QuickRescheduleSheet";
 import { QuickAdd } from "../ui/QuickAdd";
@@ -101,7 +107,11 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
   const toast = useToast();
   const showDone = showDoneFor(projectId);
 
-  const [moving, setMoving] = useState<Task | null>(null);
+  // Cards being tap-moved to another column: one from its menu, or a whole selection.
+  const [moving, setMoving] = useState<Task[] | null>(null);
+  const [movingTasks, setMovingTasks] = useState<string[] | null>(null);
+  const [labeling, setLabeling] = useState<string[] | null>(null);
+  const selection = useSelection();
   const [newSection, setNewSection] = useState("");
   const [sectionMenu, setSectionMenu] = useState<{ sectionId: string; pos: MenuPos } | null>(null);
   const [taskMenu, setTaskMenu] = useState<{ task: Task; pos: MenuPos } | null>(null);
@@ -157,6 +167,25 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
         : [],
     [projectTasks, showDone],
   );
+
+  // Every card on the board is selectable, the Done column's too.
+  const selectable = useMemo(() => [...tasks, ...doneTasks], [tasks, doneTasks]);
+  useSelectionSource(selectable);
+  const outsidePress = useOutsidePressExit();
+  const selectedTasks = () => selectable.filter((task) => selection.has(task.id));
+  const selectedIds = () => [...selection.selected];
+  const allSelectedCompleted = () => {
+    const chosen = selectedTasks();
+    return chosen.length > 0 && chosen.every((task) => task.is_completed);
+  };
+  // Complete the selection, or reopen it when every selected task is already done.
+  const toggleSelected = () => {
+    const chosen = selectedTasks();
+    if (allSelectedCompleted()) for (const task of chosen) view.toggle(task);
+    else view.bulkComplete(chosen.map((task) => task.id));
+  };
+  // In select mode a click on a card toggles it instead of opening it.
+  const openOrSelect = selection.mode ? (task: Task) => selection.toggle(task.id) : onOpenTask;
 
   const columns = useMemo<Column[]>(
     () => [
@@ -255,16 +284,39 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
     if (to >= 0) reorderSectionTo(draggedSectionId, to);
   };
 
+  /** Several cards to the end of one column, undone together. */
+  const moveCardsWithUndo = (cards: Task[], targetSectionId: string | null) => {
+    const movable = cards.filter((c) => !c.locked);
+    const writes = columnMoveManyWrites(
+      projectTasks,
+      movable.map((c) => c.id),
+      targetSectionId,
+    );
+    const before = writes.map((w) => projectTasks.find((p) => p.id === w.id)!);
+    applyWrites(writes);
+    const targetName = targetSectionId
+      ? (sections.find((s) => s.id === targetSectionId)?.name ?? t("board.noSection"))
+      : t("board.noSection");
+    toast.show(t("toast.movedToSection", { name: targetName }), {
+      label: t("common.undo"),
+      run: () => {
+        for (const p of before)
+          view.moveCard(p.id, { section_id: p.section_id, sort_order: p.sort_order });
+      },
+    });
+  };
+
   const moveToColumn = (sectionId: string | null) => {
     if (!moving) return;
-    moveCardWithUndo(moving.id, sectionId, Number.MAX_SAFE_INTEGER);
+    if (moving.length === 1) moveCardWithUndo(moving[0]!.id, sectionId, Number.MAX_SAFE_INTEGER);
+    else moveCardsWithUndo(moving, sectionId);
     haptics.selection();
     setMoving(null);
   };
 
-  const startMove = (task: Task) => {
+  const startMove = (cards: Task[]) => {
     haptics.impact("light");
-    setMoving(task);
+    setMoving(cards);
   };
 
   useEffect(() => {
@@ -384,7 +436,24 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
       onCopy={(task) => void copyTasks([task])}
       onDuplicate={(task) => view.bulkDuplicate([task.id])}
       onDelete={(task) => view.bulkDelete([task.id])}
-      onMoveToColumn={startMove}
+      onMoveToColumn={(task) => startMove([task])}
+      onSelect={(task) => selection.beginWith(task.id)}
+      bulk={
+        selection.mode && selection.has(taskMenu.task.id) && selection.count > 1
+          ? ({
+              tasks: selectedTasks(),
+              onToggle: toggleSelected,
+              onSetPriority: (p) => view.bulkSetPriority(selectedIds(), p),
+              onSetDue: (dueAt) => view.bulkSetDue(selectedIds(), dueAt),
+              onCopy: () => void copyTasks(selectedTasks()),
+              onDuplicate: () => view.bulkDuplicate(selectedIds()),
+              onDelete: () => view.bulkDelete(selectedIds()),
+              onMove: () => setMovingTasks(selectedIds()),
+              onLabels: () => setLabeling(selectedIds()),
+              onMoveToColumn: () => startMove(selectedTasks().filter((x) => !x.is_completed)),
+            } satisfies TaskContextMenuBulk)
+          : undefined
+      }
     />
   ) : null;
 
@@ -405,12 +474,17 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
   );
 
   return (
-    <View className="flex-1 bg-white dark:bg-zinc-950">
+    <View className="flex-1 bg-white dark:bg-zinc-950" {...outsidePress}>
       {/* Native tap-to-move banner */}
       {moving && (
-        <View className="flex-row items-center gap-2 border-b border-neutral-200 bg-neutral-100 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800">
+        <View
+          dataSet={{ selectionKeep: "" }}
+          className="flex-row items-center gap-2 border-b border-neutral-200 bg-neutral-100 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800"
+        >
           <Text numberOfLines={1} className="flex-1 text-sm text-neutral-700 dark:text-neutral-200">
-            {t("board.movingCard", { title: displayTitle(moving, t) })}
+            {moving.length === 1
+              ? t("board.movingCard", { title: displayTitle(moving[0]!, t) })
+              : t("board.movingCards", { count: moving.length })}
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -476,7 +550,7 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
               col.id != null ? (pos) => setSectionMenu({ sectionId: col.id!, pos }) : undefined
             }
             onToggle={view.toggle}
-            onOpen={onOpenTask}
+            onOpen={openOrSelect}
             onCardActions={(task, pos) => setTaskMenu({ task, pos })}
             onAddTask={(input) => {
               const last = columnRoots(tasks, col.id).at(-1);
@@ -515,7 +589,7 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
             width={colWidth}
             now={view.now}
             onToggle={view.toggle}
-            onOpen={onOpenTask}
+            onOpen={openOrSelect}
             onCardActions={(task, pos) => setTaskMenu({ task, pos })}
             formatDue={view.formatDue}
             labelById={labelById}
@@ -558,6 +632,45 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
       {sectionActionsMenu}
       {taskActionsMenu}
       {moveToPicker}
+      {selection.mode && (
+        <SelectionToolbar
+          count={selection.count}
+          allCompleted={allSelectedCompleted()}
+          now={view.now}
+          timeZone={view.timeZone}
+          onSelectAll={() => selection.selectAll()}
+          onComplete={toggleSelected}
+          onSetPriority={(p) => view.bulkSetPriority(selectedIds(), p)}
+          onSetDue={(dueAt) => view.bulkSetDue(selectedIds(), dueAt)}
+          onCopy={() => void copyTasks(selectedTasks())}
+          onDuplicate={() => view.bulkDuplicate(selectedIds())}
+          onMove={() => setMovingTasks(selectedIds())}
+          onLabel={() => setLabeling(selectedIds())}
+          onDelete={() => view.bulkDelete(selectedIds())}
+          onClear={() => selection.clear()}
+        />
+      )}
+      <MoveToPicker
+        title={movingTasks ? t("selection.count", { count: movingTasks.length }) : null}
+        projects={projects}
+        sections={allSections.sections}
+        onPick={(target) => {
+          if (movingTasks) view.bulkMove(movingTasks, target);
+          setMovingTasks(null);
+        }}
+        onClose={() => setMovingTasks(null)}
+      />
+      <BulkLabelSheet
+        title={labeling ? t("selection.count", { count: labeling.length }) : null}
+        tasks={labeling ? selectable.filter((task) => labeling.includes(task.id)) : []}
+        onApply={(change) => {
+          if (labeling) view.bulkSetLabels(labeling, change);
+        }}
+        onClear={() => {
+          if (labeling) view.bulkClearLabels(labeling);
+        }}
+        onClose={() => setLabeling(null)}
+      />
       <QuickRescheduleSheet
         title={rescheduling ? displayTitle(rescheduling, t) : null}
         now={view.now}
@@ -637,7 +750,7 @@ function BoardColumn({
   nestedByCard: Map<string, { task: Task; depth: number }[]>;
   ghost?: ReactNode;
   onCardDragStart: (task: Task) => void;
-  moving: Task | null;
+  moving: Task[] | null;
   onMoveHere: (sectionId: string | null) => void;
   onReorderColumn: (draggedSectionId: string) => void;
   sectionIndex: number;
@@ -709,7 +822,9 @@ function BoardColumn({
         : "left"
       : null;
 
-  const isSourceColumn = moving != null && (moving.section_id ?? null) === column.id;
+  // Every moving card already sits in this column: nothing to move here.
+  const isSourceColumn =
+    moving != null && moving.every((m) => (m.section_id ?? null) === column.id);
   const isMoveTarget = moving != null && !isSourceColumn;
 
   const isWide = useIsWide();
@@ -751,7 +866,7 @@ function BoardColumn({
     <DraggableCard
       task={item}
       now={now}
-      dimmed={moving?.id === item.id}
+      dimmed={moving?.some((m) => m.id === item.id)}
       focused={item.id === cursorId || item.id === menuTaskId}
       isLast={index === cards.length - 1}
       onToggle={onToggle}
@@ -851,6 +966,8 @@ function BoardColumn({
           accessibilityRole="button"
           accessibilityLabel={t("board.moveHereTo", { name: column.name })}
           onPress={() => onMoveHere(column.id)}
+          // Moving a selection keeps it: not an outside press (`useOutsidePressExit`).
+          dataSet={{ selectionKeep: "" }}
           className="mb-2 items-center rounded-md border border-accent-300 py-2 dark:border-accent-700 web:cursor-pointer"
         >
           <Text className="text-sm font-medium text-accent-600 dark:text-accent-300">
@@ -1104,8 +1221,9 @@ function DraggableCard({
 }) {
   const ref = useRef<View>(null);
   const bottomEdgeRef = useRef<View>(null);
+  const selectMode = useSelection().mode;
   const dragging = useDragSource(ref, () => task.id, {
-    enabled: !task.locked,
+    enabled: !task.locked && !selectMode,
     onDragStart: () => onCardDragStart(task),
   });
   // Mid-drag the card collapses out of its column, leaving the preview at the drop point. Collapsed,

@@ -247,10 +247,15 @@ describe("BoardScreen", () => {
       expect(projectTasks(s, projectId)[0]!.is_completed).toBe(true);
     });
 
-    it("offers no Select item -- the board has no selection toolbar to act on", async () => {
+    it("selects the card from the menu, and a press then toggles it", async () => {
       await boardWithCard();
       await openMenu();
-      expect(screen.queryByRole("menuitem", { name: "Select" })).toBeNull();
+      await fireEvent.press(screen.getByRole("menuitem", { name: "Select" }));
+      expect(screen.getByText("1 selected")).toBeTruthy();
+      expect(screen.getByLabelText("Sand the floor").props.accessibilityState?.selected).toBe(true);
+
+      await fireEvent.press(screen.getByLabelText("Sand the floor"));
+      expect(screen.getByText("0 selected")).toBeTruthy();
     });
   });
 

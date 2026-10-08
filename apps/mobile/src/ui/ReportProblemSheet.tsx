@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -14,6 +13,7 @@ import { buildPreview, mintReportId, sendReport } from "../lib/crashReporter";
 import { copyText } from "../lib/clipboard";
 import { useCancelOnEscape } from "../hooks/useCancelOnEscape";
 import { BottomSheet } from "./BottomSheet";
+import { SheetScrollView } from "./SheetScroll";
 import { PLACEHOLDER_COLOR } from "./useSheetDismiss";
 import { Field } from "./Field";
 import { Check } from "./icons";
@@ -109,7 +109,7 @@ export function ReportProblemSheet({ open, onClose }: { open: boolean; onClose: 
               textAlignVertical="top"
             />
 
-            <ScrollView
+            <SheetScrollView
               className="max-h-64"
               keyboardDismissMode="on-drag"
               keyboardShouldPersistTaps="handled"
@@ -142,7 +142,7 @@ export function ReportProblemSheet({ open, onClose }: { open: boolean; onClose: 
                   ) : null}
                 </>
               ) : null}
-            </ScrollView>
+            </SheetScrollView>
 
             {preview ? (
               <View className="flex-row gap-2">
