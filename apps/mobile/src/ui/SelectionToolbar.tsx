@@ -75,6 +75,9 @@ export function SelectionToolbar({
   return (
     <View
       accessibilityLabel={t("selection.label")}
+      // Presses on the bar never count as outside the tasks (`useOutsidePressExit`).
+      dataSet={{ selectionKeep: "" }}
+      onStartShouldSetResponder={() => true}
       className="border-t border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-zinc-900"
     >
       {panel === "priority" && (
