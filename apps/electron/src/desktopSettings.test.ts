@@ -21,9 +21,9 @@ describe("desktop settings", () => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  it("defaults to quitting on close when nothing is saved", () => {
-    expect(loadDesktopSettings(file)).toEqual({ closeToTray: false, autoCheckUpdates: true });
-    expect(DEFAULT_DESKTOP_SETTINGS.closeToTray).toBe(false);
+  it("defaults to closing to the tray when nothing is saved", () => {
+    expect(loadDesktopSettings(file)).toEqual({ closeToTray: true, autoCheckUpdates: true });
+    expect(DEFAULT_DESKTOP_SETTINGS.closeToTray).toBe(true);
     expect(DEFAULT_DESKTOP_SETTINGS.autoCheckUpdates).toBe(true);
   });
 
@@ -37,7 +37,7 @@ describe("desktop settings", () => {
   it("reads a corrupt or foreign file as the defaults", () => {
     for (const body of ["{not json", "null", "42", '{"closeToTray":"yes"}']) {
       fs.writeFileSync(file, body);
-      expect(loadDesktopSettings(file)).toEqual({ closeToTray: false, autoCheckUpdates: true });
+      expect(loadDesktopSettings(file)).toEqual({ closeToTray: true, autoCheckUpdates: true });
     }
   });
 

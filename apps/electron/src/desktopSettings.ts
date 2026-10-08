@@ -5,7 +5,7 @@ import * as fs from "node:fs";
  * to this install, not the account. Reading is best-effort; a missing or corrupt file means defaults.
  */
 export interface DesktopSettings {
-  /** Windows/Linux: closing the window hides it to the tray instead of quitting the app. */
+  /** Windows/Linux: closing the window hides it to the tray instead of quitting the app (the default). */
   closeToTray: boolean;
   /** Whether to check for updates automatically in the background (ignored when updates are disabled). */
   autoCheckUpdates: boolean;
@@ -18,7 +18,7 @@ export interface CloseToTrayState {
 }
 
 export const DEFAULT_DESKTOP_SETTINGS: DesktopSettings = {
-  closeToTray: false,
+  closeToTray: true,
   autoCheckUpdates: true,
 };
 
@@ -26,7 +26,8 @@ export function loadDesktopSettings(file: string): DesktopSettings {
   try {
     const raw = JSON.parse(fs.readFileSync(file, "utf8")) as Partial<DesktopSettings> | null;
     return {
-      closeToTray: raw?.closeToTray === true,
+      // On unless explicitly turned off.
+      closeToTray: raw?.closeToTray !== false,
       autoCheckUpdates: raw?.autoCheckUpdates !== false,
     };
   } catch {
