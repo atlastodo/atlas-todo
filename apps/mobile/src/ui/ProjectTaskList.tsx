@@ -19,6 +19,7 @@ import {
 } from "@atlas/shared";
 import { useSelection } from "../data/SelectionProvider";
 import { useSelectionSource } from "../hooks/useSelectionSource";
+import { useOutsidePressExit } from "../hooks/useOutsidePressExit";
 import { useRegisterSelectionActions } from "../data/SelectionActionsProvider";
 import { useCursorList } from "../data/CursorProvider";
 import { useReminderTaskIds } from "../hooks/useReminders";
@@ -418,6 +419,7 @@ export function ProjectTaskList({
   );
   // Prune against every task in the project: collapsing a section or a sync frame must not deselect its rows.
   useSelectionSource(visible, tasks);
+  const outsidePress = useOutsidePressExit();
 
   const reminderTaskIds = useReminderTaskIds();
 
@@ -1094,7 +1096,7 @@ export function ProjectTaskList({
 
   if (sections.length > 0) {
     return (
-      <View className="flex-1">
+      <View className="flex-1" {...outsidePress}>
         {dragDisabled ? (
           <FlatList
             ref={rowListRef}
@@ -1136,7 +1138,7 @@ export function ProjectTaskList({
   }
 
   return (
-    <View className="flex-1">
+    <View className="flex-1" {...outsidePress}>
       {dragDisabled ? (
         <FlatList
           ref={taskListRef}

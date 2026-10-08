@@ -34,6 +34,7 @@ import { useCursorList } from "../data/CursorProvider";
 import { useReminderTaskIds } from "../hooks/useReminders";
 import { useTaskClipboard } from "../hooks/useTaskClipboard";
 import { useSelectionSource } from "../hooks/useSelectionSource";
+import { useOutsidePressExit } from "../hooks/useOutsidePressExit";
 import { useIsWide } from "../hooks/useIsWide";
 import { useKeyboardHeight } from "../hooks/useKeyboardHeight";
 import { useDragPan } from "../hooks/useDragPan";
@@ -364,6 +365,7 @@ export function GroupedTaskList({
     [visibleRows],
   );
   useSelectionSource(selectableIds, known);
+  const outsidePress = useOutsidePressExit();
 
   const reminderTaskIds = useReminderTaskIds();
 
@@ -724,7 +726,7 @@ export function GroupedTaskList({
   } as const;
 
   return (
-    <View className="flex-1 bg-white dark:bg-zinc-950">
+    <View className="flex-1 bg-white dark:bg-zinc-950" {...outsidePress}>
       {/* Top controls bar: the visible Select button (replacing the old hover-only checkbox) and the
           group/sort menu, grouped as one cluster. In select mode the Select button gives way to the
           bottom SelectionToolbar's Clear/Exit. Today's "Plan day" review sits at the left edge, and
