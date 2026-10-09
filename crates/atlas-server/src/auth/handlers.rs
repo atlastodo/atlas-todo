@@ -343,9 +343,9 @@ async fn verify_login(state: &AppState, email: &str, password: &str) -> AppResul
     if password.len() > MAX_PASSWORD_LEN {
         return Err(AppError::Unauthorized);
     }
-    let user: Option<UserRow> = sqlx::query_as::<_, UserRow>(&format!(
+    let user: Option<UserRow> = sqlx::query_as::<_, UserRow>(sqlx::AssertSqlSafe(format!(
         "SELECT {USER_COLUMNS} FROM users WHERE email = $1"
-    ))
+    )))
     .bind(email)
     .fetch_optional(&state.pool)
     .await?;
@@ -381,11 +381,12 @@ async fn verify_current_password(
     if password.len() > MAX_PASSWORD_LEN {
         return Err(AppError::InvalidCredentials);
     }
-    let user: Option<UserRow> =
-        sqlx::query_as::<_, UserRow>(&format!("SELECT {USER_COLUMNS} FROM users WHERE id = $1"))
-            .bind(user_id)
-            .fetch_optional(&state.pool)
-            .await?;
+    let user: Option<UserRow> = sqlx::query_as::<_, UserRow>(sqlx::AssertSqlSafe(format!(
+        "SELECT {USER_COLUMNS} FROM users WHERE id = $1"
+    )))
+    .bind(user_id)
+    .fetch_optional(&state.pool)
+    .await?;
     let user = user.ok_or(AppError::Unauthorized)?;
     if !verify_password(password, &user.password_hash).map_err(|_| AppError::Internal)? {
         return Err(AppError::InvalidCredentials);
@@ -557,12 +558,12 @@ async fn insert_user(
     kdf: Kdf,
     req: &SignupRequest,
 ) -> AppResult<Option<UserRow>> {
-    let inserted: Option<UserRow> = sqlx::query_as::<_, UserRow>(&format!(
+    let inserted: Option<UserRow> = sqlx::query_as::<_, UserRow>(sqlx::AssertSqlSafe(format!(
         "INSERT INTO users (email, password_hash, display_name, salt, public_key, encrypted_dek, encrypted_private_key, recovery_encrypted_dek, recovery_encrypted_private_key, recovery_public_key, kdf_version, kdf_params, signing_public_key, encrypted_signing_key, is_e2ee, last_login_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, TRUE, now())
          ON CONFLICT (email) DO NOTHING
          RETURNING {USER_COLUMNS}"
-    ))
+    )))
     .bind(email)
     .bind(password_hash)
     .bind(display_name)
@@ -718,11 +719,12 @@ pub async fn refresh(
         drop(tx);
         return Err(refresh_rejection(&state, &token_hash, req.grace).await);
     };
-    let user: UserRow =
-        sqlx::query_as::<_, UserRow>(&format!("SELECT {USER_COLUMNS} FROM users WHERE id = $1"))
-            .bind(user_id)
-            .fetch_one(&mut *tx)
-            .await?;
+    let user: UserRow = sqlx::query_as::<_, UserRow>(sqlx::AssertSqlSafe(format!(
+        "SELECT {USER_COLUMNS} FROM users WHERE id = $1"
+    )))
+    .bind(user_id)
+    .fetch_one(&mut *tx)
+    .await?;
     if !user.is_e2ee {
         return Err(AppError::LegacyAccount);
     }
@@ -1202,12 +1204,13 @@ pub async fn logout(
 }
 
 pub async fn me(State(state): State<AppState>, user: AuthUser) -> AppResult<Json<UserView>> {
-    let row: UserRow =
-        sqlx::query_as::<_, UserRow>(&format!("SELECT {USER_COLUMNS} FROM users WHERE id = $1"))
-            .bind(user.user_id)
-            .fetch_optional(&state.pool)
-            .await?
-            .ok_or(AppError::NotFound)?;
+    let row: UserRow = sqlx::query_as::<_, UserRow>(sqlx::AssertSqlSafe(format!(
+        "SELECT {USER_COLUMNS} FROM users WHERE id = $1"
+    )))
+    .bind(user.user_id)
+    .fetch_optional(&state.pool)
+    .await?
+    .ok_or(AppError::NotFound)?;
     Ok(Json(UserView::from_row(&row)))
 }
 
@@ -1350,12 +1353,13 @@ pub async fn export(
     State(state): State<AppState>,
     AuthUserAllowScheduled(user): AuthUserAllowScheduled,
 ) -> AppResult<Response> {
-    let row: UserRow =
-        sqlx::query_as::<_, UserRow>(&format!("SELECT {USER_COLUMNS} FROM users WHERE id = $1"))
-            .bind(user.user_id)
-            .fetch_optional(&state.pool)
-            .await?
-            .ok_or(AppError::NotFound)?;
+    let row: UserRow = sqlx::query_as::<_, UserRow>(sqlx::AssertSqlSafe(format!(
+        "SELECT {USER_COLUMNS} FROM users WHERE id = $1"
+    )))
+    .bind(user.user_id)
+    .fetch_optional(&state.pool)
+    .await?
+    .ok_or(AppError::NotFound)?;
 
     let operations = crate::sync::partition_ops(&state.pool, user.user_id).await?;
 

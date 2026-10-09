@@ -21,7 +21,7 @@ tracing-subscriber = { workspace = true }
 uuid = { workspace = true }
 time = { workspace = true }
 thiserror = { workspace = true }
-sqlx = { version = "0.8", default-features = false, features = [
+sqlx = { version = "0.9", default-features = false, features = [
     "runtime-tokio",
     "tls-rustls-ring",
     "postgres",
@@ -32,13 +32,13 @@ sqlx = { version = "0.8", default-features = false, features = [
     "migrate",
 ] }
 argon2 = "0.6"
-jsonwebtoken = "9"
+jsonwebtoken = { version = "11", features = ["rust_crypto"] }
 rand = "0.10"
 sha2 = "0.11"
 hex = "0.4"
 hmac = "0.13"
 hkdf = "0.13"
-aes-gcm = "0.10"
+aes-gcm = "0.11"
 x25519-dalek = { version = "3", features = ["static_secrets"] }
 base64 = "0.23"
 futures-util = { version = "0.3", default-features = false, features = ["sink"] }

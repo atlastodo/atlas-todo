@@ -1627,9 +1627,9 @@ async fn a_returning_member_sees_the_project_after_its_tombstone_row_was_purged(
         pid.parse::<Uuid>().unwrap(),
     );
     for table in ["entity_fields", "entity_tombstones"] {
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "DELETE FROM {table} WHERE user_id = $1 AND entity = 'project' AND entity_id = $2"
-        ))
+        )))
         .bind(bob_id)
         .bind(project)
         .execute(&state.pool)

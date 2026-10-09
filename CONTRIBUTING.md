@@ -151,7 +151,7 @@ run nothing; an rc tag runs the full suite):
 | ----------------- | ----------------------------------------------------------------------------- |
 | Lint (Rust)       | `cargo fmt --check`, clippy with `-D warnings`                                |
 | Lint (TypeScript) | typecheck of shared, client-core, mobile and electron; ESLint; Prettier check |
-| MSRV              | `cargo check` on the minimum Rust version (1.89)                              |
+| MSRV              | `cargo check` on the minimum Rust version (1.94)                              |
 | Test (Rust)       | `cargo nextest run --workspace` against PostgreSQL 16                         |
 | Test (TypeScript) | vitest in client-core, shared and electron                                    |
 | Test (mobile)     | jest in apps/mobile                                                           |
