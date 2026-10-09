@@ -829,10 +829,12 @@ export function TaskRow({
             className={
               "absolute bottom-0 right-9 top-0 flex-row items-center gap-2 pl-3 opacity-0 group-hover:opacity-100 web:focus-within:opacity-100 " +
               // Unfocused, its background is the row's hover colour reached through the same hover
-              // (and global.css's same 250ms fade), so the row lights up as one, not this box first.
+              // (and global.css's same 250ms fade). It fades from the list's opaque surface, not from
+              // transparent: two half-faded layers stacked over the row would light this box up
+              // ahead of the row.
               (focused
                 ? "bg-neutral-100 dark:bg-neutral-800"
-                : "group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900 web:focus-within:bg-neutral-50 dark:web:focus-within:bg-neutral-900")
+                : "bg-white dark:bg-zinc-950 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900 web:focus-within:bg-neutral-50 dark:web:focus-within:bg-neutral-900")
             }
           >
             {onOpen && (
