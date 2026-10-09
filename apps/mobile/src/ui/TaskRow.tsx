@@ -727,18 +727,6 @@ export function TaskRow({
               </View>
             )}
 
-            {hasReminder && (
-              <Marker label={t("task.hasReminder")}>
-                <Bell size={iconSize} className="text-neutral-400" />
-              </Marker>
-            )}
-
-            {task.recurrence !== null && (
-              <Marker label={t("task.recurring")}>
-                <Repeat size={iconSize} className="text-neutral-400" />
-              </Marker>
-            )}
-
             {subtaskProgress && subtaskProgress.total > 0 && (
               <Pressable
                 disabled={!onToggleExpand}
@@ -766,35 +754,40 @@ export function TaskRow({
               </Pressable>
             )}
 
-            {/* Fixed slots on wide layouts: an empty flag or date slot still takes its width. */}
-            {task.priority < 4 ? (
+            {task.recurrence !== null && (
+              <Marker label={t("task.recurring")}>
+                <Repeat size={iconSize} className="text-neutral-400" />
+              </Marker>
+            )}
+
+            {hasReminder && (
+              <Marker label={t("task.hasReminder")}>
+                <Bell size={iconSize} className="text-neutral-400" />
+              </Marker>
+            )}
+
+            {task.priority < 4 && (
               <Marker label={t("task.priority", { level: task.priority })}>
                 <Flag size={iconSize} className={PRIORITY_COLOR[task.priority] ?? ""} />
               </Marker>
-            ) : columns ? (
-              <View style={{ width: iconSize }} />
-            ) : null}
+            )}
 
-            {(dateMs !== null || columns) && (
-              <View
-                style={columns ? { minWidth: isWeb ? 80 : 104 } : undefined}
-                className="items-end"
-              >
-                {dateMs !== null && (
-                  <Text
-                    accessibilityLabel={
-                      showCompletedAt
-                        ? t("task.completedOn", { date: formatDue(dateMs) })
-                        : undefined
-                    }
-                    className={
-                      (isWeb ? "text-xs " : "text-base font-normal ") +
-                      (overdue && !showCompletedAt ? "text-red-500" : "text-neutral-500")
-                    }
-                  >
-                    {formatDue(dateMs)}
-                  </Text>
-                )}
+            {/* On wide layouts the date takes a fixed-width column, left-aligned so the markers
+                pack right up against it and dates still line up across rows. A row without a date
+                reserves nothing, so its markers sit at the edge. */}
+            {dateMs !== null && (
+              <View style={columns ? { minWidth: isWeb ? 80 : 104 } : undefined}>
+                <Text
+                  accessibilityLabel={
+                    showCompletedAt ? t("task.completedOn", { date: formatDue(dateMs) }) : undefined
+                  }
+                  className={
+                    (isWeb ? "text-xs " : "text-base font-normal ") +
+                    (overdue && !showCompletedAt ? "text-red-500" : "text-neutral-500")
+                  }
+                >
+                  {formatDue(dateMs)}
+                </Text>
               </View>
             )}
 

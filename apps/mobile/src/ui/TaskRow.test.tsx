@@ -86,6 +86,37 @@ describe("TaskRow", () => {
     expect(screen.queryByLabelText(/^Priority/)).toBeNull();
   });
 
+  it("orders the markers recurrence, reminder, priority, then the date last", async () => {
+    await render(
+      <TaskRow
+        task={task({ priority: 1, recurrence: "FREQ=DAILY", due_at: NOW })}
+        now={NOW}
+        onToggle={() => {}}
+        hasReminder
+        formatDue={() => "soon"}
+      />,
+    );
+    const order: string[] = [];
+    const walk = (node: unknown): void => {
+      if (!node || typeof node !== "object") {
+        if (node === "soon") order.push("date");
+        return;
+      }
+      if (Array.isArray(node)) return node.forEach(walk);
+      const { props, children } = node as {
+        props?: { accessibilityLabel?: string };
+        children?: unknown[];
+      };
+      const label = props?.accessibilityLabel;
+      if (label && /^(Recurring|Has reminder|Priority 1)$/i.test(label)) order.push(label);
+      (children ?? []).forEach(walk);
+    };
+    walk(screen.toJSON());
+
+    // The date stays rightmost and the markers pack against it, so a lone bell sits by the date.
+    expect(order).toEqual(["Recurring", "Has reminder", "Priority 1", "date"]);
+  });
+
   it("renders a text input and info icon when isEditing is true", async () => {
     const onOpen = jest.fn();
     const onSaveRename = jest.fn();
