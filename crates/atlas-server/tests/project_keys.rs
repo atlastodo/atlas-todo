@@ -979,7 +979,7 @@ async fn migration_classifies_legacy_sealed_rows() {
     let base = test_database_url();
     let admin = db::connect(&base).await.expect("connect");
     let name = format!("atlas_mig_{}", Uuid::now_v7().simple());
-    sqlx::query(&format!("CREATE DATABASE {name}"))
+    sqlx::query(sqlx::AssertSqlSafe(format!("CREATE DATABASE {name}")))
         .execute(&admin)
         .await
         .expect("create scratch database");
@@ -1070,10 +1070,12 @@ async fn migration_classifies_legacy_sealed_rows() {
     };
     // Drop the scratch database even when an assertion fails.
     let outcome = tokio::spawn(result).await;
-    sqlx::query(&format!("DROP DATABASE IF EXISTS {name} WITH (FORCE)"))
-        .execute(&admin)
-        .await
-        .expect("drop scratch database");
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "DROP DATABASE IF EXISTS {name} WITH (FORCE)"
+    )))
+    .execute(&admin)
+    .await
+    .expect("drop scratch database");
     if let Err(e) = outcome {
         std::panic::resume_unwind(e.into_panic());
     }

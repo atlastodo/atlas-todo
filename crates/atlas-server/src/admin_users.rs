@@ -103,7 +103,7 @@ async fn lock_admins_and_guard(
 
 async fn fetch_user_view(state: &AppState, id: Uuid) -> AppResult<Option<AdminUserView>> {
     let sql = format!("SELECT {USER_SUMMARY} FROM users u WHERE u.id = $1");
-    Ok(sqlx::query_as::<_, AdminUserView>(&sql)
+    Ok(sqlx::query_as::<_, AdminUserView>(sqlx::AssertSqlSafe(sql))
         .bind(id)
         .fetch_optional(&state.pool)
         .await?
@@ -144,7 +144,7 @@ async fn list_users(
           ORDER BY u.id DESC
           LIMIT $3"
     );
-    let rows = sqlx::query_as::<_, AdminUserView>(&sql)
+    let rows = sqlx::query_as::<_, AdminUserView>(sqlx::AssertSqlSafe(sql))
         .bind(pattern)
         .bind(q.before_id)
         .bind(q.limit.unwrap_or(DEFAULT_LIST_LIMIT).clamp(1, 100))

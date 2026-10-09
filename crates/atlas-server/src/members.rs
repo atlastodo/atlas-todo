@@ -439,12 +439,14 @@ fn member_view_sql(filter: &str) -> String {
 }
 
 async fn member_view(pool: &PgPool, project_id: Uuid, user_id: Uuid) -> AppResult<MemberView> {
-    sqlx::query_as::<_, MemberView>(&member_view_sql("pm.project_id = $1 AND pm.user_id = $2"))
-        .bind(project_id)
-        .bind(user_id)
-        .fetch_optional(pool)
-        .await?
-        .ok_or(AppError::NotFound)
+    sqlx::query_as::<_, MemberView>(sqlx::AssertSqlSafe(member_view_sql(
+        "pm.project_id = $1 AND pm.user_id = $2",
+    )))
+    .bind(project_id)
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?
+    .ok_or(AppError::NotFound)
 }
 
 /// `GET /projects/:id/members`: visible to any active member, or the creator of a not-yet-shared
@@ -462,9 +464,9 @@ async fn list_members(
             }
         }
     }
-    let rows = sqlx::query_as::<_, MemberView>(&member_view_sql(
+    let rows = sqlx::query_as::<_, MemberView>(sqlx::AssertSqlSafe(member_view_sql(
         "pm.project_id = $1 ORDER BY pm.created_at",
-    ))
+    )))
     .bind(project_id)
     .fetch_all(&state.pool)
     .await?;
