@@ -40,7 +40,7 @@ hmac = "0.13"
 hkdf = "0.13"
 aes-gcm = "0.10"
 x25519-dalek = { version = "3", features = ["static_secrets"] }
-base64 = "0.22"
+base64 = "0.23"
 futures-util = { version = "0.3", default-features = false, features = ["sink"] }
 object_store = { version = "0.14.2", default-features = false, features = ["aws"] }
 
