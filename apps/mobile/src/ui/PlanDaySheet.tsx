@@ -199,24 +199,30 @@ export function PlanDaySheet({
       subtitle={review.length > 0 ? t("planDay.subtitle", { count: review.length }) : undefined}
       icon={<CalendarClock size={18} className="text-neutral-500" />}
     >
-      <View>
-        {review.length === 0 ? (
-          <View className="min-h-[240px] flex-1 justify-center">
-            <EmptyState
-              icon={CalendarClock}
-              title={t("planDay.emptyTitle")}
-              description={t("planDay.emptyBody")}
-              actions={[
-                {
-                  label: t("planDay.addFromUpcoming"),
-                  onPress: () => setPickerOpen(true),
-                  primary: true,
-                },
-              ]}
-            />
-          </View>
-        ) : (
-          <SheetScrollView style={{ maxHeight: 460 }} keyboardShouldPersistTaps="handled">
+      {/* The review list and the picker scroll as one, shrinking to what the sheet's max height
+          leaves; Apply stays pinned below them so it is reachable however long they get. */}
+      <View style={{ flexShrink: 1 }}>
+        <SheetScrollView
+          style={{ flexGrow: 0, flexShrink: 1 }}
+          testID="plan-day-scroll"
+          keyboardShouldPersistTaps="handled"
+        >
+          {review.length === 0 ? (
+            <View className="min-h-[240px] flex-1 justify-center">
+              <EmptyState
+                icon={CalendarClock}
+                title={t("planDay.emptyTitle")}
+                description={t("planDay.emptyBody")}
+                actions={[
+                  {
+                    label: t("planDay.addFromUpcoming"),
+                    onPress: () => setPickerOpen(true),
+                    primary: true,
+                  },
+                ]}
+              />
+            </View>
+          ) : (
             <View className="gap-2">
               {review.map((item) => {
                 const decision = decisions[item.task.id];
@@ -300,69 +306,69 @@ export function PlanDaySheet({
                 );
               })}
             </View>
-          </SheetScrollView>
-        )}
+          )}
 
-        {(pickerOpen || review.length > 0) && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("planDay.addFromUpcoming")}
-            onPress={() => setPickerOpen((curr) => !curr)}
-            className="mt-3 flex-row items-center justify-center gap-1.5 rounded-md border border-neutral-200 py-2.5 dark:border-neutral-700 web:cursor-pointer"
-          >
-            <Plus size={14} className="text-neutral-500" />
-            <Text className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
-              {t("planDay.addFromUpcoming")}
-            </Text>
-          </Pressable>
-        )}
+          {(pickerOpen || review.length > 0) && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("planDay.addFromUpcoming")}
+              onPress={() => setPickerOpen((curr) => !curr)}
+              className="mt-3 flex-row items-center justify-center gap-1.5 rounded-md border border-neutral-200 py-2.5 dark:border-neutral-700 web:cursor-pointer"
+            >
+              <Plus size={14} className="text-neutral-500" />
+              <Text className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                {t("planDay.addFromUpcoming")}
+              </Text>
+            </Pressable>
+          )}
 
-        {pickerOpen && (
-          <View className="mt-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
-            <View className="mb-1 flex-row items-center justify-between">
-              <Text className="text-xs font-semibold uppercase text-neutral-500">
-                {t("planDay.upcomingTitle")}
-              </Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("common.close")}
-                onPress={() => setPickerOpen(false)}
-              >
-                <X size={14} className="text-neutral-500" />
-              </Pressable>
-            </View>
-            {pool.length === 0 ? (
-              <Text className="py-4 text-center text-sm text-neutral-400">
-                {t("planDay.upcomingEmpty")}
-              </Text>
-            ) : (
-              <View className="gap-0.5">
-                {pool.map((task) => {
-                  const offset = task.due_at !== null ? dayOffset(task.due_at, now, timeZone) : 0;
-                  return (
-                    <Pressable
-                      key={task.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${t("planDay.addFromUpcoming")}: ${displayTitle(task, t)}`}
-                      onPress={() => addFromUpcoming(task)}
-                      className="flex-row items-center justify-between gap-2 rounded-md px-2 py-2.5 active:bg-neutral-100 dark:active:bg-neutral-800 web:cursor-pointer"
-                    >
-                      <Text
-                        numberOfLines={1}
-                        className="flex-1 text-sm text-neutral-900 dark:text-neutral-100"
-                      >
-                        {displayTitle(task, t)}
-                      </Text>
-                      <Text className="shrink text-xs text-neutral-500">
-                        {dayLabel(offset, task.due_at ?? now)}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+          {pickerOpen && (
+            <View className="mt-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
+              <View className="mb-1 flex-row items-center justify-between">
+                <Text className="text-xs font-semibold uppercase text-neutral-500">
+                  {t("planDay.upcomingTitle")}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("common.close")}
+                  onPress={() => setPickerOpen(false)}
+                >
+                  <X size={14} className="text-neutral-500" />
+                </Pressable>
               </View>
-            )}
-          </View>
-        )}
+              {pool.length === 0 ? (
+                <Text className="py-4 text-center text-sm text-neutral-400">
+                  {t("planDay.upcomingEmpty")}
+                </Text>
+              ) : (
+                <View className="gap-0.5">
+                  {pool.map((task) => {
+                    const offset = task.due_at !== null ? dayOffset(task.due_at, now, timeZone) : 0;
+                    return (
+                      <Pressable
+                        key={task.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${t("planDay.addFromUpcoming")}: ${displayTitle(task, t)}`}
+                        onPress={() => addFromUpcoming(task)}
+                        className="flex-row items-center justify-between gap-2 rounded-md px-2 py-2.5 active:bg-neutral-100 dark:active:bg-neutral-800 web:cursor-pointer"
+                      >
+                        <Text
+                          numberOfLines={1}
+                          className="flex-1 text-sm text-neutral-900 dark:text-neutral-100"
+                        >
+                          {displayTitle(task, t)}
+                        </Text>
+                        <Text className="shrink text-xs text-neutral-500">
+                          {dayLabel(offset, task.due_at ?? now)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          )}
+        </SheetScrollView>
 
         {review.length > 0 && (
           <View className="mt-3">
