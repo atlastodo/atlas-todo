@@ -2,10 +2,11 @@
  * Quick-add's implicit morning-of reminder, over a real in-memory store. The notify seam is mocked
  * (native-only expo calls) so the permission request it makes is observable.
  */
-import { act, renderHook } from "@testing-library/react-native";
+import { act, fireEvent, renderHook, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlas/client-core";
 import { PREFERENCES_ID } from "@atlas/shared";
 import { withApp } from "../testutil";
+import { PermissionExplainerHost } from "../ui/PermissionExplainerHost";
 import { useQuickAddMorningReminder } from "./useReminders";
 
 jest.mock("../lib/notify", () => ({
@@ -27,17 +28,26 @@ beforeEach(() => {
 });
 
 describe("useQuickAddMorningReminder", () => {
-  it("asks for notification permission from the quick-add that creates the reminder", async () => {
+  it("explains, then asks for notification permission, from the quick-add that creates the reminder", async () => {
     const store = new LocalStore("test");
+    const App = withApp(store);
     const { result } = await renderHook(() => useQuickAddMorningReminder(), {
-      wrapper: withApp(store),
+      wrapper: ({ children }) => (
+        <App>
+          {children}
+          <PermissionExplainerHost />
+        </App>
+      ),
     });
 
     // The write re-renders the store wrapper, so it belongs inside act.
     await act(() => result.current("t1", SATURDAY_ALL_DAY, "UTC", NOW));
+    await act(async () => {});
 
     expect(store.list("reminder")).toHaveLength(1);
-    // Still inside the submit gesture, which a browser requires for its permission prompt.
+    // The explainer's button is the gesture a browser requires for its permission prompt.
+    expect(ensureNotifyPermission()).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText("Turn on notifications"));
     expect(ensureNotifyPermission()).toHaveBeenCalledTimes(1);
   });
 

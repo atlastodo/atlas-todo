@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import DateTimePicker, { type DateTimePickerEvent } from "./DateTimePicker";
 import { reminderFireAt } from "@atlas/shared";
 import type { Task } from "@atlas/client-core";
-import { useNotifyPermission, useReminders, type NewReminder } from "../hooks/useReminders";
+import { useReminders, type NewReminder } from "../hooks/useReminders";
+import { explainNotifications } from "../lib/permissionExplainer";
 import { NotifyPermissionHint } from "./NotifyPermissionHint";
 import { useFormat } from "../hooks/useFormat";
 import { usePreferences } from "../hooks/usePreferences";
@@ -28,7 +29,6 @@ export function ReminderSection({ task }: { task: Task }) {
   const { t } = useTranslation();
   const { forTask, setReminder, removeReminder } = useReminders();
   const { remindersEnabled, timezone } = usePreferences();
-  const { request } = useNotifyPermission();
   const fmt = useFormat();
   const toast = useToast();
   const [picking, setPicking] = useState(false);
@@ -38,7 +38,7 @@ export function ReminderSection({ task }: { task: Task }) {
 
   const saveReminder = (spec: NewReminder) => {
     setReminder(task.id, spec);
-    if (remindersEnabled) void request();
+    if (remindersEnabled) void explainNotifications();
   };
 
   const onPick = (event: DateTimePickerEvent, date?: Date) => {

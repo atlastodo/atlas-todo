@@ -1461,5 +1461,30 @@
     "month_other": "{{count}} måneder",
     "year_one": "{{count}} år",
     "year_other": "{{count}} år"
+  },
+  "permissionExplainer": {
+    "notNow": "Ikke nu",
+    "gotIt": "Forstået",
+    "notificationsWeb": {
+      "title": "Få påmindelser til tiden",
+      "body": "Atlas Todo bruger notifikationer til at give dig besked, når en påmindelse forfalder. Din browser spørger nu: vælg Tillad for at slå dem til.",
+      "allow": "Slå notifikationer til",
+      "refusedTitle": "Notifikationer er slået fra",
+      "refused": "Browseren tillod ikke notifikationer, så påmindelser kan ikke give dig besked. Du kan tillade dem senere i browserens webstedsindstillinger for Atlas Todo."
+    },
+    "notificationsNative": {
+      "title": "Få påmindelser til tiden",
+      "body": "Atlas Todo bruger notifikationer til at give dig besked, når en påmindelse forfalder, også når appen er lukket. Din enhed spørger nu: vælg Tillad for at slå dem til.",
+      "allow": "Slå notifikationer til",
+      "refusedTitle": "Notifikationer er slået fra",
+      "refused": "Notifikationer blev ikke tilladt, så påmindelser kan ikke give dig besked. Du kan tillade dem senere i enhedens indstillinger for Atlas Todo."
+    },
+    "storage": {
+      "title": "Behold dine data på denne enhed",
+      "body": "Atlas gemmer dine opgaver i denne browser, så appen virker offline. Browseren kan slette dataene for at frigøre plads, og Safari sletter dem efter syv dage uden besøg, så ændringer, der ikke er synkroniseret endnu, går tabt. Tillader du vedvarende lagring, beder det browseren om at beholde dem.",
+      "allow": "Behold mine data",
+      "refusedTitle": "Browseren sagde nej",
+      "refused": "Dine data er der stadig, men browseren kan stadig rydde dem, hvis pladsen bliver trang. Chrome og Edge afgør det selv ud fra, hvor ofte du bruger siden, så det hjælper at bogmærke eller installere Atlas. Under Indstillinger → Data kan du spørge igen senere."
+    }
   }
 }

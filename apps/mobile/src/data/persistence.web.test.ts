@@ -59,18 +59,27 @@ describe("web persistence seam", () => {
     expect(await reopened.load()).toEqual([]);
   });
 
-  it("asks the browser to keep the storage, so it is not evicted with unsynced changes", async () => {
+  it("asks for persistent storage silently only in the desktop app", async () => {
     (globalThis as { indexedDB?: IDBFactory }).indexedDB = new IDBFactory();
     const nav = globalThis.navigator as { storage?: unknown };
+    const win = globalThis as unknown as { atlasDesktop?: { isElectron?: boolean } };
     const saved = nav.storage;
     const persist = jest.fn(async () => true);
     nav.storage = { persisted: async () => false, persist };
     try {
+      // A browser may prompt, so there the explainer asks (PersistentStorageExplainer), not this.
       await createPersistence(USER_A);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(persist).not.toHaveBeenCalled();
+
+      // Electron grants it without a prompt.
+      win.atlasDesktop = { isElectron: true };
+      await createPersistence(USER_B);
       await new Promise((r) => setTimeout(r, 0));
       expect(persist).toHaveBeenCalledTimes(1);
     } finally {
       nav.storage = saved;
+      delete win.atlasDesktop;
     }
   });
 

@@ -1461,5 +1461,30 @@
     "month_other": "{{count}} months",
     "year_one": "{{count}} year",
     "year_other": "{{count}} years"
+  },
+  "permissionExplainer": {
+    "notNow": "Not now",
+    "gotIt": "Got it",
+    "notificationsWeb": {
+      "title": "Get reminders on time",
+      "body": "Atlas Todo uses notifications to alert you when a reminder is due. Your browser will ask next: choose Allow to turn them on.",
+      "allow": "Turn on notifications",
+      "refusedTitle": "Notifications are off",
+      "refused": "The browser didn't allow notifications, so reminders can't alert you. You can allow them later in the browser's site settings for Atlas Todo."
+    },
+    "notificationsNative": {
+      "title": "Get reminders on time",
+      "body": "Atlas Todo uses notifications to alert you when a reminder is due, even with the app closed. Your device will ask next: choose Allow to turn them on.",
+      "allow": "Turn on notifications",
+      "refusedTitle": "Notifications are off",
+      "refused": "Notifications weren't allowed, so reminders can't alert you. You can allow them later in your device settings for Atlas Todo."
+    },
+    "storage": {
+      "title": "Keep your data on this device",
+      "body": "Atlas keeps your tasks in this browser so the app works offline. The browser may delete that data to free up space, and Safari deletes it after seven days without a visit, losing changes that haven't synced yet. Allowing persistent storage asks the browser to keep it.",
+      "allow": "Keep my data",
+      "refusedTitle": "The browser didn't agree",
+      "refused": "Your data stays, but the browser may still clear it under pressure. Chrome and Edge decide on their own from how often you use the site, so bookmarking or installing Atlas helps. Settings → Data can ask again later."
+    }
   }
 }
