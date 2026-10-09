@@ -17,7 +17,7 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use hkdf::Hkdf;
 use hmac::{Hmac, KeyInit as HmacKeyInit, Mac};
-use rand::RngCore;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -119,7 +119,7 @@ pub fn issue_challenge(
 
 fn random_uuid() -> Uuid {
     let mut bytes = [0u8; 16];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::rng().fill_bytes(&mut bytes);
     uuid::Builder::from_random_bytes(bytes).into_uuid()
 }
 
@@ -157,8 +157,8 @@ fn nonce_mac(secret: &[u8], token: &str) -> Hmac<Sha256> {
 pub fn seal(recipient: &PublicKey, plaintext: &[u8]) -> SealedKey {
     let mut ephemeral_secret = [0u8; 32];
     let mut iv = [0u8; IV_LEN];
-    rand::thread_rng().fill_bytes(&mut ephemeral_secret);
-    rand::thread_rng().fill_bytes(&mut iv);
+    rand::rng().fill_bytes(&mut ephemeral_secret);
+    rand::rng().fill_bytes(&mut iv);
     seal_with(recipient, plaintext, ephemeral_secret, iv)
 }
 

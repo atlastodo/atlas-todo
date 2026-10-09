@@ -4,7 +4,7 @@
 //! random opaque strings handed to the client; we persist only their SHA-256 hash so a database
 //! leak can't be replayed. Refresh tokens are bound to a `device_id` and rotated on every use.
 
-use rand::RngCore;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -67,7 +67,7 @@ pub struct RefreshToken {
 /// Generate a new random refresh token (256 bits of entropy, hex-encoded).
 pub fn generate_refresh_token() -> RefreshToken {
     let mut bytes = [0u8; 32];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::rng().fill_bytes(&mut bytes);
     let plaintext = hex::encode(bytes);
     let hash = hash_refresh_token(&plaintext);
     RefreshToken { plaintext, hash }

@@ -21,7 +21,7 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use futures_util::{SinkExt, StreamExt};
-use rand::RngCore;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sqlx::{PgConnection, Postgres, Transaction};
@@ -146,7 +146,7 @@ impl SyncHub {
             }
         }
         let mut bytes = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut bytes);
+        rand::rng().fill_bytes(&mut bytes);
         let ticket = hex::encode(bytes);
         tickets.by_ticket.insert(
             ticket.clone(),
