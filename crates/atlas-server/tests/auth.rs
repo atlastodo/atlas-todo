@@ -12,7 +12,7 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use hkdf::Hkdf;
 use http_body_util::BodyExt;
-use rand::RngCore;
+use rand::Rng;
 use serde_json::{json, Value};
 use sha2::Sha256;
 use tower::ServiceExt;
@@ -107,7 +107,7 @@ async fn send(
 
 fn random_bytes<const N: usize>() -> [u8; N] {
     let mut bytes = [0u8; N];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::rng().fill_bytes(&mut bytes);
     bytes
 }
 
