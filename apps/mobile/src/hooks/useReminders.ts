@@ -11,6 +11,8 @@ import { useStore, useStoreOptional, type StoreContextValue } from "../data/Stor
 import {
   ensureNotifyPermission,
   onNotifyPermissionChange,
+  openExactAlarmSettings,
+  readExactAlarms,
   readNotifyPermission,
 } from "../lib/notify";
 import { explainNotifications } from "../lib/permissionExplainer";
@@ -231,4 +233,18 @@ export function useNotifyPermission(): UseNotifyPermission {
     };
   }, []);
   return { permission, request: ensureNotifyPermission };
+}
+
+export interface UseExactAlarms {
+  /** Whether booked reminders fire on time; `unsupported` where the OS never delays them. */
+  exactAlarms: "granted" | "denied" | "unsupported";
+  /** Open the system page that grants exact-alarm access. */
+  openSettings: () => Promise<void>;
+}
+
+/** Exact-alarm access (Android 12+), re-read whenever the app returns to the foreground. */
+export function useExactAlarms(): UseExactAlarms {
+  const [exactAlarms, setExactAlarms] = useState(readExactAlarms);
+  useEffect(() => onNotifyPermissionChange(() => setExactAlarms(readExactAlarms())), []);
+  return { exactAlarms, openSettings: openExactAlarmSettings };
 }

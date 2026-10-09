@@ -113,6 +113,12 @@ export async function scheduleNotification(
 
 export async function cancelScheduled(_id: string): Promise<void> {}
 
+export function readExactAlarms(): "granted" | "denied" | "unsupported" {
+  return "unsupported";
+}
+
+export async function openExactAlarmSettings(): Promise<void> {}
+
 export async function bookedNotificationIds(_kind: "reminder" | "habit"): Promise<string[]> {
   return [];
 }

@@ -12,12 +12,15 @@ import { useHabitReminderScheduler } from "./useHabitReminderScheduler";
 jest.mock("../lib/notify", () => {
   // Created inside the factory (TDZ): read back off the mocked module.
   const permission = { current: "granted" };
+  const exactAlarms = { current: "unsupported" };
   const permissionListeners = new Set<() => void>();
   return {
     __esModule: true,
     permission,
     permissionChanged: () => permissionListeners.forEach((listener) => listener()),
     readNotifyPermission: jest.fn(async () => permission.current),
+    readExactAlarms: jest.fn(() => exactAlarms.current),
+    openExactAlarmSettings: jest.fn(async () => {}),
     onNotifyPermissionChange: jest.fn((listener: () => void) => {
       permissionListeners.add(listener);
       return () => permissionListeners.delete(listener);
