@@ -140,7 +140,7 @@ async fn fetch_invite_view(pool: &sqlx::PgPool, id: Uuid) -> AppResult<AdminInvi
            LEFT JOIN users u ON u.id = i.used_by
           WHERE i.id = $1"
     );
-    sqlx::query_as::<_, AdminInviteView>(&sql)
+    sqlx::query_as::<_, AdminInviteView>(sqlx::AssertSqlSafe(sql))
         .bind(id)
         .fetch_optional(pool)
         .await?
@@ -159,13 +159,13 @@ async fn list_invites(
     _admin: AdminUser,
     Query(q): Query<ListQuery>,
 ) -> AppResult<Json<Vec<AdminInviteView>>> {
-    let rows = sqlx::query_as::<_, AdminInviteView>(&format!(
+    let rows = sqlx::query_as::<_, AdminInviteView>(sqlx::AssertSqlSafe(format!(
         "SELECT {INVITE_COLUMNS}
            FROM invites i
            LEFT JOIN users u ON u.id = i.used_by
           ORDER BY i.created_at DESC
           LIMIT $1"
-    ))
+    )))
     .bind(q.limit.unwrap_or(50).clamp(1, 100))
     .fetch_all(&state.pool)
     .await?;

@@ -1229,11 +1229,13 @@ async fn malformed_links_do_not_break_downloads_or_gc() {
 
     // The rows are shared test data for every other GC pass; do not leave them behind.
     for table in ["entity_fields", "entity_tombstones"] {
-        sqlx::query(&format!("DELETE FROM {table} WHERE user_id = $1"))
-            .bind(alice_id)
-            .execute(&state.pool)
-            .await
-            .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "DELETE FROM {table} WHERE user_id = $1"
+        )))
+        .bind(alice_id)
+        .execute(&state.pool)
+        .await
+        .unwrap();
     }
 }
 
@@ -1477,9 +1479,9 @@ async fn a_removed_member_stays_revoked_after_retention_purges_the_project_tombs
     let bob_id: Uuid = bob.id.parse().unwrap();
     let pid_uuid: Uuid = pid.parse().unwrap();
     for table in ["entity_tombstones", "entity_fields"] {
-        sqlx::query(&format!(
+        sqlx::query(sqlx::AssertSqlSafe(format!(
             "DELETE FROM {table} WHERE user_id = $1 AND entity = 'project' AND entity_id = $2"
-        ))
+        )))
         .bind(bob_id)
         .bind(pid_uuid)
         .execute(&state.pool)

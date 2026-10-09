@@ -297,7 +297,7 @@ async fn list_reports(
           ORDER BY r.created_at DESC
           LIMIT $3"
     );
-    let rows = sqlx::query_as::<_, ReportSummaryView>(&sql)
+    let rows = sqlx::query_as::<_, ReportSummaryView>(sqlx::AssertSqlSafe(sql))
         .bind(q.resolved)
         .bind(q.before_ms)
         .bind(q.limit.unwrap_or(DEFAULT_LIST_LIMIT).clamp(1, 100))
@@ -317,7 +317,7 @@ async fn get_report(
            LEFT JOIN users u ON u.id = r.user_id
           WHERE r.id = $1"
     );
-    let row = sqlx::query_as::<_, ReportView>(&sql)
+    let row = sqlx::query_as::<_, ReportView>(sqlx::AssertSqlSafe(sql))
         .bind(id)
         .fetch_optional(&state.pool)
         .await?

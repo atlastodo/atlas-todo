@@ -643,7 +643,7 @@ async fn get_blob(
             AND (f.value #>> '{}') = $2
             AND "
         + LIVE_ATTACHMENT_PREDICATE;
-    let refs: Vec<(bool, bool)> = sqlx::query_as(&sql)
+    let refs: Vec<(bool, bool)> = sqlx::query_as(sqlx::AssertSqlSafe(sql))
         .bind(user.user_id)
         .bind(&sha)
         .fetch_all(&state.pool)
@@ -849,20 +849,20 @@ pub async fn gc_once(
         return Ok(GcStats { blobs: 0, bytes: 0 });
     }
     let referenced = referenced_sql();
-    sqlx::query(
-        &("UPDATE blobs b SET unreferenced_since = NULL
+    sqlx::query(sqlx::AssertSqlSafe(
+        "UPDATE blobs b SET unreferenced_since = NULL
             WHERE b.unreferenced_since IS NOT NULL AND "
             .to_owned()
-            + &referenced),
-    )
+            + &referenced,
+    ))
     .execute(pool)
     .await?;
-    sqlx::query(
-        &("UPDATE blobs b SET unreferenced_since = now()
+    sqlx::query(sqlx::AssertSqlSafe(
+        "UPDATE blobs b SET unreferenced_since = now()
             WHERE b.unreferenced_since IS NULL AND NOT "
             .to_owned()
-            + &referenced),
-    )
+            + &referenced,
+    ))
     .execute(pool)
     .await?;
     let gc_sql = "WITH dead AS (
@@ -878,7 +878,7 @@ pub async fn gc_once(
       )
       DELETE FROM blobs WHERE sha256 IN (SELECT sha256 FROM dead)
       RETURNING sha256, size";
-    let rows: Vec<(String, i64)> = sqlx::query_as(&gc_sql)
+    let rows: Vec<(String, i64)> = sqlx::query_as(sqlx::AssertSqlSafe(gc_sql))
         .bind(grace_days.clamp(1, i64::from(MAX_GRACE_DAYS)) as i32)
         .bind(GC_BATCH)
         .fetch_all(pool)

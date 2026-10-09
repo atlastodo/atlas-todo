@@ -445,10 +445,10 @@ async fn insert_token(
     let revoked = revoked_days_ago
         .map(|d| format!("now() - make_interval(days => {d})"))
         .unwrap_or_else(|| "NULL".to_string());
-    sqlx::query(&format!(
+    sqlx::query(sqlx::AssertSqlSafe(format!(
         "INSERT INTO refresh_tokens (user_id, device_id, token_hash, expires_at, revoked_at)
          VALUES ($1, $2, $3, now() + make_interval(days => $4), {revoked})"
-    ))
+    )))
     .bind(user)
     .bind(device)
     .bind(format!("purge-test-{}", Uuid::now_v7()))

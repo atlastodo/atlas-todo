@@ -258,10 +258,10 @@ async fn list_project_keys(
     .bind(user.user_id)
     .fetch_all(&state.pool)
     .await?;
-    let canonical: Vec<(Uuid, String)> = sqlx::query_as(&format!(
+    let canonical: Vec<(Uuid, String)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT c.project_id, c.key_id FROM ({CANONICAL_KEYS}) c
           WHERE c.project_id IN (SELECT project_id FROM project_members WHERE user_id = $1)"
-    ))
+    )))
     .bind(user.user_id)
     .fetch_all(&state.pool)
     .await?;
@@ -300,7 +300,7 @@ async fn list_missing_keys(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> AppResult<Json<Vec<MissingKey>>> {
-    let rows = sqlx::query_as::<_, MissingKey>(&format!(
+    let rows = sqlx::query_as::<_, MissingKey>(sqlx::AssertSqlSafe(format!(
         "WITH wanted AS (
              SELECT c.project_id, c.key_id, 0 AS rank FROM ({CANONICAL_KEYS}) c
              UNION ALL
@@ -321,7 +321,7 @@ async fn list_missing_keys(
                  WHERE pk.project_id = pm.project_id AND pk.user_id = pm.user_id
                    AND pk.key_id = w.key_id AND pk.kind = 'wrapped')
           ORDER BY pm.project_id, pm.created_at, pm.user_id, w.rank, w.key_id"
-    ))
+    )))
     .bind(user.user_id)
     .fetch_all(&state.pool)
     .await?;

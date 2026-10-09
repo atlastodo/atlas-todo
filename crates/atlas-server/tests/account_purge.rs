@@ -127,7 +127,7 @@ async fn schedule_deletion(pool: &PgPool, id: Uuid, days_ago: i32) {
 }
 
 async fn count(pool: &PgPool, sql: &str, id: Uuid) -> i64 {
-    sqlx::query_scalar(sql)
+    sqlx::query_scalar(sqlx::AssertSqlSafe(sql.to_owned()))
         .bind(id)
         .fetch_one(pool)
         .await
