@@ -171,7 +171,7 @@ fn seal_with(
     let ephemeral = StaticSecret::from(ephemeral_secret);
     let shared = ephemeral.diffie_hellman(recipient);
     let ct = Aes256Gcm::new(&seal_key(shared.as_bytes()).into())
-        .encrypt(Nonce::from_slice(&iv), plaintext)
+        .encrypt(&Nonce::from(iv), plaintext)
         .expect("AES-GCM only fails for plaintexts beyond 64 GiB");
     SealedKey {
         ephemeral_public_key: hex::encode(PublicKey::from(&ephemeral).as_bytes()),
@@ -242,7 +242,7 @@ mod tests {
         let iv = BASE64.decode(&sealed.encrypted_key.iv).ok()?;
         let ct = BASE64.decode(&sealed.encrypted_key.ct).ok()?;
         Aes256Gcm::new(&seal_key(shared.as_bytes()).into())
-            .decrypt(Nonce::from_slice(&iv), ct.as_slice())
+            .decrypt(&Nonce::try_from(iv.as_slice()).ok()?, ct.as_slice())
             .ok()
     }
 

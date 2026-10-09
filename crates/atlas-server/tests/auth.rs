@@ -248,7 +248,7 @@ fn try_answer_challenge(challenge: &Value, secret: &StaticSecret) -> Option<Stri
         .decode(sealed["encryptedKey"]["ct"].as_str().unwrap())
         .unwrap();
     let nonce = Aes256Gcm::new(&key.into())
-        .decrypt(Nonce::from_slice(&iv), ct.as_slice())
+        .decrypt(&Nonce::try_from(iv.as_slice()).ok()?, ct.as_slice())
         .ok()?;
     Some(hex::encode(nonce))
 }
