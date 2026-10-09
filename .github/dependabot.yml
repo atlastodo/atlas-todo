@@ -70,6 +70,9 @@ updates:
       - dependency-name: "babel-jest"
       - dependency-name: "@types/jest"
       - dependency-name: "jest-environment-jsdom"
+      # nativewind 4 is built on Tailwind 3; v4 needs nativewind 5.
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /docker
