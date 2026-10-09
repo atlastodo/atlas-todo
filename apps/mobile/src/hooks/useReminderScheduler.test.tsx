@@ -29,12 +29,16 @@ jest.mock("../lib/notify", () => {
   // Created inside the factory (the factory runs while this module's imports resolve, before any
   // outer const exists -- TDZ): the listener registry is read back off the mocked module.
   const permission = { current: "granted" };
+  const exactAlarms = { current: "unsupported" };
   const permissionListeners = new Set<() => void>();
   return {
     __esModule: true,
     permission,
+    exactAlarms,
     permissionChanged: () => permissionListeners.forEach((listener) => listener()),
     readNotifyPermission: jest.fn(async () => permission.current),
+    readExactAlarms: jest.fn(() => exactAlarms.current),
+    openExactAlarmSettings: jest.fn(async () => {}),
     onNotifyPermissionChange: jest.fn((listener: () => void) => {
       permissionListeners.add(listener);
       return () => permissionListeners.delete(listener);
@@ -56,6 +60,7 @@ const seam = () =>
   jest.requireMock("../lib/notify") as {
     bookedNotificationIds: jest.Mock;
     permission: { current: string };
+    exactAlarms: { current: string };
     permissionChanged: () => void;
     notify: jest.Mock;
     ensureNotifyPermission: jest.Mock;
@@ -97,6 +102,7 @@ const reminderFields = (store: LocalStore) => store.get("reminder", "r1") ?? {};
 beforeEach(() => {
   jest.clearAllMocks();
   seam().permission.current = "granted";
+  seam().exactAlarms.current = "unsupported";
 });
 
 describe("Complete press", () => {
@@ -319,6 +325,21 @@ describe("permission", () => {
     await act(() => seam().permissionChanged());
     await waitFor(() => expect(seam().reminderScheduleIO.schedule).toHaveBeenCalled());
     expect(seam().ensureNotifyPermission).not.toHaveBeenCalled();
+  });
+
+  it("books every reminder again once exact-alarm access is granted", async () => {
+    seam().exactAlarms.current = "denied";
+    const store = new LocalStore("test");
+    const taskId = seedTask(store);
+    seedReminder(store, taskId, { at: Date.now() + 3_600_000 });
+
+    await mount(store);
+    await waitFor(() => expect(seam().reminderScheduleIO.schedule).toHaveBeenCalledTimes(1));
+
+    // Booked inexact: unmoved, the diff alone would leave it to Doze.
+    seam().exactAlarms.current = "granted";
+    await act(() => seam().permissionChanged());
+    await waitFor(() => expect(seam().reminderScheduleIO.schedule).toHaveBeenCalledTimes(2));
   });
 });
 

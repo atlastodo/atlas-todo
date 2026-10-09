@@ -616,6 +616,7 @@
     "openSettings": "Åbn indstillinger",
     "permissionDeniedNative": "Notifikationer er slået fra for Atlas Todo. Tillad dem i enhedens indstillinger for at få påmindelser.",
     "permissionDefaultNative": "Notifikationer er slået fra for Atlas Todo, så påmindelser kan ikke give dig besked.",
+    "exactAlarmsDenied": "Påmindelser kan komme op til 10 minutter for sent, mens telefonen er låst. Tillad \"Alarmer og påmindelser\" for Atlas Todo for at få dem til tiden.",
     "heading": "Påmindelser",
     "remove": "Fjern påmindelse",
     "time": "Påmindelsestidspunkt",

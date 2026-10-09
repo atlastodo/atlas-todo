@@ -616,6 +616,7 @@
     "openSettings": "Open settings",
     "permissionDeniedNative": "Notifications are turned off for Atlas Todo. Allow them in your device settings to get reminders.",
     "permissionDefaultNative": "Notifications are off for Atlas Todo, so reminders can't alert you.",
+    "exactAlarmsDenied": "Reminders may arrive up to 10 minutes late while your phone is locked. Allow \"Alarms & reminders\" for Atlas Todo to get them on time.",
     "heading": "Reminders",
     "remove": "Remove reminder",
     "time": "Reminder time",

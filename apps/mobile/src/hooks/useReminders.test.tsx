@@ -13,6 +13,8 @@ jest.mock("../lib/notify", () => ({
   __esModule: true,
   ensureNotifyPermission: jest.fn(async () => true),
   readNotifyPermission: jest.fn(async () => "default"),
+  readExactAlarms: jest.fn(() => "unsupported"),
+  openExactAlarmSettings: jest.fn(async () => {}),
   onNotifyPermissionChange: jest.fn(() => () => {}),
 }));
 

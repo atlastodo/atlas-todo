@@ -12,7 +12,7 @@ import { useStore } from "../data/StoreProvider";
 import { useHabits } from "./useHabits";
 import { useHabitCheckins } from "./useHabitCheckins";
 import { usePreferences } from "./usePreferences";
-import { useNotifyPermission } from "./useReminders";
+import { useExactAlarms, useNotifyPermission } from "./useReminders";
 
 /**
  * Delivers per-habit nudges as OS-scheduled local notifications. Mount once at the app root.
@@ -38,8 +38,11 @@ export function useHabitReminderScheduler(): void {
   const adoptedRef = useRef(false);
   // The UI language the OS holds the nudges' text in.
   const bookedLanguageRef = useRef<string | null>(null);
+  // Whether the OS held exact-alarm access when the nudges were booked.
+  const bookedExactRef = useRef<boolean | null>(null);
   const isWeb = Platform.OS === "web";
   const canNotify = useNotifyPermission().permission === "granted";
+  const exact = useExactAlarms().exactAlarms !== "denied";
 
   useEffect(() => {
     if (isWeb) return;
@@ -72,8 +75,12 @@ export function useHabitReminderScheduler(): void {
       if (!adoptedRef.current) adoptBooked(booked, desired, scheduled);
       adoptedRef.current = true;
       // A language change moves no fire time: book every nudge again so none keeps the old text.
-      const rebook = bookedLanguageRef.current !== null && bookedLanguageRef.current !== language;
+      // Likewise once exact-alarm access is granted: earlier bookings stay inexact otherwise.
+      const rebook =
+        (bookedLanguageRef.current !== null && bookedLanguageRef.current !== language) ||
+        (bookedExactRef.current === false && exact);
       bookedLanguageRef.current = language;
+      bookedExactRef.current = exact;
       applySchedule(desired, scheduled, body, scheduleIO, { rebook });
     })();
     return cleanup;
@@ -88,5 +95,6 @@ export function useHabitReminderScheduler(): void {
     weekStartsOn,
     t,
     language,
+    exact,
   ]);
 }

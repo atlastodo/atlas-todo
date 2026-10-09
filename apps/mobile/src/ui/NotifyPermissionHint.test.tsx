@@ -10,10 +10,14 @@ import { PermissionExplainerHost } from "./PermissionExplainerHost";
 jest.mock("../lib/notify", () => {
   // Created inside the factory (it runs before any outer const exists): read back off the mock.
   const permission = { current: "granted" };
+  const exactAlarms = { current: "unsupported" };
   return {
     __esModule: true,
     permission,
+    exactAlarms,
     readNotifyPermission: jest.fn(async () => permission.current),
+    readExactAlarms: jest.fn(() => exactAlarms.current),
+    openExactAlarmSettings: jest.fn(async () => {}),
     onNotifyPermissionChange: jest.fn(() => () => {}),
     ensureNotifyPermission: jest.fn(async () => true),
   };
@@ -22,11 +26,14 @@ jest.mock("../lib/notify", () => {
 const seam = () =>
   jest.requireMock("../lib/notify") as {
     permission: { current: string };
+    exactAlarms: { current: string };
+    openExactAlarmSettings: jest.Mock;
     ensureNotifyPermission: jest.Mock;
   };
 
 beforeEach(() => {
   seam().permission.current = "granted";
+  seam().exactAlarms.current = "unsupported";
   seam().ensureNotifyPermission.mockClear();
 });
 
@@ -60,6 +67,16 @@ describe("NotifyPermissionHint (native)", () => {
     await render(<NotifyPermissionHint />);
     await settle();
     expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("points a phone without exact-alarm access to Alarms & reminders", async () => {
+    seam().exactAlarms.current = "denied";
+    await render(<NotifyPermissionHint />);
+    await settle();
+
+    expect(screen.getByText(/up to 10 minutes late/)).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: "Open settings" }));
+    expect(seam().openExactAlarmSettings).toHaveBeenCalled();
   });
 });
 
