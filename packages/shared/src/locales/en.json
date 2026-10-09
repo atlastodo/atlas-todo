@@ -311,7 +311,7 @@
     "reminders": "Reminders",
     "remindersDesc": "In-app notifications before a task is due.",
     "closeToTray": "Close to tray",
-    "closeToTrayDesc": "Closing the window keeps Atlas Todo running in the tray, so sync and reminders continue. Quit from the tray icon.",
+    "closeToTrayDesc": "Closing the window keeps Atlas Todo running in the tray, so sync and reminders continue. Quit from the tray icon or with Ctrl+Q.",
     "pomodoro": "Pomodoro",
     "focusLength": "Focus length (min)",
     "shortBreak": "Short break (min)",

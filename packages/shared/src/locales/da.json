@@ -311,7 +311,7 @@
     "reminders": "Påmindelser",
     "remindersDesc": "In-app-notifikationer før en opgave forfalder.",
     "closeToTray": "Luk til systembakken",
-    "closeToTrayDesc": "Når vinduet lukkes, kører Atlas Todo videre i systembakken, så synkronisering og påmindelser fortsætter. Afslut fra ikonet i systembakken.",
+    "closeToTrayDesc": "Når vinduet lukkes, kører Atlas Todo videre i systembakken, så synkronisering og påmindelser fortsætter. Afslut fra ikonet i systembakken eller med Ctrl+Q.",
     "pomodoro": "Pomodoro",
     "focusLength": "Fokuslængde (min)",
     "shortBreak": "Kort pause (min)",

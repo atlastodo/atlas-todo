@@ -27,6 +27,7 @@ import {
   type DesktopSettings,
 } from "./desktopSettings";
 import { decryptBytes, encryptBytes } from "./keyWrap";
+import { isQuitShortcut } from "./shortcuts";
 import { DesktopUpdater } from "./updater";
 import {
   APP_ORIGIN,
@@ -321,15 +322,15 @@ function createTray(): void {
     Menu.buildFromTemplate([
       { label: "Open Atlas Todo", click: () => focusMainWindow() },
       { type: "separator" },
-      {
-        label: "Quit",
-        click: () => {
-          isQuitting = true;
-          app.quit();
-        },
-      },
+      { label: "Quit", accelerator: "Ctrl+Q", click: () => quitApp() },
     ]),
   );
+}
+
+/** Quit for real: the tray's Quit and Ctrl+Q, which bypass "Close to tray". */
+function quitApp(): void {
+  isQuitting = true;
+  app.quit();
 }
 
 /** IPC is only honoured from the main window's top frame while it shows the app. */
@@ -444,6 +445,12 @@ function createMainWindow(): BrowserWindow {
   }
 
   win.webContents.on("before-input-event", (event, input) => {
+    // Windows/Linux have no menu bar to carry it, so Ctrl+Q is caught here (focused window only).
+    if (isQuitShortcut(input, process.platform)) {
+      event.preventDefault();
+      quitApp();
+      return;
+    }
     if (input.type === "keyDown") {
       if (
         input.key === "F12" ||
