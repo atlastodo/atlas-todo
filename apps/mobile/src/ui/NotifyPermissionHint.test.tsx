@@ -5,6 +5,7 @@ import { withApp } from "../testutil";
 import { OnboardingProvider } from "../data/OnboardingContext";
 import { NotifyPermissionHint } from "./NotifyPermissionHint";
 import { OnboardingModal } from "./OnboardingModal";
+import { PermissionExplainerHost } from "./PermissionExplainerHost";
 
 jest.mock("../lib/notify", () => {
   // Created inside the factory (it runs before any outer const exists): read back off the mock.
@@ -63,13 +64,14 @@ describe("NotifyPermissionHint (native)", () => {
 });
 
 describe("onboarding's reminders step", () => {
-  it("asks for permission even though reminders were already on", async () => {
+  it("explains, then asks for permission even though reminders were already on", async () => {
     seam().permission.current = "default";
     const App = withApp(new LocalStore("test"));
     await render(
       <App>
         <OnboardingProvider>
           <OnboardingModal />
+          <PermissionExplainerHost />
         </OnboardingProvider>
       </App>,
     );
@@ -81,6 +83,11 @@ describe("onboarding's reminders step", () => {
     expect(seam().ensureNotifyPermission).not.toHaveBeenCalled();
 
     await fireEvent.press(screen.getByLabelText("Continue"));
+    await settle();
+    // Our explainer first; the OS prompt only from its button.
+    expect(screen.getByText("Get reminders on time")).toBeTruthy();
+    expect(seam().ensureNotifyPermission).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText("Turn on notifications"));
     expect(seam().ensureNotifyPermission).toHaveBeenCalledTimes(1);
   });
 });

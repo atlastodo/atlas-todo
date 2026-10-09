@@ -48,7 +48,7 @@ import {
 import { useStore } from "../data/StoreProvider";
 import { useToast } from "../data/ToastProvider";
 import { saveBundle, pickBundleText, pickCsvText } from "../lib/dataTransfer";
-import { ensureNotifyPermission } from "../lib/notify";
+import { explainNotifications } from "../lib/permissionExplainer";
 import { useMotion } from "../lib/motion";
 import { usePreferences } from "../hooks/usePreferences";
 import { usePomodoroConfig } from "../hooks/usePomodoroConfig";
@@ -1486,7 +1486,7 @@ export function SettingsScreen({
             description={t("settings.remindersDesc")}
             value={remindersEnabled}
             onValueChange={(on) => {
-              if (on) void ensureNotifyPermission();
+              if (on) void explainNotifications();
               setRemindersEnabled(on);
             }}
           />

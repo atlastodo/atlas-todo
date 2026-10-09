@@ -9,6 +9,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore, type Task } from "@atlas/client-core";
 import { createTask, visibleTasks } from "@atlas/shared";
 import { withApp } from "../testutil";
+import { PermissionExplainerHost } from "./PermissionExplainerHost";
 import { ReminderSection } from "./ReminderSection";
 
 // Metro resolves `lib/notify` to its `.web` half for the browser; jest resolves the native one.
@@ -66,13 +67,19 @@ function withReminder(store: LocalStore, task: Task) {
 }
 
 async function renderSection(store: LocalStore, task: Task) {
-  await render(<ReminderSection task={task} />, { wrapper: withApp(store) });
+  await render(
+    <>
+      <ReminderSection task={task} />
+      <PermissionExplainerHost />
+    </>,
+    { wrapper: withApp(store) },
+  );
   // The permission read is async; let it land.
   await act(async () => {});
 }
 
 describe("ReminderSection on the web", () => {
-  it("asks for notification permission when a reminder is added", async () => {
+  it("explains, then asks for notification permission, when a reminder is added", async () => {
     const store = newStore();
     await renderSection(store, taskWithDue(store));
 
@@ -80,8 +87,14 @@ describe("ReminderSection on the web", () => {
       await fireEvent.press(screen.getByLabelText("1 day before"));
     });
 
-    // Reminders default on, so this gesture is the one chance to ask for the browser's permission.
+    // Reminders default on, so this is the one chance to ask: the explainer first, and the
+    // browser's prompt from its button (the gesture the browser needs).
+    expect(FakeNotification.prompts).toBe(0);
+    await act(async () => {
+      await fireEvent.press(screen.getByLabelText("Turn on notifications"));
+    });
     expect(FakeNotification.prompts).toBe(1);
+    expect(screen.queryByText("Get reminders on time")).toBeNull();
   });
 
   it("offers to enable notifications while they are off, and drops the hint once granted", async () => {
