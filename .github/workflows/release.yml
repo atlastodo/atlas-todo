@@ -3,7 +3,8 @@
 # GitHub Release carrying the tag's RELEASE_NOTES.md section and every artifact.
 # A tag with a "-" (vX.Y.Z-rc.N, tagged by hand on the dev branch) is a pre-release: a GitHub
 # prerelease that is never "latest", the Docker tag X.Y.Z-rc.N (never latest), and the AAB goes to
-# the Play internal track. The Docker `dev` tag follows the dev branch instead (dev-image.yml).
+# the Play internal track; a stable release goes to PLAY_STORE_TRACK and internal. The Docker `dev`
+# tag follows the dev branch instead (dev-image.yml).
 name: Release
 
 on:
@@ -205,8 +206,9 @@ jobs:
         env:
           GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           # A pre-release goes to the internal track (PLAY_STORE_PRERELEASE_TRACK to change it);
-          # a stable one to PLAY_STORE_TRACK.
-          PLAY_STORE_TRACK: ${{ needs.prepare.outputs.prerelease == 'true' && (vars.PLAY_STORE_PRERELEASE_TRACK || 'internal') || vars.PLAY_STORE_TRACK || 'internal' }}
+          # a stable one to PLAY_STORE_TRACK and to internal as well, so internal testers are
+          # never left on an older rc. The script uploads once and drops a repeated track.
+          PLAY_STORE_TRACK: ${{ needs.prepare.outputs.prerelease == 'true' && (vars.PLAY_STORE_PRERELEASE_TRACK || 'internal') || format('{0},internal', vars.PLAY_STORE_TRACK || 'internal') }}
         # Only where the service-account secret exists, so forks skip it.
         run: |
           if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]; then
