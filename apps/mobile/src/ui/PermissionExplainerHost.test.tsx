@@ -1,13 +1,22 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { DISMISSED_KEY, explainNotifications, explainStorage } from "../lib/permissionExplainer";
+import {
+  DISMISSED_KEY,
+  explainExactAlarms,
+  explainNotifications,
+  explainStorage,
+} from "../lib/permissionExplainer";
 import { PermissionExplainerHost } from "./PermissionExplainerHost";
 
 jest.mock("../lib/notify", () => {
   const permission = { current: "default" };
+  const exactAlarms = { current: "unsupported" };
   return {
     __esModule: true,
     permission,
+    exactAlarms,
+    readExactAlarms: jest.fn(() => exactAlarms.current),
+    openExactAlarmSettings: jest.fn(async () => true),
     readNotifyPermission: jest.fn(async () => permission.current),
     ensureNotifyPermission: jest.fn(async () => true),
   };
@@ -16,7 +25,9 @@ jest.mock("../lib/notify", () => {
 const seam = () =>
   jest.requireMock("../lib/notify") as {
     permission: { current: string };
+    exactAlarms: { current: string };
     ensureNotifyPermission: jest.Mock;
+    openExactAlarmSettings: jest.Mock;
   };
 
 /** Let the async reads (permission, dismissal flag) land and the dialog render. */
@@ -33,6 +44,8 @@ beforeEach(async () => {
   await AsyncStorage.clear();
   seam().permission.current = "default";
   seam().ensureNotifyPermission.mockReset().mockResolvedValue(true);
+  seam().exactAlarms.current = "unsupported";
+  seam().openExactAlarmSettings.mockReset().mockResolvedValue(true);
 });
 
 describe("storage explainer", () => {
@@ -161,5 +174,65 @@ describe("notifications explainer", () => {
     expect(screen.getByText("Notifications are off")).toBeTruthy();
     await fireEvent.press(screen.getByLabelText("Got it"));
     expect(await granted).toBe(false);
+  });
+});
+
+describe("exact alarms explainer", () => {
+  it("explains, then opens Alarms & reminders from Open settings", async () => {
+    seam().exactAlarms.current = "denied";
+    await render(<PermissionExplainerHost />);
+    let opened!: Promise<boolean>;
+    await act(async () => {
+      opened = explainExactAlarms();
+    });
+    await settle();
+
+    expect(screen.getByText("Deliver reminders on the minute")).toBeTruthy();
+    expect(seam().openExactAlarmSettings).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByLabelText("Open settings"));
+    expect(await opened).toBe(true);
+    expect(seam().openExactAlarmSettings).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Deliver reminders on the minute")).toBeNull();
+  });
+
+  it("says nothing where reminders already fire on time", async () => {
+    await render(<PermissionExplainerHost />);
+    seam().exactAlarms.current = "granted";
+    expect(await explainExactAlarms()).toBe(false);
+    seam().exactAlarms.current = "unsupported";
+    expect(await explainExactAlarms()).toBe(false);
+    await settle();
+    expect(screen.queryByText("Deliver reminders on the minute")).toBeNull();
+  });
+
+  it("says where to go when settings can't be opened", async () => {
+    seam().exactAlarms.current = "denied";
+    seam().openExactAlarmSettings.mockResolvedValue(false);
+    await render(<PermissionExplainerHost />);
+    await act(async () => {
+      void explainExactAlarms();
+    });
+    await settle();
+
+    await fireEvent.press(screen.getByLabelText("Open settings"));
+    await settle();
+    expect(screen.getByText(/Apps → Atlas Todo → Alarms & reminders/)).toBeTruthy();
+  });
+
+  it("keeps an implicit ask quiet after Not now", async () => {
+    seam().exactAlarms.current = "denied";
+    await render(<PermissionExplainerHost />);
+    let opened!: Promise<boolean>;
+    await act(async () => {
+      opened = explainExactAlarms({ implicit: true });
+    });
+    await settle();
+    await fireEvent.press(screen.getByLabelText("Not now"));
+    expect(await opened).toBe(false);
+    expect(await AsyncStorage.getItem(DISMISSED_KEY.exactAlarms)).toBe("1");
+
+    expect(await explainExactAlarms({ implicit: true })).toBe(false);
+    await settle();
+    expect(screen.queryByText("Deliver reminders on the minute")).toBeNull();
   });
 });

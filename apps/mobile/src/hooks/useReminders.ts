@@ -239,7 +239,7 @@ export interface UseExactAlarms {
   /** Whether booked reminders fire on time; `unsupported` where the OS never delays them. */
   exactAlarms: "granted" | "denied" | "unsupported";
   /** Open the system page that grants exact-alarm access. */
-  openSettings: () => Promise<void>;
+  openSettings: () => Promise<boolean>;
 }
 
 /** Exact-alarm access (Android 12+), re-read whenever the app returns to the foreground. */

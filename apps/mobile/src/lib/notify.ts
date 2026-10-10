@@ -168,12 +168,12 @@ export function readExactAlarms(): "granted" | "denied" | "unsupported" {
   }
 }
 
-/** Open this app's "Alarms & reminders" settings page. Best-effort. */
-export async function openExactAlarmSettings(): Promise<void> {
+/** Open this app's "Alarms & reminders" settings page. Resolves to whether it opened. */
+export async function openExactAlarmSettings(): Promise<boolean> {
   try {
-    await ExactAlarm?.openExactAlarmSettingsAsync();
+    return (await ExactAlarm?.openExactAlarmSettingsAsync()) ?? false;
   } catch {
-    // Best-effort.
+    return false;
   }
 }
 
