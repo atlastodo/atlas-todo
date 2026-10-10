@@ -169,6 +169,10 @@ jobs:
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+      # A dependency update can add a permission without anyone noticing: only what
+      # docs/android-permissions.md lists may ship.
+      - name: Check the declared permissions
+        run: node apps/mobile/scripts/check-android-permissions.mjs
       - name: Verify both are signed with the upload key
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

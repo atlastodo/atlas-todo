@@ -138,7 +138,8 @@ change the _Server URL_ field on the sign-in screen.
 - Web: your server serves the web app at its root URL. There is nothing to configure.
 - Android: join the closed test on Google Play (see the top of this page), or download
   `atlas-todo-X.Y.Z.apk` from [GitHub Releases](https://github.com/atlastodo/atlas-todo/releases)
-  and install it.
+  and install it. [docs/android-permissions.md](./docs/android-permissions.md) lists the
+  permissions it asks for, and why.
 - Desktop (Linux): each release has `atlas-desktop-X.Y.Z.tar.gz`, which contains the app and a
   Nix flake for x86_64 and aarch64 Linux. See [apps/electron/README.md](./apps/electron/README.md)
   for the Nix setup.
