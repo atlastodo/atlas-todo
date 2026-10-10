@@ -140,26 +140,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
-        with:
-          distribution: temurin
-          java-version: "17"
-      # Pinned cmdline-tools + accepted licences, so AGP can fetch the exact NDK/CMake/platform
-      # React Native asks for.
-      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      # Toolchain, deps and the build caches (written on main by android-cache.yml, read here).
+      - uses: ./.github/actions/android-setup
         with:
           node-version: ${{ env.NODE_VERSION }}
-          package-manager-cache: false
-      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
           bun-version: ${{ env.BUN_VERSION }}
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: bun-${{ runner.os }}-
-      - run: bun install --frozen-lockfile
       - name: Decode the upload keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -168,9 +153,6 @@ jobs:
           python3 -c 'import base64, os, re, sys; s = re.sub(r"[^A-Za-z0-9+/=]", "", os.environ["ANDROID_KEYSTORE_BASE64"]); s += "=" * (-len(s) % 4); open(sys.argv[1], "wb").write(base64.b64decode(s))' \
             "$RUNNER_TEMP/upload.keystore"
           echo "KEYSTORE=$RUNNER_TEMP/upload.keystore" >> "$GITHUB_ENV"
-      - name: Generate the native project
-        working-directory: apps/mobile
-        run: bunx expo prebuild --platform android --clean
       - name: Build the signed APK and AAB
         working-directory: apps/mobile/android
         env:
@@ -179,12 +161,9 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         # AGP's injected signing config (what Android Studio's "Generate Signed Bundle / APK" uses)
         # signs both outputs with the upload key; the prebuilt project's own release config is the
-        # debug key. arm64-v8a only, as before.
+        # debug key. The shared script keeps the flags identical to the cache-filling build.
         run: |
-          ./gradlew assembleRelease bundleRelease --no-daemon \
-            -Dorg.gradle.jvmargs="-Xmx6g -XX:MaxMetaspaceSize=2g" \
-            -x lint -x lintVitalRelease -x lintVitalAnalyzeRelease \
-            -PreactNativeArchitectures=arm64-v8a \
+          ../../../.github/scripts/android-gradle.sh \
             -Pandroid.injected.signing.store.file="$KEYSTORE" \
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \

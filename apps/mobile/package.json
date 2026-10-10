@@ -1,6 +1,6 @@
 {
   "name": "@atlas/mobile",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "license": "AGPL-3.0-only",
   "repository": {
@@ -34,6 +34,7 @@
     "@react-native-community/datetimepicker": "9.1.0",
     "expo": "~57.0.26",
     "expo-audio": "~57.0.5",
+    "expo-build-properties": "~57.0.22",
     "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.14",
     "expo-crypto": "~57.0.3",

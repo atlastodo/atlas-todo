@@ -570,11 +570,13 @@ async fn ws_refuses_disabled_and_deletion_scheduled_accounts() {
     ] {
         let (token, user) = signup_with_id(&control).await;
         let earlier = ticket(&control, &token).await;
-        sqlx::query(&format!("UPDATE users SET {column} = now() WHERE id = $1"))
-            .bind(user)
-            .execute(&state.pool)
-            .await
-            .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "UPDATE users SET {column} = now() WHERE id = $1"
+        )))
+        .bind(user)
+        .execute(&state.pool)
+        .await
+        .unwrap();
         assert_eq!(
             url_handshake_status(ws_url(addr, &earlier, 0)).await,
             Some(403),

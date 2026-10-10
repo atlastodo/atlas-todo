@@ -21,7 +21,7 @@ import { planReminderResponse, type ReminderResponse } from "../lib/reminderActi
 import { useStore } from "../data/StoreProvider";
 import { useLocalTasks } from "./useLocalTasks";
 import { usePreferences } from "./usePreferences";
-import { useNotifyPermission, useReminders } from "./useReminders";
+import { useExactAlarms, useNotifyPermission, useReminders } from "./useReminders";
 
 /** How often to check for due reminders while the tab is open (web in-app path). */
 const WEB_INTERVAL_MS = 30_000;
@@ -58,9 +58,12 @@ export function useReminderScheduler(actorId?: string): void {
   const adoptedRef = useRef(false);
   // Native only: the UI language the OS holds the bookings' text in.
   const bookedLanguageRef = useRef<string | null>(null);
+  // Native only: whether the OS held exact-alarm access when the bookings were made.
+  const bookedExactRef = useRef<boolean | null>(null);
   const isWeb = Platform.OS === "web";
   const { permission } = useNotifyPermission();
   const canNotify = permission === "granted";
+  const exact = useExactAlarms().exactAlarms !== "denied";
 
   // Web interval scheduler. Permission is a dependency, so granting it starts delivery at once.
   useEffect(() => {
@@ -132,8 +135,13 @@ export function useReminderScheduler(actorId?: string): void {
       adoptedRef.current = true;
       // A language change moves no fire time, so the diff alone would leave banners in the old
       // language: book them all again.
-      const rebook = bookedLanguageRef.current !== null && bookedLanguageRef.current !== language;
+      // Exact-alarm access is read when a booking is made: those made without it stay inexact
+      // (Doze holds them ~10 minutes), so book them all again once it is granted.
+      const rebook =
+        (bookedLanguageRef.current !== null && bookedLanguageRef.current !== language) ||
+        (bookedExactRef.current === false && exact);
       bookedLanguageRef.current = language;
+      bookedExactRef.current = exact;
       reconcileNotifications(
         reminders,
         tasks,
@@ -155,6 +163,7 @@ export function useReminderScheduler(actorId?: string): void {
     timeZone,
     t,
     language,
+    exact,
   ]);
 
   // Native: handle a Complete / Snooze press. Subscribed once (the handler rides a ref to see fresh

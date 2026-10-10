@@ -24,6 +24,7 @@ import {
 import { AppState, Platform } from "react-native";
 import i18n from "../i18n";
 import type { ScheduleIO } from "@atlas/shared";
+import { ExactAlarm } from "../../modules/atlas-exact-alarm";
 import {
   REMINDER_CATEGORY_ID,
   REMINDER_COMPLETE_ACTION,
@@ -151,6 +152,29 @@ export function onNotifyPermissionChange(listener: () => void): () => void {
     permissionListeners.delete(listener);
     subscription?.remove();
   };
+}
+
+/**
+ * Whether the OS fires a booked reminder on time. Android 12+ needs exact-alarm access for that;
+ * without it expo-notifications books an inexact alarm that Doze can hold back by ~10 minutes.
+ * `unsupported` where the question does not arise (iOS, Android before 12, no native module).
+ */
+export function readExactAlarms(): "granted" | "denied" | "unsupported" {
+  if (!ExactAlarm) return "unsupported";
+  try {
+    return ExactAlarm.canScheduleExactAlarms() ? "granted" : "denied";
+  } catch {
+    return "unsupported";
+  }
+}
+
+/** Open this app's "Alarms & reminders" settings page. Resolves to whether it opened. */
+export async function openExactAlarmSettings(): Promise<boolean> {
+  try {
+    return (await ExactAlarm?.openExactAlarmSettingsAsync()) ?? false;
+  } catch {
+    return false;
+  }
 }
 
 /**

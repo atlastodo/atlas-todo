@@ -16,8 +16,8 @@ use aes_gcm::{Aes256Gcm, Nonce};
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use hkdf::Hkdf;
-use hmac::{Hmac, Mac};
-use rand::RngCore;
+use hmac::{Hmac, KeyInit as HmacKeyInit, Mac};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -119,7 +119,7 @@ pub fn issue_challenge(
 
 fn random_uuid() -> Uuid {
     let mut bytes = [0u8; 16];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::rng().fill_bytes(&mut bytes);
     uuid::Builder::from_random_bytes(bytes).into_uuid()
 }
 
@@ -147,8 +147,8 @@ pub fn response_matches(secret: &[u8], token: &str, response_hex: &str) -> bool 
 }
 
 fn nonce_mac(secret: &[u8], token: &str) -> Hmac<Sha256> {
-    let mut mac =
-        <Hmac<Sha256> as Mac>::new_from_slice(secret).expect("HMAC accepts keys of any length");
+    let mut mac = <Hmac<Sha256> as HmacKeyInit>::new_from_slice(secret)
+        .expect("HMAC accepts keys of any length");
     mac.update(NONCE_DOMAIN);
     mac.update(token.as_bytes());
     mac
@@ -157,8 +157,8 @@ fn nonce_mac(secret: &[u8], token: &str) -> Hmac<Sha256> {
 pub fn seal(recipient: &PublicKey, plaintext: &[u8]) -> SealedKey {
     let mut ephemeral_secret = [0u8; 32];
     let mut iv = [0u8; IV_LEN];
-    rand::thread_rng().fill_bytes(&mut ephemeral_secret);
-    rand::thread_rng().fill_bytes(&mut iv);
+    rand::rng().fill_bytes(&mut ephemeral_secret);
+    rand::rng().fill_bytes(&mut iv);
     seal_with(recipient, plaintext, ephemeral_secret, iv)
 }
 
@@ -171,7 +171,7 @@ fn seal_with(
     let ephemeral = StaticSecret::from(ephemeral_secret);
     let shared = ephemeral.diffie_hellman(recipient);
     let ct = Aes256Gcm::new(&seal_key(shared.as_bytes()).into())
-        .encrypt(Nonce::from_slice(&iv), plaintext)
+        .encrypt(&Nonce::from(iv), plaintext)
         .expect("AES-GCM only fails for plaintexts beyond 64 GiB");
     SealedKey {
         ephemeral_public_key: hex::encode(PublicKey::from(&ephemeral).as_bytes()),
@@ -242,7 +242,7 @@ mod tests {
         let iv = BASE64.decode(&sealed.encrypted_key.iv).ok()?;
         let ct = BASE64.decode(&sealed.encrypted_key.ct).ok()?;
         Aes256Gcm::new(&seal_key(shared.as_bytes()).into())
-            .decrypt(Nonce::from_slice(&iv), ct.as_slice())
+            .decrypt(&Nonce::try_from(iv.as_slice()).ok()?, ct.as_slice())
             .ok()
     }
 

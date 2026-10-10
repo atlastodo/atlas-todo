@@ -4,6 +4,7 @@ import {
   type IndexedDbEvents,
   type Persistence,
 } from "@atlas/client-core";
+import { isElectron } from "../auth/serverUrl";
 import { closeAll, trackOpen } from "./openDatabases";
 
 /**
@@ -26,16 +27,16 @@ export async function createPersistence(
   if (typeof indexedDB === "undefined") return new MemoryPersistence();
   // Scoped to the user so two accounts in one browser never share an op log: a second account
   // would inherit the first's unsynced outbox and push ops that 403 forever.
-  void requestPersistentStorage();
+  void requestPersistentStorageInElectron();
   return trackOpen(userId, new IndexedDbPersistence(dbName(userId), indexedDB, events));
 }
 
 /**
- * Ask the browser to keep this site's storage (when a signed-in store opens). Otherwise it is
- * best-effort and may be evicted under pressure (Safari after seven days without a visit), taking
- * unsynced changes with it. A refusal changes nothing else.
+ * The desktop app asks the browser layer to keep its storage silently: Electron grants it without a
+ * prompt. In a browser `PersistentStorageExplainer` explains first, since the browser may prompt.
  */
-async function requestPersistentStorage(): Promise<void> {
+async function requestPersistentStorageInElectron(): Promise<void> {
+  if (!isElectron()) return;
   const storage = (globalThis.navigator as { storage?: StorageManager } | undefined)?.storage;
   if (typeof storage?.persist !== "function") return;
   try {

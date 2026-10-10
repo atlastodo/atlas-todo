@@ -48,6 +48,9 @@ import { FocusProvider } from "../src/data/FocusProvider";
 import { FocusBar } from "../src/ui/FocusBar";
 import { OnboardingProvider } from "../src/data/OnboardingContext";
 import { OnboardingModal } from "../src/ui/OnboardingModal";
+import { PermissionExplainerHost } from "../src/ui/PermissionExplainerHost";
+import { PersistentStorageExplainer } from "../src/ui/PersistentStorageExplainer";
+import { PermissionsSheetHost } from "../src/ui/PermissionsSheet";
 import { UpdateBanner } from "../src/ui/UpdateBanner";
 import { NotificationsProvider } from "../src/data/NotificationsProvider";
 import { AuthProvider, useAuth } from "../src/auth/AuthContext";
@@ -284,6 +287,10 @@ function Gate() {
                                   <GlobalCommandPalette />
                                   <RouteBreadcrumbs />
                                   <OnboardingModal />
+                                  {/* After the wizard, so its explainer draws over it. */}
+                                  <PermissionExplainerHost />
+                                  <PersistentStorageExplainer />
+                                  <PermissionsSheetHost />
                                 </View>
                               </CommandPaletteProvider>
                             </OnboardingProvider>

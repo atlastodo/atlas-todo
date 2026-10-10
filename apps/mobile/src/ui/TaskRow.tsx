@@ -727,18 +727,6 @@ export function TaskRow({
               </View>
             )}
 
-            {hasReminder && (
-              <Marker label={t("task.hasReminder")}>
-                <Bell size={iconSize} className="text-neutral-400" />
-              </Marker>
-            )}
-
-            {task.recurrence !== null && (
-              <Marker label={t("task.recurring")}>
-                <Repeat size={iconSize} className="text-neutral-400" />
-              </Marker>
-            )}
-
             {subtaskProgress && subtaskProgress.total > 0 && (
               <Pressable
                 disabled={!onToggleExpand}
@@ -766,35 +754,40 @@ export function TaskRow({
               </Pressable>
             )}
 
-            {/* Fixed slots on wide layouts: an empty flag or date slot still takes its width. */}
-            {task.priority < 4 ? (
+            {task.recurrence !== null && (
+              <Marker label={t("task.recurring")}>
+                <Repeat size={iconSize} className="text-neutral-400" />
+              </Marker>
+            )}
+
+            {hasReminder && (
+              <Marker label={t("task.hasReminder")}>
+                <Bell size={iconSize} className="text-neutral-400" />
+              </Marker>
+            )}
+
+            {task.priority < 4 && (
               <Marker label={t("task.priority", { level: task.priority })}>
                 <Flag size={iconSize} className={PRIORITY_COLOR[task.priority] ?? ""} />
               </Marker>
-            ) : columns ? (
-              <View style={{ width: iconSize }} />
-            ) : null}
+            )}
 
-            {(dateMs !== null || columns) && (
-              <View
-                style={columns ? { minWidth: isWeb ? 80 : 104 } : undefined}
-                className="items-end"
-              >
-                {dateMs !== null && (
-                  <Text
-                    accessibilityLabel={
-                      showCompletedAt
-                        ? t("task.completedOn", { date: formatDue(dateMs) })
-                        : undefined
-                    }
-                    className={
-                      (isWeb ? "text-xs " : "text-base font-normal ") +
-                      (overdue && !showCompletedAt ? "text-red-500" : "text-neutral-500")
-                    }
-                  >
-                    {formatDue(dateMs)}
-                  </Text>
-                )}
+            {/* On wide layouts the date takes a fixed-width column, left-aligned so the markers
+                pack right up against it and dates still line up across rows. A row without a date
+                reserves nothing, so its markers sit at the edge. */}
+            {dateMs !== null && (
+              <View style={columns ? { minWidth: isWeb ? 80 : 104 } : undefined}>
+                <Text
+                  accessibilityLabel={
+                    showCompletedAt ? t("task.completedOn", { date: formatDue(dateMs) }) : undefined
+                  }
+                  className={
+                    (isWeb ? "text-xs " : "text-base font-normal ") +
+                    (overdue && !showCompletedAt ? "text-red-500" : "text-neutral-500")
+                  }
+                >
+                  {formatDue(dateMs)}
+                </Text>
               </View>
             )}
 
@@ -836,10 +829,12 @@ export function TaskRow({
             className={
               "absolute bottom-0 right-9 top-0 flex-row items-center gap-2 pl-3 opacity-0 group-hover:opacity-100 web:focus-within:opacity-100 " +
               // Unfocused, its background is the row's hover colour reached through the same hover
-              // (and global.css's same 250ms fade), so the row lights up as one, not this box first.
+              // (and global.css's same 250ms fade). It fades from the list's opaque surface, not from
+              // transparent: two half-faded layers stacked over the row would light this box up
+              // ahead of the row.
               (focused
                 ? "bg-neutral-100 dark:bg-neutral-800"
-                : "group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900 web:focus-within:bg-neutral-50 dark:web:focus-within:bg-neutral-900")
+                : "bg-white dark:bg-zinc-950 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900 web:focus-within:bg-neutral-50 dark:web:focus-within:bg-neutral-900")
             }
           >
             {onOpen && (

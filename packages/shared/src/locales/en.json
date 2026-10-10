@@ -310,8 +310,18 @@
     "statsDesc": "Completed-over-time charts and completed history.",
     "reminders": "Reminders",
     "remindersDesc": "In-app notifications before a task is due.",
+    "notifications": "Notifications",
+    "notificationPermission": "Notification permission",
+    "notificationPermissionGranted": "Allowed. Reminders can alert you.",
+    "notificationPermissionDefault": "Not turned on yet, so reminders can't alert you.",
+    "notificationPermissionDeniedNative": "Blocked for Atlas Todo. Allow notifications in your device settings.",
+    "notificationPermissionDeniedWeb": "Blocked by the browser. Allow notifications in its site settings for Atlas Todo.",
+    "notificationPermissionUnsupported": "This browser can't show notifications.",
+    "exactAlarms": "Alarms & reminders",
+    "exactAlarmsGranted": "On. Reminders arrive on the minute, even with the phone locked.",
+    "exactAlarmsDenied": "Off. While the phone is locked, reminders may arrive up to 10 minutes late.",
     "closeToTray": "Close to tray",
-    "closeToTrayDesc": "Closing the window keeps Atlas Todo running in the tray, so sync and reminders continue. Quit from the tray icon.",
+    "closeToTrayDesc": "Closing the window keeps Atlas Todo running in the tray, so sync and reminders continue. Quit from the tray icon or with Ctrl+Q.",
     "pomodoro": "Pomodoro",
     "focusLength": "Focus length (min)",
     "shortBreak": "Short break (min)",
@@ -616,6 +626,7 @@
     "openSettings": "Open settings",
     "permissionDeniedNative": "Notifications are turned off for Atlas Todo. Allow them in your device settings to get reminders.",
     "permissionDefaultNative": "Notifications are off for Atlas Todo, so reminders can't alert you.",
+    "exactAlarmsDenied": "Reminders may arrive up to 10 minutes late while your phone is locked. Allow \"Alarms & reminders\" for Atlas Todo to get them on time.",
     "heading": "Reminders",
     "remove": "Remove reminder",
     "time": "Reminder time",
@@ -1461,5 +1472,46 @@
     "month_other": "{{count}} months",
     "year_one": "{{count}} year",
     "year_other": "{{count}} years"
+  },
+  "permissions": {
+    "title": "Get reminders on time",
+    "intro": "Atlas Todo needs a couple of things allowed on this device to alert you when a reminder is due, even with the app closed and the phone locked.",
+    "notificationsTitle": "Notifications",
+    "notificationsGranted": "Allowed. Reminders can alert you.",
+    "notificationsDefault": "Lets Atlas Todo show a reminder when it's due.",
+    "notificationsDeniedNative": "Blocked for Atlas Todo. Allow notifications in your device settings.",
+    "notificationsDeniedWeb": "Blocked by the browser. Allow notifications in its site settings for Atlas Todo.",
+    "exactAlarmsTitle": "Alarms & reminders",
+    "exactAlarmsGranted": "On. Reminders arrive on the minute.",
+    "exactAlarmsDenied": "Without it, Android can hold reminders back by up to 10 minutes while the phone is locked. Turn on \"Allow setting alarms and reminders\", then come back.",
+    "allow": "Allow",
+    "allowed": "Allowed",
+    "on": "On",
+    "review": "Review permissions"
+  },
+  "permissionExplainer": {
+    "notNow": "Not now",
+    "gotIt": "Got it",
+    "notificationsWeb": {
+      "title": "Get reminders on time",
+      "body": "Atlas Todo uses notifications to alert you when a reminder is due. Your browser will ask next: choose Allow to turn them on.",
+      "allow": "Turn on notifications",
+      "refusedTitle": "Notifications are off",
+      "refused": "The browser didn't allow notifications, so reminders can't alert you. You can allow them later in the browser's site settings for Atlas Todo."
+    },
+    "notificationsNative": {
+      "title": "Get reminders on time",
+      "body": "Atlas Todo uses notifications to alert you when a reminder is due, even with the app closed. Your device will ask next: choose Allow to turn them on.",
+      "allow": "Turn on notifications",
+      "refusedTitle": "Notifications are off",
+      "refused": "Notifications weren't allowed, so reminders can't alert you. You can allow them later in your device settings for Atlas Todo."
+    },
+    "storage": {
+      "title": "Keep your data on this device",
+      "body": "Atlas keeps your tasks in this browser so the app works offline. The browser may delete that data to free up space, and Safari deletes it after seven days without a visit, losing changes that haven't synced yet. Allowing persistent storage asks the browser to keep it.",
+      "allow": "Keep my data",
+      "refusedTitle": "The browser didn't agree",
+      "refused": "Your data stays, but the browser may still clear it under pressure. Chrome and Edge decide on their own from how often you use the site, so bookmarking or installing Atlas helps. Settings → Data can ask again later."
+    }
   }
 }

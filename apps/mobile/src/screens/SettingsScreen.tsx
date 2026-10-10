@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -48,9 +49,11 @@ import {
 import { useStore } from "../data/StoreProvider";
 import { useToast } from "../data/ToastProvider";
 import { saveBundle, pickBundleText, pickCsvText } from "../lib/dataTransfer";
-import { ensureNotifyPermission } from "../lib/notify";
+import { explainNotifications } from "../lib/permissionExplainer";
+import { openPermissionsSheet } from "../lib/permissionsSheet";
 import { useMotion } from "../lib/motion";
 import { usePreferences } from "../hooks/usePreferences";
+import { useExactAlarms, useNotifyPermission } from "../hooks/useReminders";
 import { usePomodoroConfig } from "../hooks/usePomodoroConfig";
 import { useIsWide } from "../hooks/useIsWide";
 import {
@@ -60,7 +63,6 @@ import {
 } from "../nav/settingsNav";
 import { useProjects } from "../hooks/useProjects";
 import i18n, { deviceLanguage } from "../i18n";
-import { NotifyPermissionHint } from "../ui/NotifyPermissionHint";
 import { ListPicker, type PickerOption } from "../ui/ListPicker";
 import { LabelsManager } from "../ui/LabelsManager";
 import { Row, Section } from "../ui/Section";
@@ -70,6 +72,7 @@ import { ScreenFade } from "../ui/ScreenFade";
 import { ReportProblemSheet } from "../ui/ReportProblemSheet";
 import { SyncDetails } from "../ui/SyncDetails";
 import {
+  Bell,
   Bug,
   CalendarClock,
   ChevronDown,
@@ -179,6 +182,91 @@ const TICKTICK_WARNING_KEYS: Record<TicktickWarningCode, string> = {
   checklist: "settings.ticktickWarnChecklist",
   timezone: "settings.ticktickWarnTimezone",
 };
+
+/** A Settings row's secondary button: a label, pressed to act. */
+function RowButton({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      className="rounded-md border border-neutral-200 px-3 py-2 web:cursor-pointer dark:border-neutral-800"
+    >
+      <Text className="text-sm text-neutral-600 dark:text-neutral-300">{label}</Text>
+    </Pressable>
+  );
+}
+
+/**
+ * Everything that decides whether a reminder reaches the user, in one place: the reminders switch,
+ * the notification permission and, on Android 12+, exact alarms (without them a locked phone's
+ * reminders come up to ~10 minutes late). Each row says where it stands and offers its one fix.
+ */
+function NotificationsSection() {
+  const { t } = useTranslation();
+  const { remindersEnabled, setRemindersEnabled } = usePreferences();
+  const { permission } = useNotifyPermission();
+  const { exactAlarms, openSettings: openExactAlarmSettings } = useExactAlarms();
+  const native = Platform.OS !== "web";
+  const openAppSettings = () => void Linking.openSettings().catch(() => {});
+
+  const permissionDesc =
+    permission === "granted"
+      ? t("settings.notificationPermissionGranted")
+      : permission === "default"
+        ? t("settings.notificationPermissionDefault")
+        : permission === "denied"
+          ? t(
+              native
+                ? "settings.notificationPermissionDeniedNative"
+                : "settings.notificationPermissionDeniedWeb",
+            )
+          : t("settings.notificationPermissionUnsupported");
+
+  return (
+    <Section icon={Bell} title={t("settings.notifications")}>
+      <Toggle
+        label={t("settings.reminders")}
+        description={t("settings.remindersDesc")}
+        value={remindersEnabled}
+        onValueChange={(on) => {
+          if (on) void explainNotifications();
+          setRemindersEnabled(on);
+        }}
+      />
+      {remindersEnabled && permission !== null && (
+        <Row label={t("settings.notificationPermission")} description={permissionDesc}>
+          {permission === "default" ? (
+            <RowButton
+              label={t("reminder.enableNotifications")}
+              onPress={() => void explainNotifications()}
+            />
+          ) : native && permission !== "unsupported" ? (
+            <RowButton label={t("reminder.openSettings")} onPress={openAppSettings} />
+          ) : null}
+        </Row>
+      )}
+      {remindersEnabled && exactAlarms !== "unsupported" && (
+        <Row
+          label={t("settings.exactAlarms")}
+          description={t(
+            exactAlarms === "granted"
+              ? "settings.exactAlarmsGranted"
+              : "settings.exactAlarmsDenied",
+          )}
+        >
+          <RowButton
+            label={t("reminder.openSettings")}
+            onPress={() => void openExactAlarmSettings()}
+          />
+        </Row>
+      )}
+      <Row label={t("permissions.title")}>
+        <RowButton label={t("permissions.review")} onPress={openPermissionsSheet} />
+      </Row>
+    </Section>
+  );
+}
 
 /**
  * Backup & restore. Import merges a bundle back in via LWW with fresh HLCs, so an imported value
@@ -1070,8 +1158,6 @@ export function SettingsScreen({
     setCountdownsEnabled,
     statsEnabled,
     setStatsEnabled,
-    remindersEnabled,
-    setRemindersEnabled,
     smartDatesEnabled,
     setSmartDatesEnabled,
     hapticsEnabled,
@@ -1481,18 +1567,6 @@ export function SettingsScreen({
             value={statsEnabled}
             onValueChange={setStatsEnabled}
           />
-          <Toggle
-            label={t("settings.reminders")}
-            description={t("settings.remindersDesc")}
-            value={remindersEnabled}
-            onValueChange={(on) => {
-              if (on) void ensureNotifyPermission();
-              setRemindersEnabled(on);
-            }}
-          />
-          {remindersEnabled && (
-            <NotifyPermissionHint className="border-t border-neutral-200/50 py-3.5 dark:border-neutral-800/60" />
-          )}
         </Section>
         {focusEnabled && (
           <Section icon={SlidersHorizontal} title={t("settings.pomodoro")}>
@@ -1528,6 +1602,11 @@ export function SettingsScreen({
             />
           </Section>
         )}
+      </SettingsPane>
+
+      {/* Notifications */}
+      <SettingsPane id="notifications" active={active}>
+        <NotificationsSection />
       </SettingsPane>
 
       {/* Labels */}

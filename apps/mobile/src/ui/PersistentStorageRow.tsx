@@ -6,11 +6,10 @@ import { RefreshCw } from "./icons";
 
 /**
  * Settings → Data's web-only row reporting whether the browser promised not to evict the local
- * database (`navigator.storage.persist()`, fired by `data/persistence.web.ts`).
+ * database (`navigator.storage.persist()`, asked once through `PersistentStorageExplainer`).
  *
  * Web storage is best-effort: eviction under pressure (Safari after seven days) destroys unsynced
- * changes, and the server only holds ciphertext. Browsers answer persist() themselves, so the row
- * reports the answer instead of asking permission first. "Ask again" re-runs it, disabled while in
+ * changes, and the server only holds ciphertext. The row reports where that stands. "Ask again" re-runs it, disabled while in
  * flight (Firefox settles only after the user answers its prompt). Native, Electron and a private
  * mode with no IndexedDB render nothing.
  */

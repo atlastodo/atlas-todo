@@ -5,14 +5,19 @@ import { withApp } from "../testutil";
 import { OnboardingProvider } from "../data/OnboardingContext";
 import { NotifyPermissionHint } from "./NotifyPermissionHint";
 import { OnboardingModal } from "./OnboardingModal";
+import { PermissionExplainerHost } from "./PermissionExplainerHost";
 
 jest.mock("../lib/notify", () => {
   // Created inside the factory (it runs before any outer const exists): read back off the mock.
   const permission = { current: "granted" };
+  const exactAlarms = { current: "unsupported" };
   return {
     __esModule: true,
     permission,
+    exactAlarms,
     readNotifyPermission: jest.fn(async () => permission.current),
+    readExactAlarms: jest.fn(() => exactAlarms.current),
+    openExactAlarmSettings: jest.fn(async () => {}),
     onNotifyPermissionChange: jest.fn(() => () => {}),
     ensureNotifyPermission: jest.fn(async () => true),
   };
@@ -21,11 +26,14 @@ jest.mock("../lib/notify", () => {
 const seam = () =>
   jest.requireMock("../lib/notify") as {
     permission: { current: string };
+    exactAlarms: { current: string };
+    openExactAlarmSettings: jest.Mock;
     ensureNotifyPermission: jest.Mock;
   };
 
 beforeEach(() => {
   seam().permission.current = "granted";
+  seam().exactAlarms.current = "unsupported";
   seam().ensureNotifyPermission.mockClear();
 });
 
@@ -60,16 +68,27 @@ describe("NotifyPermissionHint (native)", () => {
     await settle();
     expect(screen.queryByRole("button")).toBeNull();
   });
+
+  it("points a phone without exact-alarm access to Alarms & reminders", async () => {
+    seam().exactAlarms.current = "denied";
+    await render(<NotifyPermissionHint />);
+    await settle();
+
+    expect(screen.getByText(/up to 10 minutes late/)).toBeTruthy();
+    await fireEvent.press(screen.getByRole("button", { name: "Open settings" }));
+    expect(seam().openExactAlarmSettings).toHaveBeenCalled();
+  });
 });
 
 describe("onboarding's reminders step", () => {
-  it("asks for permission even though reminders were already on", async () => {
+  async function leaveFeaturesStep() {
     seam().permission.current = "default";
     const App = withApp(new LocalStore("test"));
     await render(
       <App>
         <OnboardingProvider>
           <OnboardingModal />
+          <PermissionExplainerHost />
         </OnboardingProvider>
       </App>,
     );
@@ -81,6 +100,12 @@ describe("onboarding's reminders step", () => {
     expect(seam().ensureNotifyPermission).not.toHaveBeenCalled();
 
     await fireEvent.press(screen.getByLabelText("Continue"));
-    expect(seam().ensureNotifyPermission).toHaveBeenCalledTimes(1);
+    await settle();
+  }
+
+  it("on a phone, leaves the asking to the permissions drawer after the wizard", async () => {
+    await leaveFeaturesStep();
+    expect(screen.queryByText("Get reminders on time")).toBeNull();
+    expect(seam().ensureNotifyPermission).not.toHaveBeenCalled();
   });
 });

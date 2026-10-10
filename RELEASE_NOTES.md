@@ -1,27 +1,37 @@
-## v0.1.8
+## v0.1.9
 
 ### Features
-- Sign in and create account as steps of the welcome wizard
-- Select mode on the board
-- Bulk actions in the task context menu
-- Click outside the tasks to leave select mode
-- One current-value style in the task context menu
-- Hover highlight on project rows
-- One package-manager message for disabled desktop updates
-- A Desktop app section in Settings
-- Close to the tray by default
-- Keep the desktop layout in a narrow desktop window
-- Create projects in a dialog with icon, colour, folder and view
+- Ask for reminder permissions from one drawer, on every new device
+- Ask for exact alarms in onboarding and gather notifications in Settings
+- Explain storage and notification permissions before prompting
+- Ctrl+Q fully quits the app, even with Close to tray on
 
 ### Fixes
-- Localize relative times in Devices
-- Lock scrolling while a sheet is being pulled
-- A dedicated Android notification icon
-- Theme the task context menu's portal
-- Launch Electron without devenv's LD_LIBRARY_PATH
-- Drop the chevron on project rows
+- Minify Android release builds and allow any orientation
+- Fade a hovered task row's action box from the list surface
+- Fire Android reminders on time with exact-alarm access
+- Keep Plan your day's Apply reachable with the picker open
+- Pack task row markers against the due date
+- Audit dynamic SQL for sqlx 0.9 and raise the MSRV to 1.94
+- Move to the rand 0.10 API (rng(), Rng)
+- Build AES-GCM nonces with TryFrom for aes-gcm 0.11
+- Select jsonwebtoken's rust_crypto provider
+- Override source-map-js and postcss-selector-parser past their advisories
+- Capture phone shots with a touch pointer
 
 ### Changes
-- Point Dependabot at dev and regenerate nix/bun.nix on its PRs
-- Keep the Rust cache key stable, and save Rust caches from dev
-- Optimize the Argon2 crates in dev and test builds
+- Cache Gradle, the NDK and native C++ for the release build
+- Ignore RUSTSEC-2023-0071 (rsa is unreachable, the server only uses HS256)
+- Bump aes-gcm from 0.10.3 to 0.11.1
+- Keep Dependabot off Tailwind majors until nativewind 5
+- Bump sqlx from 0.8.6 to 0.9.0
+- Bump base64 from 0.22.1 to 0.23.1
+- Bump rand from 0.8.6 to 0.10.3
+- Bump jsonwebtoken from 9.3.1 to 11.1.0
+- Keep Dependabot off the packages the Expo SDK pins
+- Bump electron from 43.6.0 to 44.5.1
+- Bump argon2, hkdf, hmac, sha2 and x25519-dalek
+- Raise the MSRV to Rust 1.89
+- Bump the cargo-minor-patch group with 3 updates
+- Bump tokio-tungstenite from 0.29.0 to 0.30.0
+- Bump taiki-e/install-action

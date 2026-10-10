@@ -12,7 +12,7 @@ use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
 use hkdf::Hkdf;
 use http_body_util::BodyExt;
-use rand::RngCore;
+use rand::Rng;
 use serde_json::{json, Value};
 use sha2::Sha256;
 use tower::ServiceExt;
@@ -93,7 +93,7 @@ fn unique_email() -> String {
 
 fn random_bytes<const N: usize>() -> [u8; N] {
     let mut bytes = [0u8; N];
-    rand::thread_rng().fill_bytes(&mut bytes);
+    rand::rng().fill_bytes(&mut bytes);
     bytes
 }
 
@@ -249,7 +249,7 @@ fn answer_challenge(challenge: &Value, secret: &StaticSecret) -> Option<String> 
         .decode(sealed["encryptedKey"]["ct"].as_str().unwrap())
         .unwrap();
     let nonce = Aes256Gcm::new(&key.into())
-        .decrypt(Nonce::from_slice(&iv), ct.as_slice())
+        .decrypt(&Nonce::try_from(iv.as_slice()).ok()?, ct.as_slice())
         .ok()?;
     Some(hex::encode(nonce))
 }

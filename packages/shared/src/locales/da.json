@@ -310,8 +310,18 @@
     "statsDesc": "Diagrammer over gennemførte opgaver og historik.",
     "reminders": "Påmindelser",
     "remindersDesc": "In-app-notifikationer før en opgave forfalder.",
+    "notifications": "Notifikationer",
+    "notificationPermission": "Tilladelse til notifikationer",
+    "notificationPermissionGranted": "Tilladt. Påmindelser kan give dig besked.",
+    "notificationPermissionDefault": "Ikke slået til endnu, så påmindelser kan ikke give dig besked.",
+    "notificationPermissionDeniedNative": "Blokeret for Atlas Todo. Tillad notifikationer i enhedens indstillinger.",
+    "notificationPermissionDeniedWeb": "Blokeret af browseren. Tillad notifikationer i dens webstedsindstillinger for Atlas Todo.",
+    "notificationPermissionUnsupported": "Denne browser kan ikke vise notifikationer.",
+    "exactAlarms": "Alarmer og påmindelser",
+    "exactAlarmsGranted": "Til. Påmindelser kommer på minuttet, også når telefonen er låst.",
+    "exactAlarmsDenied": "Fra. Mens telefonen er låst, kan påmindelser komme op til 10 minutter for sent.",
     "closeToTray": "Luk til systembakken",
-    "closeToTrayDesc": "Når vinduet lukkes, kører Atlas Todo videre i systembakken, så synkronisering og påmindelser fortsætter. Afslut fra ikonet i systembakken.",
+    "closeToTrayDesc": "Når vinduet lukkes, kører Atlas Todo videre i systembakken, så synkronisering og påmindelser fortsætter. Afslut fra ikonet i systembakken eller med Ctrl+Q.",
     "pomodoro": "Pomodoro",
     "focusLength": "Fokuslængde (min)",
     "shortBreak": "Kort pause (min)",
@@ -616,6 +626,7 @@
     "openSettings": "Åbn indstillinger",
     "permissionDeniedNative": "Notifikationer er slået fra for Atlas Todo. Tillad dem i enhedens indstillinger for at få påmindelser.",
     "permissionDefaultNative": "Notifikationer er slået fra for Atlas Todo, så påmindelser kan ikke give dig besked.",
+    "exactAlarmsDenied": "Påmindelser kan komme op til 10 minutter for sent, mens telefonen er låst. Tillad \"Alarmer og påmindelser\" for Atlas Todo for at få dem til tiden.",
     "heading": "Påmindelser",
     "remove": "Fjern påmindelse",
     "time": "Påmindelsestidspunkt",
@@ -1461,5 +1472,46 @@
     "month_other": "{{count}} måneder",
     "year_one": "{{count}} år",
     "year_other": "{{count}} år"
+  },
+  "permissions": {
+    "title": "Få påmindelser til tiden",
+    "intro": "Atlas Todo skal have et par ting tilladt på denne enhed for at give dig besked, når en påmindelse forfalder, også når appen er lukket og telefonen låst.",
+    "notificationsTitle": "Notifikationer",
+    "notificationsGranted": "Tilladt. Påmindelser kan give dig besked.",
+    "notificationsDefault": "Lader Atlas Todo vise en påmindelse, når den forfalder.",
+    "notificationsDeniedNative": "Blokeret for Atlas Todo. Tillad notifikationer i enhedens indstillinger.",
+    "notificationsDeniedWeb": "Blokeret af browseren. Tillad notifikationer i dens webstedsindstillinger for Atlas Todo.",
+    "exactAlarmsTitle": "Alarmer og påmindelser",
+    "exactAlarmsGranted": "Til. Påmindelser kommer på minuttet.",
+    "exactAlarmsDenied": "Uden det kan Android holde påmindelser tilbage i op til 10 minutter, mens telefonen er låst. Slå \"Tillad indstilling af alarmer og påmindelser\" til, og vend tilbage.",
+    "allow": "Tillad",
+    "allowed": "Tilladt",
+    "on": "Til",
+    "review": "Gennemgå tilladelser"
+  },
+  "permissionExplainer": {
+    "notNow": "Ikke nu",
+    "gotIt": "Forstået",
+    "notificationsWeb": {
+      "title": "Få påmindelser til tiden",
+      "body": "Atlas Todo bruger notifikationer til at give dig besked, når en påmindelse forfalder. Din browser spørger nu: vælg Tillad for at slå dem til.",
+      "allow": "Slå notifikationer til",
+      "refusedTitle": "Notifikationer er slået fra",
+      "refused": "Browseren tillod ikke notifikationer, så påmindelser kan ikke give dig besked. Du kan tillade dem senere i browserens webstedsindstillinger for Atlas Todo."
+    },
+    "notificationsNative": {
+      "title": "Få påmindelser til tiden",
+      "body": "Atlas Todo bruger notifikationer til at give dig besked, når en påmindelse forfalder, også når appen er lukket. Din enhed spørger nu: vælg Tillad for at slå dem til.",
+      "allow": "Slå notifikationer til",
+      "refusedTitle": "Notifikationer er slået fra",
+      "refused": "Notifikationer blev ikke tilladt, så påmindelser kan ikke give dig besked. Du kan tillade dem senere i enhedens indstillinger for Atlas Todo."
+    },
+    "storage": {
+      "title": "Behold dine data på denne enhed",
+      "body": "Atlas gemmer dine opgaver i denne browser, så appen virker offline. Browseren kan slette dataene for at frigøre plads, og Safari sletter dem efter syv dage uden besøg, så ændringer, der ikke er synkroniseret endnu, går tabt. Tillader du vedvarende lagring, beder det browseren om at beholde dem.",
+      "allow": "Behold mine data",
+      "refusedTitle": "Browseren sagde nej",
+      "refused": "Dine data er der stadig, men browseren kan stadig rydde dem, hvis pladsen bliver trang. Chrome og Edge afgør det selv ud fra, hvor ofte du bruger siden, så det hjælper at bogmærke eller installere Atlas. Under Indstillinger → Data kan du spørge igen senere."
+    }
   }
 }
