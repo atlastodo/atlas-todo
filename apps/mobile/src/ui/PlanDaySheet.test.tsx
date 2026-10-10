@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen, within } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 import type { Task } from "@atlas/client-core";
 import { endOfDay, planDayItems, planDayUpcoming, type PlanDayItem } from "@atlas/shared";
 import { PlanDaySheet } from "./PlanDaySheet";
@@ -187,5 +188,28 @@ describe("PlanDaySheet", () => {
     await fireEvent.press(screen.getByLabelText("Add from upcoming: Laundry"));
     // Pulled tasks leave the pool instead of being added twice.
     expect(screen.queryByLabelText("Add from upcoming: Laundry")).toBeNull();
+  });
+
+  it("scrolls a long review together with the picker, keeping Apply pinned outside", async () => {
+    const review = Array.from({ length: 12 }, (_, i) =>
+      task(`r${i}`, `Review ${i}`, NOW - (i + 1) * DAY),
+    );
+    const upcoming = Array.from({ length: 8 }, (_, i) =>
+      task(`u${i}`, `Upcoming ${i}`, NOW + (i % 6) * DAY + DAY),
+    );
+    await mount({ items: planDayItems(review, NOW), upcoming });
+    await fireEvent.press(screen.getByText("Add from upcoming"));
+
+    const scroller = screen.getByTestId("plan-day-scroll");
+    // No fixed height: the scroller shrinks to the sheet's room instead of overflowing it.
+    expect(StyleSheet.flatten(scroller.props.style)).toMatchObject({ flexShrink: 1 });
+    expect(StyleSheet.flatten(scroller.props.style).maxHeight).toBeUndefined();
+    const inScroller = (label: string) => within(scroller).queryAllByLabelText(label).length > 0;
+    // Every review and picker row scrolls into reach, in the one scroller...
+    expect(inScroller("Keep: Review 11")).toBe(true);
+    expect(inScroller("Add from upcoming: Upcoming 7")).toBe(true);
+    // ...while Apply sits outside it, always on screen.
+    expect(screen.getByLabelText("Apply changes")).toBeTruthy();
+    expect(inScroller("Apply changes")).toBe(false);
   });
 });

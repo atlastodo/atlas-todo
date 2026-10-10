@@ -2,8 +2,8 @@
   "expo": {
     "name": "Atlas Todo",
     "slug": "atlas-todo",
-    "version": "0.1.8",
-    "orientation": "portrait",
+    "version": "0.1.9",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "atlastodo",
     "userInterfaceStyle": "automatic",
@@ -27,7 +27,7 @@
     },
     "android": {
       "package": "dev.sejder.atlastodo",
-      "versionCode": 10899,
+      "versionCode": 10999,
       "adaptiveIcon": {
         "backgroundColor": "#4F46E5",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -41,7 +41,8 @@
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
-      ]
+      ],
+      "permissions": ["android.permission.SCHEDULE_EXACT_ALARM"]
     },
     "web": {
       "bundler": "metro",
@@ -73,7 +74,16 @@
           "enableBackgroundPlayback": false
         }
       ],
-      "react-native-quick-crypto"
+      "react-native-quick-crypto",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

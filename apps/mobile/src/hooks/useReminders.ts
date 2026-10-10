@@ -11,8 +11,11 @@ import { useStore, useStoreOptional, type StoreContextValue } from "../data/Stor
 import {
   ensureNotifyPermission,
   onNotifyPermissionChange,
+  openExactAlarmSettings,
+  readExactAlarms,
   readNotifyPermission,
 } from "../lib/notify";
+import { explainNotifications } from "../lib/permissionExplainer";
 import type { NotifyPermission } from "../lib/reminderActions";
 import { remindersEnabledIn } from "./usePreferences";
 
@@ -195,8 +198,8 @@ export function useQuickAddMorningReminder(): (
       if (offset === null) return;
       writeNewReminder(ctx.store, taskId, { offset_min_before_due: offset });
       ctx.kick();
-      // Still inside the quick-add gesture, where a browser allows the prompt.
-      void ensureNotifyPermission();
+      // Unasked for, so a "Not now" to the explainer keeps later quick-adds quiet.
+      void explainNotifications({ implicit: true });
     },
     [ctx],
   );
@@ -230,4 +233,18 @@ export function useNotifyPermission(): UseNotifyPermission {
     };
   }, []);
   return { permission, request: ensureNotifyPermission };
+}
+
+export interface UseExactAlarms {
+  /** Whether booked reminders fire on time; `unsupported` where the OS never delays them. */
+  exactAlarms: "granted" | "denied" | "unsupported";
+  /** Open the system page that grants exact-alarm access. */
+  openSettings: () => Promise<boolean>;
+}
+
+/** Exact-alarm access (Android 12+), re-read whenever the app returns to the foreground. */
+export function useExactAlarms(): UseExactAlarms {
+  const [exactAlarms, setExactAlarms] = useState(readExactAlarms);
+  useEffect(() => onNotifyPermissionChange(() => setExactAlarms(readExactAlarms())), []);
+  return { exactAlarms, openSettings: openExactAlarmSettings };
 }
