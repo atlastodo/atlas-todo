@@ -1,5 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ensureNotifyPermission, readNotifyPermission } from "./notify";
+import {
+  ensureNotifyPermission,
+  openExactAlarmSettings,
+  readExactAlarms,
+  readNotifyPermission,
+} from "./notify";
 
 /**
  * Our own explainer in front of a browser or OS permission prompt, so the prompt never shows up
@@ -8,7 +13,7 @@ import { ensureNotifyPermission, readNotifyPermission } from "./notify";
  * request (a press is the user gesture a browser needs before it will prompt).
  */
 
-export type ExplainerKind = "notifications" | "storage";
+export type ExplainerKind = "notifications" | "exactAlarms" | "storage";
 
 /** `granted`: the prompt was allowed. `refused`: asked, but the browser or OS said no. */
 export type ExplainerResult = "granted" | "refused" | "dismissed";
@@ -44,6 +49,7 @@ export function showExplainer(
 
 export const DISMISSED_KEY: Record<ExplainerKind, string> = {
   notifications: "atlas.explainer.notifications.dismissed",
+  exactAlarms: "atlas.explainer.exactAlarms.dismissed",
   storage: "atlas.explainer.storage.dismissed",
 };
 
@@ -73,6 +79,21 @@ export async function explainNotifications({ implicit = false } = {}): Promise<b
   if (implicit && (await wasDismissed("notifications"))) return false;
   const result = await showExplainer("notifications", ensureNotifyPermission);
   if (result === "dismissed" && implicit) rememberDismissal("notifications");
+  return result === "granted";
+}
+
+/**
+ * Explain exact alarms, then open this app's "Alarms & reminders" page, while Android reports them
+ * denied (Android 14+ denies them to new installs). Without them a locked phone's reminders wait
+ * for Doze's next window, minutes late. The grant happens in system settings, so this resolves to
+ * whether that page opened; the reminder scheduler books everything again on return. `implicit` as
+ * for {@link explainNotifications}.
+ */
+export async function explainExactAlarms({ implicit = false } = {}): Promise<boolean> {
+  if (readExactAlarms() !== "denied") return false;
+  if (implicit && (await wasDismissed("exactAlarms"))) return false;
+  const result = await showExplainer("exactAlarms", openExactAlarmSettings);
+  if (result === "dismissed" && implicit) rememberDismissal("exactAlarms");
   return result === "granted";
 }
 

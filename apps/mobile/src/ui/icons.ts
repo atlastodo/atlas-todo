@@ -16,6 +16,7 @@
 import { cssInterop } from "nativewind";
 import type { LucideIcon } from "lucide-react-native";
 
+import AlarmClock from "lucide-react-native/icons/alarm-clock";
 import Archive from "lucide-react-native/icons/archive";
 import ArrowDownAZ from "lucide-react-native/icons/arrow-down-a-z";
 import ArrowRightLeft from "lucide-react-native/icons/arrow-right-left";
@@ -120,6 +121,7 @@ function styled(icon: LucideIcon): void {
 
 /** The curated set, alphabetical. */
 const ICONS = {
+  AlarmClock,
   Archive,
   ArrowDownAZ,
   ArrowRightLeft,
@@ -219,6 +221,7 @@ export type IconName = keyof typeof ICONS;
 export type { LucideIcon };
 
 export {
+  AlarmClock,
   Archive,
   ArrowDownAZ,
   ArrowRightLeft,

@@ -1,4 +1,5 @@
 import {
+  Bell,
   CalendarClock,
   Database,
   LifeBuoy,
@@ -30,6 +31,7 @@ export type SettingsSectionId =
   | "tasks"
   | "calendar"
   | "features"
+  | "notifications"
   | "labels"
   | "data"
   | "server"
@@ -51,6 +53,7 @@ const ALL_SECTIONS: SettingsSection[] = [
   { id: "tasks", labelKey: "settings.tasksGestures", icon: ListChecks },
   { id: "calendar", labelKey: "settings.calendarTime", icon: CalendarClock },
   { id: "features", labelKey: "settings.features", icon: SlidersHorizontal },
+  { id: "notifications", labelKey: "settings.notifications", icon: Bell },
   { id: "labels", labelKey: "label.manage", icon: Tag },
   { id: "data", labelKey: "settings.data", icon: Database },
   { id: "server", labelKey: "settings.server", icon: Server },

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { ThemeScope } from "../theme/ThemeProvider";
 import { haptics } from "../lib/haptics";
 import { registerExplainerHost, type ExplainerRequest } from "../lib/permissionExplainer";
-import { Bell, Database } from "./icons";
+import { AlarmClock, Bell, Database } from "./icons";
 import { ELEVATED_SURFACE_CLASS, SCRIM_CLASS } from "./useSheetDismiss";
 
 /**
@@ -46,8 +46,13 @@ export function PermissionExplainerHost() {
 
   const web = Platform.OS === "web";
   const k =
-    request.kind === "storage" ? "storage" : web ? "notificationsWeb" : "notificationsNative";
-  const Icon = request.kind === "storage" ? Database : Bell;
+    request.kind === "notifications"
+      ? web
+        ? "notificationsWeb"
+        : "notificationsNative"
+      : request.kind;
+  const Icon =
+    request.kind === "storage" ? Database : request.kind === "exactAlarms" ? AlarmClock : Bell;
   const refused = phase === "refused";
   const dismiss = () => finish(refused ? "refused" : "dismissed");
   const title = t(

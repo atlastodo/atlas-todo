@@ -6,6 +6,13 @@ import { fakeAuth, withApp } from "../testutil";
 import { settingsSections, type SettingsSectionId } from "../nav/settingsNav";
 import { relativeLabel, SettingsScreen } from "./SettingsScreen";
 
+jest.mock("../../modules/atlas-exact-alarm", () => ({
+  ExactAlarm: {
+    canScheduleExactAlarms: () => false,
+    openExactAlarmSettingsAsync: jest.fn(async () => true),
+  },
+}));
+
 const SESSION = {
   accessToken: "a",
   refreshToken: "r",
@@ -38,6 +45,19 @@ const read = (store: LocalStore, field: string) =>
   (store.get("preference", PREFERENCES_ID) ?? {})[field];
 
 describe("SettingsScreen", () => {
+  it("gathers reminders and exact alarms under Notifications", async () => {
+    const store = await mount("notifications");
+    expect(screen.getByText(/up to 10 minutes late/)).toBeTruthy();
+    const { ExactAlarm } = jest.requireMock("../../modules/atlas-exact-alarm");
+    const buttons = screen.getAllByLabelText("Open settings");
+    await fireEvent.press(buttons[buttons.length - 1]!);
+    expect(ExactAlarm.openExactAlarmSettingsAsync).toHaveBeenCalled();
+
+    await fireEvent(screen.getByLabelText("Reminders"), "valueChange", false);
+    expect(read(store, "reminders_enabled")).toBe(false);
+    expect(screen.queryByText(/up to 10 minutes late/)).toBeNull();
+  });
+
   it("writes a feature toggle to the store", async () => {
     const store = await mount("features");
     // Habits default on, so this switches them off.

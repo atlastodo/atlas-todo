@@ -310,6 +310,16 @@
     "statsDesc": "Completed-over-time charts and completed history.",
     "reminders": "Reminders",
     "remindersDesc": "In-app notifications before a task is due.",
+    "notifications": "Notifications",
+    "notificationPermission": "Notification permission",
+    "notificationPermissionGranted": "Allowed. Reminders can alert you.",
+    "notificationPermissionDefault": "Not turned on yet, so reminders can't alert you.",
+    "notificationPermissionDeniedNative": "Blocked for Atlas Todo. Allow notifications in your device settings.",
+    "notificationPermissionDeniedWeb": "Blocked by the browser. Allow notifications in its site settings for Atlas Todo.",
+    "notificationPermissionUnsupported": "This browser can't show notifications.",
+    "exactAlarms": "Alarms & reminders",
+    "exactAlarmsGranted": "On. Reminders arrive on the minute, even with the phone locked.",
+    "exactAlarmsDenied": "Off. While the phone is locked, reminders may arrive up to 10 minutes late.",
     "closeToTray": "Close to tray",
     "closeToTrayDesc": "Closing the window keeps Atlas Todo running in the tray, so sync and reminders continue. Quit from the tray icon or with Ctrl+Q.",
     "pomodoro": "Pomodoro",
@@ -1479,6 +1489,13 @@
       "allow": "Turn on notifications",
       "refusedTitle": "Notifications are off",
       "refused": "Notifications weren't allowed, so reminders can't alert you. You can allow them later in your device settings for Atlas Todo."
+    },
+    "exactAlarms": {
+      "title": "Deliver reminders on the minute",
+      "body": "While your phone is locked, Android can hold reminders back by up to 10 minutes. Allowing Alarms & reminders for Atlas Todo lets them arrive on time. Settings opens next: turn on Allow setting alarms and reminders, then come back.",
+      "allow": "Open settings",
+      "refusedTitle": "Couldn't open settings",
+      "refused": "Open your device settings, go to Apps → Atlas Todo → Alarms & reminders, and allow it there."
     },
     "storage": {
       "title": "Keep your data on this device",
