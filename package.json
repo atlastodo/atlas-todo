@@ -36,6 +36,6 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "playwright-core": "^1.63.0",
     "prettier": "3.9.9",
-    "typescript-eslint": "^8.71.0"
+    "typescript-eslint": "^8.71.1"
   }
 }
