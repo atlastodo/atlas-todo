@@ -81,7 +81,7 @@ describe("NotifyPermissionHint (native)", () => {
 });
 
 describe("onboarding's reminders step", () => {
-  it("explains, then asks for permission even though reminders were already on", async () => {
+  async function leaveFeaturesStep() {
     seam().permission.current = "default";
     const App = withApp(new LocalStore("test"));
     await render(
@@ -101,10 +101,11 @@ describe("onboarding's reminders step", () => {
 
     await fireEvent.press(screen.getByLabelText("Continue"));
     await settle();
-    // Our explainer first; the OS prompt only from its button.
-    expect(screen.getByText("Get reminders on time")).toBeTruthy();
+  }
+
+  it("on a phone, leaves the asking to the permissions drawer after the wizard", async () => {
+    await leaveFeaturesStep();
+    expect(screen.queryByText("Get reminders on time")).toBeNull();
     expect(seam().ensureNotifyPermission).not.toHaveBeenCalled();
-    await fireEvent.press(screen.getByLabelText("Turn on notifications"));
-    expect(seam().ensureNotifyPermission).toHaveBeenCalledTimes(1);
   });
 });

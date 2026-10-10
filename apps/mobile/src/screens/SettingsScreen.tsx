@@ -50,6 +50,7 @@ import { useStore } from "../data/StoreProvider";
 import { useToast } from "../data/ToastProvider";
 import { saveBundle, pickBundleText, pickCsvText } from "../lib/dataTransfer";
 import { explainNotifications } from "../lib/permissionExplainer";
+import { openPermissionsSheet } from "../lib/permissionsSheet";
 import { useMotion } from "../lib/motion";
 import { usePreferences } from "../hooks/usePreferences";
 import { useExactAlarms, useNotifyPermission } from "../hooks/useReminders";
@@ -260,6 +261,9 @@ function NotificationsSection() {
           />
         </Row>
       )}
+      <Row label={t("permissions.title")}>
+        <RowButton label={t("permissions.review")} onPress={openPermissionsSheet} />
+      </Row>
     </Section>
   );
 }
