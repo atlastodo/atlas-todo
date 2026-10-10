@@ -3,7 +3,7 @@
     "name": "Atlas Todo",
     "slug": "atlas-todo",
     "version": "0.1.9-rc.4",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "scheme": "atlastodo",
     "userInterfaceStyle": "automatic",
@@ -74,7 +74,16 @@
           "enableBackgroundPlayback": false
         }
       ],
-      "react-native-quick-crypto"
+      "react-native-quick-crypto",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

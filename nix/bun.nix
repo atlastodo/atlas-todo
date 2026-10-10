@@ -2101,6 +2101,10 @@
     url = "https://registry.npmjs.org/expo-audio/-/expo-audio-57.0.5.tgz";
     hash = "sha512-39fX5JC5zDvELB4/eDJPj2XAYRN0W9+K2DfDWm5N3aC5WZ7HRrhupWtT6hbH09NlfYpsRSqYOwEZnocFM42ynQ==";
   };
+  "expo-build-properties@57.0.22" = fetchurl {
+    url = "https://registry.npmjs.org/expo-build-properties/-/expo-build-properties-57.0.22.tgz";
+    hash = "sha512-A5oRf2I02XDRu2NnqKo7Au5kUu244unvyoRMUsB+xvg/BOlsR+G/oyDFGkjbda1cJbeKm9eqposIXbA2ri5UrQ==";
+  };
   "expo-clipboard@57.0.2" = fetchurl {
     url = "https://registry.npmjs.org/expo-clipboard/-/expo-clipboard-57.0.2.tgz";
     hash = "sha512-VB4Au8X/RbvJKUtJk+87vdtveWSNEa5RzY3ooeO6VNF7Rd49RbQXZOu3/TfEW9p7mU8TCfyTvjyCiAUwSoSJ4w==";
