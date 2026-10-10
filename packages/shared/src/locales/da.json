@@ -261,7 +261,7 @@
     "defaultView": "Standard startvisning",
     "defaultViewDesc": "Listen appen åbner på.",
     "smartDates": "Smarte datoer i hurtig tilføjelse",
-    "smartDatesDesc": "Genkend udtryk som 'i morgen' eller '17' som en forfaldsdato, når du tilføjer en opgave.",
+    "smartDatesDesc": "Genkend udtryk som 'i morgen' eller 'kl 17' som en forfaldsdato, når du tilføjer en opgave.",
     "haptics": "Haptisk feedback",
     "hapticsDesc": "Afspil en let vibration ved tryk, strøg og træk. Kun på telefon.",
     "appearance": "Udseende",
