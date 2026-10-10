@@ -1473,6 +1473,22 @@
     "year_one": "{{count}} år",
     "year_other": "{{count}} år"
   },
+  "permissions": {
+    "title": "Få påmindelser til tiden",
+    "intro": "Atlas Todo skal have et par ting tilladt på denne enhed for at give dig besked, når en påmindelse forfalder, også når appen er lukket og telefonen låst.",
+    "notificationsTitle": "Notifikationer",
+    "notificationsGranted": "Tilladt. Påmindelser kan give dig besked.",
+    "notificationsDefault": "Lader Atlas Todo vise en påmindelse, når den forfalder.",
+    "notificationsDeniedNative": "Blokeret for Atlas Todo. Tillad notifikationer i enhedens indstillinger.",
+    "notificationsDeniedWeb": "Blokeret af browseren. Tillad notifikationer i dens webstedsindstillinger for Atlas Todo.",
+    "exactAlarmsTitle": "Alarmer og påmindelser",
+    "exactAlarmsGranted": "Til. Påmindelser kommer på minuttet.",
+    "exactAlarmsDenied": "Uden det kan Android holde påmindelser tilbage i op til 10 minutter, mens telefonen er låst. Slå \"Tillad indstilling af alarmer og påmindelser\" til, og vend tilbage.",
+    "allow": "Tillad",
+    "allowed": "Tilladt",
+    "on": "Til",
+    "review": "Gennemgå tilladelser"
+  },
   "permissionExplainer": {
     "notNow": "Ikke nu",
     "gotIt": "Forstået",
@@ -1489,13 +1505,6 @@
       "allow": "Slå notifikationer til",
       "refusedTitle": "Notifikationer er slået fra",
       "refused": "Notifikationer blev ikke tilladt, så påmindelser kan ikke give dig besked. Du kan tillade dem senere i enhedens indstillinger for Atlas Todo."
-    },
-    "exactAlarms": {
-      "title": "Få påmindelser på minuttet",
-      "body": "Mens telefonen er låst, kan Android holde påmindelser tilbage i op til 10 minutter. Tillad Alarmer og påmindelser for Atlas Todo, så de kommer til tiden. Indstillinger åbner nu: slå Tillad indstilling af alarmer og påmindelser til, og vend tilbage.",
-      "allow": "Åbn indstillinger",
-      "refusedTitle": "Indstillinger kunne ikke åbnes",
-      "refused": "Åbn enhedens indstillinger, gå til Apps → Atlas Todo → Alarmer og påmindelser, og tillad det der."
     },
     "storage": {
       "title": "Behold dine data på denne enhed",

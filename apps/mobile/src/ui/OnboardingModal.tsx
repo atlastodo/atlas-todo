@@ -34,7 +34,7 @@ import { useLocalMode } from "../auth/localMode";
 import { AuthForm, useAuthForm, type AuthFormState } from "../auth/AuthForm";
 import { deviceLanguage } from "../i18n";
 import { ThemeScope } from "../theme/ThemeProvider";
-import { explainExactAlarms, explainNotifications } from "../lib/permissionExplainer";
+import { explainNotifications } from "../lib/permissionExplainer";
 import { haptics } from "../lib/haptics";
 import { ListPicker, type PickerOption } from "./ListPicker";
 import { NotifyPermissionHint } from "./NotifyPermissionHint";
@@ -363,13 +363,12 @@ function Wizard({
 
   const handleNext = () => {
     haptics.selection();
-    // Reminders are on by default, so the toggle's own prompt never runs for most people: leaving
-    // the step that presents them asks, through the explainer. A no-op once answered. Once they are
-    // allowed, Android 14+ still needs exact alarms, or a locked phone's reminders come late.
-    if (current === "features" && remindersEnabled) {
-      void explainNotifications({ implicit: true }).then((allowed) => {
-        if (allowed) void explainExactAlarms({ implicit: true });
-      });
+    // Reminders are on by default, so the toggle's own prompt never runs for most people. On a phone
+    // the permissions drawer (`PermissionsSheetHost`) asks for everything once the wizard closes; a
+    // browser has only the notification prompt, so leaving the step that presents reminders asks
+    // for it through the explainer. A no-op once answered.
+    if (current === "features" && remindersEnabled && Platform.OS === "web") {
+      void explainNotifications({ implicit: true });
     }
     if (step < TOTAL_STEPS) {
       setStep(step + 1);

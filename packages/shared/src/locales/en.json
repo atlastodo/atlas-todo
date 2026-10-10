@@ -1473,6 +1473,22 @@
     "year_one": "{{count}} year",
     "year_other": "{{count}} years"
   },
+  "permissions": {
+    "title": "Get reminders on time",
+    "intro": "Atlas Todo needs a couple of things allowed on this device to alert you when a reminder is due, even with the app closed and the phone locked.",
+    "notificationsTitle": "Notifications",
+    "notificationsGranted": "Allowed. Reminders can alert you.",
+    "notificationsDefault": "Lets Atlas Todo show a reminder when it's due.",
+    "notificationsDeniedNative": "Blocked for Atlas Todo. Allow notifications in your device settings.",
+    "notificationsDeniedWeb": "Blocked by the browser. Allow notifications in its site settings for Atlas Todo.",
+    "exactAlarmsTitle": "Alarms & reminders",
+    "exactAlarmsGranted": "On. Reminders arrive on the minute.",
+    "exactAlarmsDenied": "Without it, Android can hold reminders back by up to 10 minutes while the phone is locked. Turn on \"Allow setting alarms and reminders\", then come back.",
+    "allow": "Allow",
+    "allowed": "Allowed",
+    "on": "On",
+    "review": "Review permissions"
+  },
   "permissionExplainer": {
     "notNow": "Not now",
     "gotIt": "Got it",
@@ -1489,13 +1505,6 @@
       "allow": "Turn on notifications",
       "refusedTitle": "Notifications are off",
       "refused": "Notifications weren't allowed, so reminders can't alert you. You can allow them later in your device settings for Atlas Todo."
-    },
-    "exactAlarms": {
-      "title": "Deliver reminders on the minute",
-      "body": "While your phone is locked, Android can hold reminders back by up to 10 minutes. Allowing Alarms & reminders for Atlas Todo lets them arrive on time. Settings opens next: turn on Allow setting alarms and reminders, then come back.",
-      "allow": "Open settings",
-      "refusedTitle": "Couldn't open settings",
-      "refused": "Open your device settings, go to Apps → Atlas Todo → Alarms & reminders, and allow it there."
     },
     "storage": {
       "title": "Keep your data on this device",
