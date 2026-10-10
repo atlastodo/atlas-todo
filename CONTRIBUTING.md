@@ -104,19 +104,25 @@ Where the tests live:
 
 ## Adding or changing UI text
 
-All user-facing text goes through i18next. The catalogs are
-`packages/shared/src/locales/en.json` and `packages/shared/src/locales/da.json`.
+All user-facing text goes through i18next. The catalogs are in `packages/shared/src/locales/`:
+English (`en.json`, the base), Danish, German, Spanish, French, Italian, Dutch, Polish and
+Brazilian Portuguese (`pt.json`).
 
-1. Add the key to `en.json` and to `da.json`, at the same path. If you can't write Danish, add
-   the English text to `da.json` and say so in the PR.
+1. Add the key to every catalog, at the same path. For a plural, `en.json` has `_one`/`_other`;
+   each other catalog has its own language's plural forms (Polish `_one`/`_few`/`_many`/`_other`).
+   If you can't write a language, add the English text to its catalog and say so in the PR.
 2. Use it with `t("section.key")`.
 3. Run the two checks:
    - `cd packages/shared && bunx --bun vitest run src/i18n.test.ts` checks that every locale has
-     exactly the English keys and is valid UTF-8.
+     exactly the English keys, in its own plural forms, and is valid UTF-8.
    - `cd apps/mobile && bun run test -- i18n/keys` checks that every literal key the app uses
      exists in every locale.
 
-A new language also needs an entry in `packages/shared/src/i18n.ts`.
+A new language also needs an entry in `packages/shared/src/i18n.ts` and a quick-add lexicon in
+`packages/shared/src/quickAddLexicons.ts` (its words for today, tomorrow, weekdays, months, "in 3
+days", "every week" and times), with cases in the "every UI language" table of
+`quickAddParse.test.ts`. The settings and onboarding text about smart dates quotes examples in the
+language; they must parse.
 
 ## Commits and pull requests
 

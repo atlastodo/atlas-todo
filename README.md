@@ -67,7 +67,8 @@ which may be reset; see the [privacy notice](https://atlastodo.dev/privacy.html)
 - Import and export: Import a TickTick CSV export. Back up and restore your data as JSON.
 - Admin panel: Manage accounts, close signups, create signup invites, read bug reports and
   review the audit log.
-- Languages: English and Danish.
+- Languages: English, Danish, German, Spanish, French, Italian, Dutch, Polish and Brazilian
+  Portuguese. Quick add understands dates, times and repeats typed in each of them.
 - Platforms: Web (served by your server), Android, and a Linux desktop app (Electron).
 
 ## Architecture
