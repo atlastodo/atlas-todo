@@ -29,8 +29,8 @@
     "baseline-browser-mapping": "2.11.25",
     "source-map-js": "^1.2.2",
     "postcss-selector-parser": "^7.1.6",
-    "@atlastodo/client-core": "https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz",
-    "@atlastodo/shared": "https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz"
+    "@atlastodo/client-core": "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz",
+    "@atlastodo/shared": "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz"
   },
   "devDependencies": {
     "eslint": "^10.11.0",

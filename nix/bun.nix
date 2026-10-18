@@ -4347,12 +4347,12 @@
     url = "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz";
     hash = "sha512-3ofp+LL8E+pK/JuPLPggVAIaEuhvIz4qNcf3nA1Xn2o/7fb7s/TYpHhwGDv1ZU3PkBluUVaF8PyCHcm48cKLWQ==";
   };
-  "tarball:https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz" = builtins.fetchTarball {
-    url = "https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz";
+  "tarball:https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz" = builtins.fetchTarball {
+    url = "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz";
     sha256 = "sha256-c6RQJp0Cx4RDD/vDDFhCQkIF9jXmT5MrJQYAMV+eENs=";
   };
-  "tarball:https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz" = builtins.fetchTarball {
-    url = "https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz";
+  "tarball:https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz" = builtins.fetchTarball {
+    url = "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz";
     sha256 = "sha256-Pjd8fOO/xGxWWOyQ/cF2vULGBhbZbpEfeaSFEXWg1DM=";
   };
   "terminal-link@2.1.1" = fetchurl {

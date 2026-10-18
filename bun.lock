@@ -26,8 +26,8 @@
       "name": "@atlastodo/mobile",
       "version": "0.1.11-rc.5",
       "dependencies": {
-        "@atlastodo/client-core": "https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz",
-        "@atlastodo/shared": "https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz",
+        "@atlastodo/client-core": "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz",
+        "@atlastodo/shared": "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz",
         "@expo/metro-runtime": "~58.0.14",
         "@react-native-async-storage/async-storage": "2.2.0",
         "@react-native-community/datetimepicker": "9.2.1",
@@ -97,8 +97,8 @@
     },
   },
   "overrides": {
-    "@atlastodo/client-core": "https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz",
-    "@atlastodo/shared": "https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz",
+    "@atlastodo/client-core": "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz",
+    "@atlastodo/shared": "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz",
     "baseline-browser-mapping": "2.11.25",
     "browserslist": "4.29.0",
     "decode-uri-component": "0.5.0",
@@ -116,13 +116,13 @@
 
     "@asamuzakjp/css-color": ["@asamuzakjp/css-color@3.2.0", "", { "dependencies": { "@csstools/css-calc": "^2.1.3", "@csstools/css-color-parser": "^3.0.9", "@csstools/css-parser-algorithms": "^3.0.4", "@csstools/css-tokenizer": "^3.0.3", "lru-cache": "^10.4.3" } }, "sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw=="],
 
-    "@atlastodo/client-core": ["@atlastodo/client-core@https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz", { "dependencies": { "@noble/ciphers": "^2.4.0", "@noble/curves": "^2.4.0", "@noble/hashes": "^2.4.0", "@scure/bip39": "^2.4.0" } }, "sha512-STUwfNOfXGuw8G92OiyPsZbgxvcXzubBtlG+iy40jCyL8ec1lCviE/BJc8f/XeZVr13Onj+HLH4rhJxI6DiF4g=="],
+    "@atlastodo/client-core": ["@atlastodo/client-core@https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz", { "dependencies": { "@noble/ciphers": "^2.4.0", "@noble/curves": "^2.4.0", "@noble/hashes": "^2.4.0", "@scure/bip39": "^2.4.0" } }, "sha512-STUwfNOfXGuw8G92OiyPsZbgxvcXzubBtlG+iy40jCyL8ec1lCviE/BJc8f/XeZVr13Onj+HLH4rhJxI6DiF4g=="],
 
     "@atlastodo/electron": ["@atlastodo/electron@workspace:apps/electron"],
 
     "@atlastodo/mobile": ["@atlastodo/mobile@workspace:apps/mobile"],
 
-    "@atlastodo/shared": ["@atlastodo/shared@https://github.com/atlastodo/atlas-todo/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz", { "dependencies": { "@atlastodo/client-core": "0.1.11-rc.5", "@noble/hashes": "^2.4.0", "fflate": "^0.8.3" } }, "sha512-lOXU61Hq3LSP+WBPwO/KtUVEWbk3iLvpy2lngU8O1kSBPXTuGU/Od6vaCBUFRtXTrOIO7JaZAlD7TGuSdW+3Wg=="],
+    "@atlastodo/shared": ["@atlastodo/shared@https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz", { "dependencies": { "@atlastodo/client-core": "0.1.11-rc.5", "@noble/hashes": "^2.4.0", "fflate": "^0.8.3" } }, "sha512-lOXU61Hq3LSP+WBPwO/KtUVEWbk3iLvpy2lngU8O1kSBPXTuGU/Od6vaCBUFRtXTrOIO7JaZAlD7TGuSdW+3Wg=="],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],
 
