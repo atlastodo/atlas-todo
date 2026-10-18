@@ -12,8 +12,5 @@ lib.fileset.toSource {
     (root + "/bun.lock")
     (root + "/apps/mobile")
     (root + "/apps/electron")
-    (root + "/packages")
-    # packages/client-core bundles the app manifests (the plaintext-field policy).
-    (root + "/manifests")
   ];
 }
