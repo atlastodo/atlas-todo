@@ -50,7 +50,7 @@ cp "$ROOT/apps/electron/package.json" "$OUTPUT_DIR/package.json"
 # The licence and the third-party notices for the JavaScript in the package (the desktop app has no
 # Rust; Electron itself comes from nixpkgs).
 cp "$ROOT/LICENSE" "$OUTPUT_DIR/LICENSE"
-node "$ROOT/scripts/third-party-licenses.mjs" --notices "$OUTPUT_DIR/THIRD_PARTY_NOTICES.txt" --no-rust
+node "$ROOT/scripts/third-party-licenses.mjs" --notices "$OUTPUT_DIR/THIRD_PARTY_NOTICES.txt"
 
 # Release marker, read by main.js: it turns off dev mode (--dev, a localhost dev server) for good.
 # Written into the package only -- apps/electron/dist stays a dev build.
