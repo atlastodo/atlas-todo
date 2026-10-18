@@ -1,0 +1,205 @@
+# Lint + test for every push to dev and main and every PR, or on demand. A push or PR only runs the
+# jobs whose files changed (see `changes`); the audit runs when dependencies change and once a week.
+# release.yml calls this same workflow on a v* tag, so a release is gated on the full suite.
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  # Literal "ci-" prefix: when release.yml calls this workflow, github.workflow is the caller's
+  # name, and a group shared with the caller would make this run wait on its own parent.
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  # A newer push supersedes the run still going for the previous one.
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # Bun is pinned in lockstep with devenv (its devenv.lock nixpkgs) -- bump them together.
+  BUN_VERSION: "1.4.2"
+  NODE_VERSION: "26"
+
+jobs:
+  # Decides which jobs run. A tag, a manual run or a call from release.yml runs everything; the
+  # weekly schedule runs only the audit. The branch push of a release commit
+  # (`chore(release): vX.Y.Z`) runs nothing: its tag is pushed in the same breath and release.yml
+  # runs the full suite for that commit.
+  changes:
+    name: Changes
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      lint_ts: ${{ steps.filter.outputs.lint_ts }}
+      test_ts: ${{ steps.filter.outputs.test_ts }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      deps: ${{ steps.filter.outputs.deps }}
+    steps:
+      - id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set_all() { for k in lint_ts test_ts mobile deps; do echo "$k=$1" >>"$GITHUB_OUTPUT"; done; }
+          case "$EVENT" in
+            schedule)
+              set_all false
+              echo "deps=true" >>"$GITHUB_OUTPUT"
+              exit 0
+              ;;
+            push)
+              if [ "$REF_TYPE" = tag ] || [[ "$BEFORE" =~ ^0*$ ]]; then set_all true; exit 0; fi
+              if [[ "$HEAD_MESSAGE" == "chore(release):"* ]]; then set_all false; exit 0; fi
+              files="$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq '.files[].filename')"
+              ;;
+            pull_request)
+              files="$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename')"
+              ;;
+            *)
+              set_all true
+              exit 0
+              ;;
+          esac
+          # The compare API lists at most 300 files; past that, assume everything changed.
+          if [ "$(grep -c . <<<"$files")" -ge 300 ]; then set_all true; exit 0; fi
+          ci='^\.github/workflows/ci\.yml$'
+          shared="^(package\.json$|bun\.lock$|bunfig\.toml$)|$ci"
+          deps="^(bun\.lock|package\.json|apps/[^/]+/package\.json)$|$ci"
+          has() { if grep -qE "$1" <<<"$files"; then echo true; else echo false; fi; }
+          {
+            # Prettier checks Markdown, YAML and JSON too, so every change lints.
+            echo "lint_ts=$(has .)"
+            echo "test_ts=$(has "$shared|^apps/electron/")"
+            echo "mobile=$(has "$shared|^apps/mobile/")"
+            echo "deps=$(has "$deps")"
+          } >>"$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+  lint-ts:
+    name: Lint (TypeScript)
+    needs: changes
+    if: ${{ needs.changes.outputs.lint_ts == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      # Every workspace that defines `typecheck`: mobile and electron.
+      - run: bun run --parallel --filter '*' typecheck
+      # The licences of the JS packages the builds ship, against an allow-list.
+      - run: node scripts/third-party-licenses.mjs --check
+      - run: bunx eslint .
+      - run: bunx prettier --check .
+
+  test-ts:
+    name: Test (TypeScript)
+    needs: changes
+    if: ${{ needs.changes.outputs.test_ts == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      # `--bun` runs vitest itself under Bun's runtime; these suites are runtime-agnostic pure TS.
+      - name: electron
+        working-directory: apps/electron
+        run: bunx --bun vitest run
+
+  test-mobile:
+    name: Test (mobile)
+    needs: changes
+    if: ${{ needs.changes.outputs.mobile == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # jest-expo must run under real Node: under Bun's runtime every suite dies at load
+      # ("Attempted to assign to readonly property"). Bun only installs the deps.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # Babel transforms of node_modules dominate jest-expo's cold start.
+          path: .jest-cache
+          key: jest-${{ runner.os }}-${{ hashFiles('bun.lock') }}-${{ github.sha }}
+          restore-keys: jest-${{ runner.os }}-${{ hashFiles('bun.lock') }}-
+      - run: bun install --frozen-lockfile
+      - run: node --version
+      - working-directory: apps/mobile
+        run: bun run test -- --ci --maxWorkers=4 --cacheDirectory="$GITHUB_WORKSPACE/.jest-cache"
+
+  # The audit surfaces advisories without blocking: they often sit in un-updatable transitive
+  # deps. Fixable ones go in `overrides` or a dependency bump, never an ignore list.
+  audit-js:
+    name: Audit (JS)
+    needs: changes
+    if: ${{ needs.changes.outputs.deps == 'true' }}
+    runs-on: ubuntu-24.04
+    # Stays red on the braces and node-forge advisories that have no fix yet: see `//audit-known`
+    # in the root package.json before chasing them.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+      # Reads bun.lock only; no install needed.
+      - run: bun audit

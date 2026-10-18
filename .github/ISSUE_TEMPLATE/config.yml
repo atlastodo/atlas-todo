@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/atlastodo/atlas-todo/blob/main/SECURITY.md
+    about: Please report vulnerabilities privately as described in SECURITY.md, not in a public issue.
+  - name: A problem with the server or self-hosting
+    url: https://github.com/atlastodo/atlas/issues/new/choose
+    about: The sync server, the Docker image, the NixOS module and the atlas CLI live in the core repository, atlastodo/atlas.
+  - name: Ask a question or share an idea
+    url: https://github.com/atlastodo/atlas-todo/discussions
+    about: Questions about using Atlas Todo, and ideas that are not yet a concrete feature request.
