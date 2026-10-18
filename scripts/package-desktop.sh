@@ -19,6 +19,8 @@ OUTPUT_DIR="${OUTPUT_DIR:-$ROOT/dist-desktop}"
 # built-in server (users type theirs on the sign-in screen). A distribution that should default to
 # a specific instance sets it here or via CI -- e.g. EXPO_PUBLIC_API_URL=https://todo.example.com/api
 export EXPO_PUBLIC_API_URL="${EXPO_PUBLIC_API_URL:-}"
+# The About screen's source and licence links (the release workflow passes github.repository).
+export EXPO_PUBLIC_REPO_URL="${EXPO_PUBLIC_REPO_URL:-https://github.com/atlastodo/atlas-todo}"
 export CI=1
 export EXPO_NO_TELEMETRY=1
 

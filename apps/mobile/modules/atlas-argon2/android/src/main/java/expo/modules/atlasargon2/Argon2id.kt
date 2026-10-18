@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.params.Argon2Parameters
 /**
  * Argon2id through Bouncy Castle's pure-Java implementation (no JNI), kept apart from the module so
  * it depends on nothing but Bouncy Castle. Its output must match the other clients' byte for byte
- * (`test-vectors/password_kdf_vectors.json`).
+ * (`password_kdf_vectors.json`, shipped in `@atlastodo/client-core` under `test-vectors/`).
  */
 object Argon2id {
   fun derive(

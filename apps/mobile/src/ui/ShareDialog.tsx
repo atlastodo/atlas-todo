@@ -49,7 +49,8 @@ import {
  * server-authoritative and REST-driven; a successful change `kick()`s a sync. Sharing is E2EE:
  * the invite goes first, then the project key is sealed to each invitee's pinned public key and
  * signed with the user's identity key. Each member gets a safety number to verify out of band;
- * removing a member rotates the project key. See docs/architecture.md.
+ * removing a member rotates the project key. See docs/architecture.md in the core repository
+ * (atlastodo/atlas).
  */
 
 const ROLE_KEY: Record<MemberRole, string> = {
