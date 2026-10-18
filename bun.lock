@@ -14,7 +14,7 @@
     },
     "apps/electron": {
       "name": "@atlastodo/electron",
-      "version": "0.1.11-rc.5",
+      "version": "0.1.11-rc.6",
       "devDependencies": {
         "@types/node": "^26.6.5",
         "electron": "^44.7.0",
@@ -24,7 +24,7 @@
     },
     "apps/mobile": {
       "name": "@atlastodo/mobile",
-      "version": "0.1.11-rc.5",
+      "version": "0.1.11-rc.6",
       "dependencies": {
         "@atlastodo/client-core": "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz",
         "@atlastodo/shared": "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz",
