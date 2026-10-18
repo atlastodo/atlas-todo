@@ -1,9 +1,10 @@
 /**
- * Metro config for the Bun-workspace monorepo.
+ * Metro config for the Bun workspace (apps/mobile, apps/electron).
  *
- * `@atlastodo/client-core` and `@atlastodo/shared` are consumed from their TypeScript source, so
- * Metro must watch the workspace root, resolve packages from both the app's and the root's
- * `node_modules`, and honour the package `exports` field (and its `@atlastodo/source` condition).
+ * `@atlastodo/client-core` and `@atlastodo/shared` are the core release's built packages (their
+ * ESM `dist/`), installed like any other dependency. Bun keeps every installed package in the
+ * workspace root's `node_modules/.bun`, so Metro watches the workspace root, resolves from both
+ * the app's and the root's `node_modules`, and honours the package `exports` field.
  *
  * Hierarchical lookup must stay enabled: Bun's isolated linker puts each package's dependencies
  * under `node_modules/.bun/<pkg>/node_modules`, so Metro has to walk up from a module's real path
@@ -31,12 +32,5 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.unstable_enablePackageExports = true;
-// The core packages' `exports` lead with an `@atlastodo/source` condition (their src/), ahead of
-// the dist/ a published tarball carries: in this workspace they are bundled from source, unbuilt.
-// A consumer of the tarballs leaves it off and gets dist/.
-config.resolver.unstable_conditionNames = [
-  ...(config.resolver.unstable_conditionNames ?? []),
-  "@atlastodo/source",
-];
 
 module.exports = withNativeWind(config, { input: "./global.css" });

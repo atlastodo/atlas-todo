@@ -36,7 +36,7 @@ module.exports = {
   // jest-expo's stock allowlist (anchored to the first `node_modules/`) transforms nothing. The
   // untranspiled ESM/Flow packages (react-native, expo-*, nativewind, ...) all live there.
   transformIgnorePatterns: [
-    "node_modules/.bun/.*/node_modules/(?!(.*(react-native|expo|@expo|@noble|@scure|@react-navigation)))",
+    "node_modules/.bun/.*/node_modules/(?!(.*(react-native|expo|@expo|@noble|@scure|@react-navigation|@atlastodo)))",
   ],
   transform: {
     // jest-expo's transform misses `.mjs`, which lucide's per-icon deep imports resolve to.
@@ -44,17 +44,9 @@ module.exports = {
     ...expoPreset.transform,
   },
   moduleNameMapper: {
-    // The workspace packages are raw TS source, as Metro and tsc see them (their `@atlastodo/source`
-    // export condition). The fixtures a package tarball ships under test-vectors/ are the
-    // repository's test-vectors/ here, which a pack copies them from.
-    "^@atlastodo/shared$": path.resolve(__dirname, "../../packages/shared/src/index.ts"),
-    "^@atlastodo/client-core$": path.resolve(__dirname, "../../packages/client-core/src/index.ts"),
-    "^@atlastodo/(client-core|shared|sdk)/test-vectors/(.*)$": path.resolve(
-      __dirname,
-      "../../test-vectors/$2",
-    ),
-    // Babel injects `@babel/runtime` helpers relative to the file, and `packages/shared/` cannot
-    // reach the app's copy under the isolated linker.
+    // Babel injects `@babel/runtime` helpers relative to the file, and a package transformed from
+    // `node_modules/.bun` (the core packages' ESM `dist/`, among others) cannot reach the app's
+    // copy under the isolated linker.
     "^@babel/runtime/(.*)$": path.resolve(__dirname, "node_modules/@babel/runtime/$1"),
     ...expoPreset.moduleNameMapper,
   },
