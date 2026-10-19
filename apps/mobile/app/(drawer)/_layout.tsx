@@ -627,6 +627,9 @@ export default function DrawerLayout() {
         }}
       >
         <Drawer.Screen name="(tabs)" options={{ title: t("nav.tasks"), headerShown: false }} />
+        {/* The landing route `/` only redirects (index.tsx). expo-router 58 renders nothing for a
+            focused route without a Drawer.Screen, so an undeclared index left `/` blank. */}
+        <Drawer.Screen name="index" options={{ title: "Atlas Todo", headerShown: false }} />
         {NAV.filter((item) => !PRIMARY_TABS.includes(item.view)).map((item) => (
           <Drawer.Screen
             key={item.view}
