@@ -21,7 +21,7 @@
 ## Verification
 
 - `test:all` = full suite, in order: vitest in `apps/electron` → jest in `apps/mobile`, under `set -euo pipefail` (the first failure stops it). Nothing needs Postgres. `apps/mobile/src/ui/TaskRow.rerender.test.tsx` is a known flake under load: rerun it alone before chasing it.
-- `lint` = `tsc --noEmit` for `apps/mobile` and `apps/electron` + `eslint .` (flat config in `eslint.config.mjs`: typescript-eslint recommended + react-hooks) + `prettier --check .` (`.prettierrc.json`, `.prettierignore`) + `scripts/third-party-licenses.mjs --check` + the `nix/bun.nix` freshness check. `fmt` runs `prettier --write .`. CI's `Lint (TypeScript)` typechecks with `bun run --parallel --filter '*' typecheck`.
+- `lint` = `tsc --noEmit` for `apps/mobile` and `apps/electron` + `oxlint .` (`.oxlintrc.json`: the correctness category, typescript-eslint's recommended rules, `rules-of-hooks` + `exhaustive-deps`, and the local `scripts/oxlint/atlas-plugin.mjs` rule against `className` on `Animated.*`; disable comments are `// oxlint-disable-next-line <rule>`, `eslint-disable` ones are ignored) + `prettier --check .` (`.prettierrc.json`, `.prettierignore`) + `scripts/third-party-licenses.mjs --check` + the `nix/bun.nix` freshness check. `fmt` runs `prettier --write .`. CI's `Lint (TypeScript)` typechecks with `bun run --parallel --filter '*' typecheck`.
 - Runners are per-package, deliberately separate (not `bun test`):
   - `apps/electron`: `cd apps/electron && bunx --bun vitest run src/foo.test.ts` (vitest under Bun's runtime, supported since Bun 1.4; `test:all` and CI do the same).
   - `apps/mobile`: jest-expo (`bun run test -- <pattern>`) — must run under real Node; under Bun's runtime it dies at load (`Attempted to assign to readonly property`).

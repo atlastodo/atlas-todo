@@ -33,7 +33,7 @@ export function useFocusSessions(): UseFocusSessions {
 
   const sessions = useMemo(
     () => store.list("focus_session").map((e) => toFocusSession(e.id, e.fields)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
 

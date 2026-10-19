@@ -79,7 +79,7 @@ export function useReminderTaskIds(): Set<string> {
       }
       return ids;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
 }
@@ -93,7 +93,7 @@ export function useReminders(): UseReminders {
         .list("reminder")
         .filter((e) => !isTrashed(e.fields))
         .map((e) => toReminder(e.id, e.fields)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
 

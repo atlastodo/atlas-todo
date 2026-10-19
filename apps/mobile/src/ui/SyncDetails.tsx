@@ -354,7 +354,7 @@ function KeylessProjects() {
         };
       });
     // The diagnostics fields change after a sync and re-read the mutable store.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [store, keyring, myId, t, diagnostics.lastSyncAt, diagnostics.deferred, diagnostics.locked]);
 
   if (!auth || !myId || projects.length === 0) return null;

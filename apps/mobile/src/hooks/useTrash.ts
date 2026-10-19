@@ -60,7 +60,7 @@ export function useTrash(): UseTrash {
           ? { ...item, label: attachmentName(store, keyring, item.id) }
           : item,
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version, keyring],
   );
 

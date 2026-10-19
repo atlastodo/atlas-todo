@@ -168,15 +168,15 @@ in
     # jest-expo must run under real Node (`bun run` only starts it).
     (cd apps/mobile && bun run test)
   '';
-  # Every workspace's typecheck (mobile and electron, as CI's `Lint (TypeScript)`), ESLint
-  # (`eslint.config.mjs`), `prettier --check` and the shipped licences.
+  # Every workspace's typecheck (mobile and electron, as CI's `Lint (TypeScript)`), oxlint
+  # (`.oxlintrc.json`), `prettier --check` and the shipped licences.
   # One command per line: under `set -e` a failure on the left of `&&` would not stop the script.
   scripts.lint.exec = ''
     set -euo pipefail
     cd "$DEVENV_ROOT"
     (cd apps/mobile && bun run typecheck)
     (cd apps/electron && bun run typecheck)
-    bunx eslint .
+    bunx oxlint .
     bunx prettier --check .
     node scripts/third-party-licenses.mjs --check
     # nix/bun.nix must match bun.lock, or the flake's web-dist/atlas-desktop builds fail offline.

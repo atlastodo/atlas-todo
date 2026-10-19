@@ -70,7 +70,7 @@ export function useHabitCheckins(): UseHabitCheckins {
       );
     }
     return { index, rows };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [store, version]);
 
   const statesFor = useCallback((habitId: string) => index.get(habitId) ?? EMPTY, [index]);

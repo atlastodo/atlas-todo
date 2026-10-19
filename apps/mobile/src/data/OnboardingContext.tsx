@@ -43,7 +43,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   const hasExistingData = useMemo(
     () => store.list("task").length > 0 || store.list("project").length > 0,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
 

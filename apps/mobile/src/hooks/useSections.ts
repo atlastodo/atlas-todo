@@ -51,7 +51,7 @@ export function useSections(projectId: string): UseSections {
         .map((e) => toSection(e.id, e.fields))
         .filter((s) => s.project_id === projectId && s.archived_at == null)
         .sort((a, b) => a.sort_order - b.sort_order),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version, projectId],
   );
 

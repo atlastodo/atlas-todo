@@ -286,7 +286,7 @@ function Wizard({
       setFirstTaskTitle("");
     }
     // `steps` follows the mode, which a running wizard never changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, startAt]);
 
   const TOTAL_STEPS = steps.length;

@@ -159,7 +159,7 @@ export function usePreferences(): UsePreferences {
 
   const prefs = useMemo(
     () => store.get("preference", PREF_ID) ?? {},
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
 

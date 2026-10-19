@@ -25,7 +25,7 @@ export function useAllSections(): UseAllSections {
       }
     }
     return m;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [store, version]);
 
   return useMemo(
