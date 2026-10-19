@@ -21,7 +21,7 @@ updates:
 
   # Bun workspace (root bun.lock covers apps/*). Bun itself is pinned in lockstep across devenv and
   # the workflows, so Dependabot doesn't touch it. The core packages (@atlastodo/*) are pinned to a
-  # core release by URL and move by hand, with that release.
+  # core release's exact npm version and move by hand, with that release.
   - package-ecosystem: bun
     directory: /
     target-branch: dev

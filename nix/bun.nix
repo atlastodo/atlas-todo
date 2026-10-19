@@ -25,8 +25,16 @@
     url = "https://registry.npmjs.org/@asamuzakjp/css-color/-/css-color-3.2.0.tgz";
     hash = "sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==";
   };
+  "@atlastodo/client-core@0.1.11-rc.8" = fetchurl {
+    url = "https://registry.npmjs.org/@atlastodo/client-core/-/client-core-0.1.11-rc.8.tgz";
+    hash = "sha512-4kZ+w1wH9ooCsvRGy/k4UA8TKfncidfV8kVD4TnCMoSM7FQhNXlEMT/mLjtsbXC19PNRK4bTERNeQe2wHTUkBg==";
+  };
   "@atlastodo/electron" = copyPathToStore ../apps/electron;
   "@atlastodo/mobile" = copyPathToStore ../apps/mobile;
+  "@atlastodo/shared@0.1.11-rc.8" = fetchurl {
+    url = "https://registry.npmjs.org/@atlastodo/shared/-/shared-0.1.11-rc.8.tgz";
+    hash = "sha512-izmRDZC2ms9Vn6AwRWLbnxjeILqGEB+Sgd3rt2ORe6LceqS8hTuQEa1E6ce4KfjtJwXhl9ikzte3PNHnZ+q8WQ==";
+  };
   "@babel/code-frame@7.29.7" = fetchurl {
     url = "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.7.tgz";
     hash = "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw==";
@@ -4346,14 +4354,6 @@
   "tailwindcss@3.4.19" = fetchurl {
     url = "https://registry.npmjs.org/tailwindcss/-/tailwindcss-3.4.19.tgz";
     hash = "sha512-3ofp+LL8E+pK/JuPLPggVAIaEuhvIz4qNcf3nA1Xn2o/7fb7s/TYpHhwGDv1ZU3PkBluUVaF8PyCHcm48cKLWQ==";
-  };
-  "tarball:https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz" = builtins.fetchTarball {
-    url = "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-client-core-0.1.11-rc.5.tgz";
-    sha256 = "sha256-c6RQJp0Cx4RDD/vDDFhCQkIF9jXmT5MrJQYAMV+eENs=";
-  };
-  "tarball:https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz" = builtins.fetchTarball {
-    url = "https://github.com/atlastodo/atlas/releases/download/v0.1.11-rc.5/atlastodo-shared-0.1.11-rc.5.tgz";
-    sha256 = "sha256-Pjd8fOO/xGxWWOyQ/cF2vULGBhbZbpEfeaSFEXWg1DM=";
   };
   "terminal-link@2.1.1" = fetchurl {
     url = "https://registry.npmjs.org/terminal-link/-/terminal-link-2.1.1.tgz";

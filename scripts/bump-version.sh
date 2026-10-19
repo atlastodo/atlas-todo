@@ -89,15 +89,15 @@ const edit = (f, fn) => {
 };
 
 // JSON manifests: only the top-level (and expo) "version" field is the plain "x.y.z" string --
-// third-party deps use caret ranges and the core packages release tarball URLs, so this exact match
-// is safe.
+// third-party deps use caret ranges and the core packages (exact versions) sit under their own
+// names, never a "version" key, so this exact match is safe.
 //
 // bun.lock records each workspace package's version too. It once sat at an old version for two
 // releases, so every `bun install` rewrote it and dirtied the tree (`--frozen-lockfile` passes
 // either way, which is why the drift went unnoticed). The same exact match is safe there: third-party
 // packages are recorded as ["name@ver", ...] arrays, so the only `"version": "x.y.z"` keys in the
-// file are the workspace ones (a tarball dependency records its version inside its URL, never as a
-// "version" key).
+// file are the workspace ones (a registry dependency records its version inside its ["name@ver"] array,
+// never as a "version" key).
 // Every workspace package, found from the root `workspaces` globs ("dir/*" or a plain path), so a
 // package added later is bumped and verified too. Directories without a package.json (or without
 // a version) are skipped.
