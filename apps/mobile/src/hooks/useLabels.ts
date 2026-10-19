@@ -44,7 +44,7 @@ export function useLabels(): UseLabels {
         .filter((e) => !isTrashed(e.fields))
         .map((e) => toLabel(e.id, e.fields))
         .sort((a, b) => a.name.localeCompare(b.name)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, labelRevision],
   );
 

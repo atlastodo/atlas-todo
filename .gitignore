@@ -9,7 +9,7 @@ devenv.local.yaml
 # pre-commit
 .pre-commit-config.yaml
 
-# The jest cache CI keeps inside the checkout; Prettier skips it via this file, ESLint via its own
+# The jest cache CI keeps inside the checkout; Prettier skips it via this file, oxlint via its own
 # ignores.
 /.jest-cache/
 

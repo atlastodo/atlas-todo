@@ -73,7 +73,7 @@ export function useProjects(): UseProjects {
         .filter((e) => !isTrashed(e.fields))
         .map((e) => toProject(e.id, e.fields))
         .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
 

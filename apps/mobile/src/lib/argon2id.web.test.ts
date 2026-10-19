@@ -28,7 +28,7 @@ interface Vectors {
     mek: string;
   }[];
 }
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// oxlint-disable-next-line typescript/no-require-imports
 const vectors = require("@atlastodo/client-core/test-vectors/password_kdf_vectors.json") as Vectors;
 
 describe("Argon2id on the web", () => {

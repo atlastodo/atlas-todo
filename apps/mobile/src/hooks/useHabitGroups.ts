@@ -79,7 +79,7 @@ export function useHabitGroups(todayMs: number, scope: HabitsScope = "all"): Use
       return members.length === 0 || members.some((h) => active.has(h.id));
     });
     return { listed, hiddenByScope: all.length - listed.length };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [all, habits, statesFor, scope, todayKey, weekStartsOn]);
 
   const rows = useMemo(

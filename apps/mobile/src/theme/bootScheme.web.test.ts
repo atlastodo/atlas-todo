@@ -11,7 +11,7 @@ function boot(prefersDark: boolean, saved: string | null) {
   if (saved === null) window.localStorage.clear();
   else window.localStorage.setItem(SCHEME_STORAGE_KEY, saved);
   // Re-run the module for each case: it applies the scheme as an import side effect.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // oxlint-disable-next-line typescript/no-require-imports
   jest.isolateModules(() => require("./bootScheme.web"));
 }
 

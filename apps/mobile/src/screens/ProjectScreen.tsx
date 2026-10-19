@@ -141,7 +141,7 @@ export function ProjectScreen({
   const project = useMemo(() => {
     const e = store.get("project", projectId);
     return e ? toProject(projectId, e) : null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [store, version, projectId]);
 
   // Everything in this project, completed included: the set a group widens from so a matched task's

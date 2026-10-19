@@ -86,7 +86,7 @@ The devenv scripts are short shell in `devenv.nix`. Without devenv, `test:all` a
 
 # lint
 bun run --parallel --filter '*' typecheck
-bunx eslint .
+bunx oxlint .
 bunx prettier --check .
 node scripts/third-party-licenses.mjs --check
 ```
@@ -122,7 +122,7 @@ All of these run inside `devenv shell` (without it, see [Without Nix](#without-n
 | `web:release-tarball`              | build the release's web app tarball                                        |
 | `nix:bun-lock`                     | regenerate `nix/bun.nix` after a `bun.lock` change                         |
 | `test:all`                         | every test suite (see below)                                               |
-| `lint`                             | typecheck, ESLint, Prettier check, licences, `nix/bun.nix` freshness       |
+| `lint`                             | typecheck, oxlint, Prettier check, licences, `nix/bun.nix` freshness       |
 | `fmt`                              | prettier                                                                   |
 | `screenshots`                      | regenerate `docs/screenshots` (needs Docker: a throwaway server and DB)    |
 | `emulator:start`, `mobile:android` | Android emulator and native dev build (needs the SDK)                      |
@@ -140,7 +140,7 @@ builtin.
 1. vitest in `apps/electron`
 2. jest (jest-expo) in `apps/mobile`
 
-`lint` typechecks `apps/mobile` and `apps/electron` and runs `eslint .`, `prettier --check .`, the
+`lint` typechecks `apps/mobile` and `apps/electron` and runs `oxlint .`, `prettier --check .`, the
 licence check and the `nix/bun.nix` freshness check. `fmt` fixes the formatting.
 
 To run one test:
@@ -202,7 +202,7 @@ no secrets, so they get the same checks:
 
 | Check             | What it runs                                                       |
 | ----------------- | ------------------------------------------------------------------ |
-| Lint (TypeScript) | typecheck of mobile and electron; ESLint; Prettier check; licences |
+| Lint (TypeScript) | typecheck of mobile and electron; oxlint; Prettier check; licences |
 | Test (TypeScript) | vitest in apps/electron                                            |
 | Test (mobile)     | jest in apps/mobile                                                |
 | Audit (JS)        | `bun audit` (allowed to fail)                                      |

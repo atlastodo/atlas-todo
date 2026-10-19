@@ -26,7 +26,7 @@ export function useComments(): UseComments {
         .list("comment")
         .filter((e) => !isTrashed(e.fields))
         .map((e) => toComment(e.id, e.fields)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
 

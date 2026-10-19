@@ -39,7 +39,7 @@ export function usePomodoroConfig(): UsePomodoroConfig {
       longBreakMin: read("longBreakMin"),
       longBreakEvery: read("longBreakEvery"),
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [store, version]);
 
   const setConfig = useCallback(

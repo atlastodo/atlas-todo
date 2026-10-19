@@ -37,7 +37,7 @@ export function useProjectMembers(): UseProjectMembers {
 
   const members = useMemo(
     () => store.list("project_member").map((e) => toMember(e.id, e.fields)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
 
