@@ -1,4 +1,4 @@
-import { fireEvent, render as render, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import {
   ApiError,
   Keyring,

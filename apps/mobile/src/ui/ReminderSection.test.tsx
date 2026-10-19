@@ -1,4 +1,4 @@
-import { fireEvent, render as render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore, type Task } from "@atlastodo/client-core";
 import { isTrashed, toReminder } from "@atlastodo/shared";
 import { withApp } from "../testutil";
