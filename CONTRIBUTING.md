@@ -155,11 +155,10 @@ Tests live next to the code they test: `apps/electron/src/*.test.ts` and
 
 ## Core packages
 
-`apps/mobile` depends on `@atlastodo/client-core` and `@atlastodo/shared` as release tarballs of
-the core repository, pinned by URL in `apps/mobile/package.json` and, for the packages' own
-dependencies on each other, in the root `package.json`'s `overrides`. Moving to a new core release
-is a change of those four URLs (keep them on one version), then `bun install`, `nix:bun-lock`,
-`test:all` and a web export. See [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md#pinning-the-core-packages-by-release-url).
+`apps/mobile` depends on `@atlastodo/client-core` and `@atlastodo/shared` from npm, pinned to one
+exact core release version in `apps/mobile/package.json`. Moving to a new core release is a change
+of those two versions (keep them on one version), then `bun install`, `nix:bun-lock`, `test:all`
+and a web export. See [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md#pinning-the-core-packages).
 
 ## Adding or changing UI text
 

@@ -132,7 +132,7 @@ in
     command -v docker >/dev/null && docker info >/dev/null 2>&1 || { echo "!! screenshots needs a running Docker daemon." >&2; exit 1; }
     # The core release the app pins. It was published before the core repository was renamed, so it
     # exists under the old image name only; later core releases are ghcr.io/atlastodo/atlas:X.Y.Z.
-    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas-todo:0.1.11-rc.5}"
+    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas:0.1.11-rc.9}"
     work="$(mktemp -d)"
     net="atlas-screenshots-$$"
     cleanup() {

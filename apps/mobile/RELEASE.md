@@ -112,7 +112,7 @@ and those of any country the app is distributed in, rather than relying on this 
 version. A release bumps `expo.version` in lockstep across all of this repository's manifests:
 `package.json`, `apps/mobile/package.json`, `apps/electron/package.json`, `apps/mobile/app.json`
 and `bun.lock`. The core packages the app pins (see
-[Pinning the core packages](#pinning-the-core-packages-by-release-url)) have their own version
+[Pinning the core packages](#pinning-the-core-packages)) have their own version
 line in the core repository and are not part of a bump.
 
 Use `scripts/bump-version.sh` (or `version:bump <version>` in `devenv`). It updates every
@@ -230,33 +230,28 @@ All are optional. An unset or empty variable means the default.
 | `PLAY_STORE_PRERELEASE_TRACK` | `internal`               | the Play track a pre-release's (`-rc.N` tag) AAB goes to                           |
 | `EXPO_PUBLIC_API_URL`         | unset                    | a server URL baked into the desktop tarball; unset means users pick one at sign-in |
 
-### Pinning the core packages by release URL
+### Pinning the core packages
 
 The app depends on the core packages (`@atlastodo/client-core`, `@atlastodo/shared`) of a core
-release, pinned by the release's tarball URL. Each package depends on its siblings at the exact
-release version, which npm cannot resolve, so the siblings are pinned through the root
-`package.json`'s `overrides` as well:
+release, from npm at the release's exact version (a pre-release is published under the `next`
+dist-tag):
 
 ```json
 {
   "dependencies": {
-    "@atlastodo/client-core": "https://github.com/atlastodo/atlas/releases/download/vX.Y.Z/atlastodo-client-core-X.Y.Z.tgz",
-    "@atlastodo/shared": "https://github.com/atlastodo/atlas/releases/download/vX.Y.Z/atlastodo-shared-X.Y.Z.tgz"
-  },
-  "overrides": {
-    "@atlastodo/client-core": "https://github.com/atlastodo/atlas/releases/download/vX.Y.Z/atlastodo-client-core-X.Y.Z.tgz",
-    "@atlastodo/shared": "https://github.com/atlastodo/atlas/releases/download/vX.Y.Z/atlastodo-shared-X.Y.Z.tgz"
+    "@atlastodo/client-core": "X.Y.Z",
+    "@atlastodo/shared": "X.Y.Z"
   }
 }
 ```
 
-(`dependencies` in `apps/mobile/package.json`, `overrides` in the root one.) The lockfile records
-each tarball's integrity hash, and `nix/bun.nix` its Nix hash, so a re-uploaded asset fails the
-install instead of slipping in. Once the packages are on npm, both blocks can become plain
-versions (`"@atlastodo/shared": "X.Y.Z"`) and the overrides can go.
+(in `apps/mobile/package.json`). Each package depends on its siblings at the same exact version,
+which npm resolves, so the root `package.json` needs no `overrides` for them. The lockfile records
+each package's integrity hash, and `nix/bun.nix` its Nix hash.
 
-To move to another core release: change the four URLs (one version for all), `bun install`,
-`nix:bun-lock`, then `test:all`, `lint` and a web export. The app imports the packages' built
+To move to another core release: change both versions (one version for both), `bun install`,
+`nix:bun-lock`, then `test:all`, `lint` and a web export, and move the `ATLAS_SERVER_IMAGE`
+default in `devenv.nix` (`screenshots`) to the same release. The app imports the packages' built
 `dist/` (ESM, with declarations), and its tests assert the fixtures they ship, e.g.
 `require("@atlastodo/client-core/test-vectors/password_kdf_vectors.json")`.
 
