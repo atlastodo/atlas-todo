@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { PROJECT_COLORS, PROJECT_ICON_NAMES } from "@atlas/shared";
+import { PROJECT_COLORS, PROJECT_ICON_NAMES } from "@atlastodo/shared";
 import { PROJECT_ICONS } from "./projectIcons";
 import { Check } from "./icons";
 
@@ -28,7 +28,7 @@ export function StylePicker({
   return (
     <>
       <View className="gap-2">
-        <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+        <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
           {iconLabel}
         </Text>
         <View accessibilityRole="radiogroup" className="flex-row flex-wrap gap-2">
@@ -65,7 +65,7 @@ export function StylePicker({
       </View>
 
       <View className="gap-2">
-        <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+        <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
           {colorLabel}
         </Text>
         <View accessibilityRole="radiogroup" className="flex-row flex-wrap gap-2">

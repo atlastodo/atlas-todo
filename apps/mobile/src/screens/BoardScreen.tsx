@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
   useWindowDimensions,
+  type ViewInstance,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import ReorderableList, { type ReorderableListReorderEvent } from "react-native-reorderable-list";
@@ -21,8 +22,8 @@ import {
   openTasks,
   rankBetween,
   type BoardMoveWrite,
-} from "@atlas/shared";
-import type { CreateTaskInput, Label, Section, Task } from "@atlas/client-core";
+} from "@atlastodo/shared";
+import type { CreateTaskInput, Label, Section, Task } from "@atlastodo/client-core";
 import { useSections } from "../hooks/useSections";
 import { useTaskListView } from "../hooks/useTaskListView";
 import { useDragLift, useDragSource, useDropTarget } from "../hooks/useCardDnd";
@@ -611,7 +612,7 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
               onSubmitEditing={addSection}
               onKeyPress={escapeSection.onKeyPress}
               placeholder={t("board.addSection")}
-              placeholderTextColor="#a1a1aa"
+              placeholderTextColor="#737373"
               returnKeyType="done"
               {...KEEP_FOCUS_SUBMIT}
               className="flex-1 py-1 text-sm text-neutral-900 dark:text-neutral-100"
@@ -771,9 +772,9 @@ function BoardColumn({
   onCardActions?: (task: Task, pos: MenuPos) => void;
 }) {
   const { t } = useTranslation();
-  const columnRef = useRef<View>(null);
-  const headerRef = useRef<View>(null);
-  const topDropRef = useRef<View>(null);
+  const columnRef = useRef<ViewInstance>(null);
+  const headerRef = useRef<ViewInstance>(null);
+  const topDropRef = useRef<ViewInstance>(null);
 
   const [renameDraft, setRenameDraft] = useState(column.name);
   useEffect(() => {
@@ -801,8 +802,8 @@ function BoardColumn({
   const topOver = useDropTarget(topDropRef, (draggedId) => {
     onDropCard(draggedId, 0);
   });
-  const bottomDropRef = useRef<View>(null);
-  const footerDropRef = useRef<View>(null);
+  const bottomDropRef = useRef<ViewInstance>(null);
+  const footerDropRef = useRef<ViewInstance>(null);
   const bottomOver = useDropTarget(bottomDropRef, (draggedId) => {
     onDropCard(draggedId, Number.MAX_SAFE_INTEGER);
   });
@@ -940,7 +941,7 @@ function BoardColumn({
               hitSlop={8}
               className="p-1 web:cursor-pointer opacity-70 hover:opacity-100"
             >
-              <Pencil size={14} className="text-neutral-400" />
+              <Pencil size={14} className="text-neutral-500" />
             </Pressable>
           )}
 
@@ -954,7 +955,7 @@ function BoardColumn({
               hitSlop={8}
               className="p-1 web:cursor-pointer opacity-70 hover:opacity-100"
             >
-              <EllipsisVertical size={15} className="text-neutral-400" />
+              <EllipsisVertical size={15} className="text-neutral-500" />
             </Pressable>
           )}
         </View>
@@ -989,7 +990,7 @@ function BoardColumn({
           {over ? (
             ghost
           ) : (
-            <Text className="text-xs text-neutral-400 dark:text-neutral-500">
+            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
               {t("board.noTasks", "No tasks")}
             </Text>
           )}
@@ -1219,8 +1220,8 @@ function DraggableCard({
   onContextMenu?: (task: Task, pos: MenuPos) => void;
   drag?: () => void;
 }) {
-  const ref = useRef<View>(null);
-  const bottomEdgeRef = useRef<View>(null);
+  const ref = useRef<ViewInstance>(null);
+  const bottomEdgeRef = useRef<ViewInstance>(null);
   const selectMode = useSelection().mode;
   const dragging = useDragSource(ref, () => task.id, {
     enabled: !task.locked && !selectMode,

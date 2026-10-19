@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 import { useTranslation } from "react-i18next";
-import { isAdmin } from "@atlas/client-core";
+import { isAdmin } from "@atlastodo/client-core";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";
 import { useIsWide } from "../hooks/useIsWide";
@@ -17,6 +17,7 @@ import { AppearanceSection } from "./settings/AppearanceSection";
 import { CalendarSection } from "./settings/CalendarSection";
 import { DataSection } from "./settings/DataSection";
 import { DesktopSection } from "./settings/DesktopSection";
+import { ApiTokensSection } from "./settings/ApiTokensSection";
 import { DevicesSection } from "./settings/DevicesSection";
 import { FeaturesSection } from "./settings/FeaturesSection";
 import { HelpSection } from "./settings/HelpSection";
@@ -72,7 +73,7 @@ export function SettingsScreen({
   const isWide = useIsWide();
   const { session } = useAuth();
   const { localOnly } = useStore();
-  const pillScrollViewRef = useRef<ScrollView>(null);
+  const pillScrollViewRef = useRef<ScrollViewInstance>(null);
   const pillX = useRef<Partial<Record<SettingsSectionId, number>>>({});
 
   // The URL owns the selection (`?section=`), so deep links and back/forward land on the same section.
@@ -121,6 +122,9 @@ export function SettingsScreen({
       </SettingsPane>
       <SettingsPane id="devices" active={active}>
         <DevicesSection />
+      </SettingsPane>
+      <SettingsPane id="apiTokens" active={active}>
+        <ApiTokensSection />
       </SettingsPane>
       <SettingsPane id="desktop" active={active}>
         <DesktopSection />

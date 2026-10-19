@@ -7,16 +7,23 @@ import {
   View,
   type KeyboardTypeOptions,
   type TextInputProps,
+  type TextInputInstance,
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { ApiError, RecoveryPhraseError, apiErrorCode } from "@atlas/client-core";
-import { CircleAlert } from "../ui/icons";
+import {
+  ApiError,
+  RecoveryPhraseError,
+  ServerIncompatibleError,
+  apiErrorCode,
+} from "@atlastodo/client-core";
+import { CircleAlert, KeyRound } from "../ui/icons";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { useAuth, type SignOutNotice } from "./AuthContext";
 import { defaultServerUrl, isOnlineWeb, loadServerUrl } from "./serverUrl";
 import { readInviteFromLink } from "./inviteLink";
 import { useLocalMode } from "./localMode";
+import { describePasskeyError } from "./passkeyErrors";
 
 /**
  * The sign-in / sign-up / recover form, shared by the standalone `LoginScreen` and the welcome
@@ -49,7 +56,15 @@ export function useAuthForm({
 }: AuthFormOptions = {}) {
   const { t } = useTranslation();
   const local = useLocalMode();
-  const { login, signup, recoverAccount, cancelAccountDeletion, changeServerUrl } = useAuth();
+  const {
+    login,
+    signup,
+    recoverAccount,
+    cancelAccountDeletion,
+    changeServerUrl,
+    loginWithPasskey,
+    signupWithPasskey,
+  } = useAuth();
   // An admin's invite link (web) opens straight into signup with its code filled in.
   const [inviteFromLink] = useState(readInviteFromLink);
   const [invite, setInvite] = useState(inviteFromLink);
@@ -90,7 +105,7 @@ export function useAuthForm({
     setError(null);
   };
 
-  const submit = async () => {
+  const submit = async (via: "password" | "passkey" = "password") => {
     if (busy) return;
     setError(null);
     setIsScheduledDeletion(false);
@@ -109,7 +124,12 @@ export function useAuthForm({
     });
     try {
       if (url !== effectiveUrl) await changeServerUrl(url);
-      if (mode === "login") {
+      if (via === "passkey" && mode === "login") {
+        // Email-first when one is typed, else the device offers its passkeys for this site.
+        await loginWithPasskey(email.trim() || undefined);
+      } else if (via === "passkey" && mode === "signup") {
+        await signupWithPasskey(email, displayName, invite.trim() || undefined);
+      } else if (mode === "login") {
         await login(email, password);
       } else if (mode === "signup") {
         // A closed instance still admits a single signup through an invite code.
@@ -118,12 +138,21 @@ export function useAuthForm({
         await recoverAccount(email, recoveryInput.trim(), password);
       }
     } catch (err) {
-      if (
+      const passkeyError = describePasskeyError(err, t);
+      if (passkeyError !== null) {
+        setError(passkeyError);
+      } else if (
         mode === "recover" &&
         (err instanceof RecoveryPhraseError || (err instanceof ApiError && err.status === 401))
       ) {
         // A wrong phrase fails before anything is posted; a 401 from /auth/recover means the same.
         setError(t("unlock.recoveryPhraseInvalid"));
+      } else if (err instanceof ServerIncompatibleError) {
+        setError(
+          err.incompatibility.reason === "apps"
+            ? t("auth.serverMissingApp")
+            : t("auth.serverTooOld"),
+        );
       } else if (err instanceof ApiError) {
         if (err.message === "account_scheduled_deletion") {
           const remaining = (err.data as { days_remaining?: unknown } | undefined)?.days_remaining;
@@ -224,10 +253,12 @@ export function AuthForm({
     submit,
     handleRestore,
   } = form;
+  // Offered where this device can use passkeys; the server's support is checked on use.
+  const passkeys = useAuth().passkeyAuthenticator !== null;
   // Return on one field moves to the next, as a credential form should.
-  const emailRef = useRef<TextInput>(null);
-  const phraseRef = useRef<TextInput>(null);
-  const passwordRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInputInstance>(null);
+  const phraseRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   return (
     <>
@@ -276,7 +307,7 @@ export function AuthForm({
           secureTextEntry
           textContentType={mode === "login" ? "password" : "newPassword"}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
-          onSubmitEditing={submit}
+          onSubmitEditing={() => void submit()}
         />
         {mode === "signup" && (
           <Field
@@ -315,7 +346,7 @@ export function AuthForm({
         <Pressable
           accessibilityRole="button"
           disabled={busy}
-          onPress={submit}
+          onPress={() => void submit()}
           className={
             "mt-1 flex-row items-center justify-center gap-2 rounded-md bg-accent-600 px-3 py-3 active:bg-accent-500 " +
             (busy ? "opacity-60" : "")
@@ -330,6 +361,37 @@ export function AuthForm({
                 : t("auth.resetAndRecover")}
           </Text>
         </Pressable>
+
+        {passkeys && mode !== "recover" && (
+          <>
+            <View className="flex-row items-center gap-3">
+              <View className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
+              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+                {t("auth.orDivider")}
+              </Text>
+              <View className="h-px flex-1 bg-neutral-200 dark:bg-neutral-800" />
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
+              onPress={() => void submit("passkey")}
+              className={
+                "flex-row items-center justify-center gap-2 rounded-md border border-neutral-300 px-3 py-3 dark:border-neutral-700 " +
+                (busy ? "opacity-60" : "")
+              }
+            >
+              <KeyRound size={18} className="text-neutral-700 dark:text-neutral-200" />
+              <Text className="text-sm font-medium text-neutral-800 dark:text-neutral-100">
+                {mode === "login" ? t("auth.passkeySignIn") : t("auth.passkeySignUp")}
+              </Text>
+            </Pressable>
+            {mode === "signup" && (
+              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+                {t("auth.passkeySignUpHint")}
+              </Text>
+            )}
+          </>
+        )}
       </View>
 
       <View className="mt-4 gap-1">
@@ -439,7 +501,7 @@ interface FieldProps {
   autoComplete?: TextInputProps["autoComplete"];
   returnKeyType?: TextInputProps["returnKeyType"];
   onSubmitEditing?: () => void;
-  inputRef?: Ref<TextInput>;
+  inputRef?: Ref<TextInputInstance>;
 }
 
 function Field({ label, value, onChange, inputRef, ...input }: FieldProps) {

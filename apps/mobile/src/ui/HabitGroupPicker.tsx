@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Habit } from "@atlas/shared";
+import type { Habit } from "@atlastodo/shared";
 import { BottomSheet } from "./BottomSheet";
 import { SheetScrollView } from "./SheetScroll";
 import { Check } from "./icons";
@@ -72,7 +72,7 @@ export function HabitGroupPicker({
           })}
 
           {groups.length === 0 && (
-            <Text className="px-2 py-3 text-sm text-neutral-400">{t("habits.noGroupsYet")}</Text>
+            <Text className="px-2 py-3 text-sm text-neutral-500">{t("habits.noGroupsYet")}</Text>
           )}
         </SheetScrollView>
       </View>

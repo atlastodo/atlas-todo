@@ -14,7 +14,7 @@ import {
   type Habit,
   type HabitKind,
   type HabitListRow,
-} from "@atlas/shared";
+} from "@atlastodo/shared";
 import { useHabits } from "../hooks/useHabits";
 import { useHabitGroups, type HabitGroupSummary, type HabitSummary } from "../hooks/useHabitGroups";
 import { useHabitCheckins } from "../hooks/useHabitCheckins";
@@ -51,7 +51,7 @@ import { resolveHabitDrop } from "../lib/habitReorder";
 
 /**
  * Habits & streaks. Each habit is one row: today's check, the name, the streak, the current
- * period, and the last seven days as circles. Schedule and streak maths is `@atlas/shared`'s
+ * period, and the last seven days as circles. Schedule and streak maths is `@atlastodo/shared`'s
  * `habits.ts`.
  *
  * Every recorded day is reversible (a tap cycles the day and raises an undo toast). The strip
@@ -159,9 +159,9 @@ function HabitGroupHeader({
         className="p-1"
       >
         {expanded ? (
-          <ChevronUp size={16} className="text-neutral-400" />
+          <ChevronUp size={16} className="text-neutral-500" />
         ) : (
-          <ChevronDown size={16} className="text-neutral-400" />
+          <ChevronDown size={16} className="text-neutral-500" />
         )}
       </Pressable>
 
@@ -174,7 +174,7 @@ function HabitGroupHeader({
         hitSlop={8}
         className="p-1"
       >
-        <EllipsisVertical size={16} className="text-neutral-400" />
+        <EllipsisVertical size={16} className="text-neutral-500" />
       </Pressable>
     </View>
   );
@@ -364,9 +364,9 @@ function HabitCard({
                 className="p-1"
               >
                 {expanded ? (
-                  <ChevronUp size={16} className="text-neutral-400" />
+                  <ChevronUp size={16} className="text-neutral-500" />
                 ) : (
-                  <ChevronDown size={16} className="text-neutral-400" />
+                  <ChevronDown size={16} className="text-neutral-500" />
                 )}
               </Pressable>
             )}
@@ -380,7 +380,7 @@ function HabitCard({
               hitSlop={8}
               className="p-1"
             >
-              <EllipsisVertical size={16} className="text-neutral-400" />
+              <EllipsisVertical size={16} className="text-neutral-500" />
             </Pressable>
           </View>
 
@@ -723,7 +723,7 @@ export function HabitsScreen({
               <View className="pb-6">
                 <HabitDayLegend />
                 {hiddenByScope > 0 && (
-                  <Text className="px-4 pt-1 text-xs text-neutral-400">
+                  <Text className="px-4 pt-1 text-xs text-neutral-500">
                     {t(yesterday ? "habits.hiddenYesterday" : "habits.hiddenToday", {
                       count: hiddenByScope,
                     })}

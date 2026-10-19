@@ -35,7 +35,7 @@ export const CSP = [
 export function resolveAppPath(
   distDir: string,
   requestUrl: string,
-  pathImpl: path.PlatformPath = path,
+  pathImpl: typeof path = path,
 ): string | null {
   let url: URL;
   try {
@@ -130,6 +130,16 @@ export function isAppUrl(raw: string): boolean {
   try {
     const url = new URL(raw);
     return url.protocol === `${APP_SCHEME}:` && url.host.toLowerCase() === APP_HOST;
+  } catch {
+    return false;
+  }
+}
+
+/** Whether a server URL is plain http, which the window can only reach with insecure content allowed. */
+export function isInsecureServerUrl(raw: unknown): boolean {
+  if (typeof raw !== "string") return false;
+  try {
+    return new URL(raw).protocol === "http:";
   } catch {
     return false;
   }

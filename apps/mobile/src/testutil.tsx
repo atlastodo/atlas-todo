@@ -8,7 +8,7 @@ import {
   type ApiClient,
   type BlobTransport,
   type Keyring,
-} from "@atlas/client-core";
+} from "@atlastodo/client-core";
 import { AuthContext, type AuthContextValue } from "./auth/AuthContext";
 import type { LocalModeValue } from "./auth/localMode";
 import {
@@ -69,6 +69,14 @@ export function fakeAuth(overrides: Partial<AuthContextValue> = {}): AuthContext
     upgradeRequired: false,
     retryAfterUpgrade: () => {},
     signOutNotice: null,
+    passkeyAuthenticator: null,
+    loginWithPasskey: async () => {},
+    signupWithPasskey: async () => {},
+    confirmWithPasskey: async () => ({ reauthToken: "proof", rootKey: null }),
+    unlockWithPasskey: async () => true,
+    addPasskey: async () => {},
+    removePasskey: async () => {},
+    removePassword: async () => {},
     ...overrides,
   };
 }

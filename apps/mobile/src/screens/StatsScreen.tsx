@@ -14,7 +14,7 @@ import {
   shiftDateKey,
   totalCompleted,
   type Habit,
-} from "@atlas/shared";
+} from "@atlastodo/shared";
 import type { LucideIcon } from "../ui/icons";
 import { CircleCheckBig, Flame, Timer } from "../ui/icons";
 import { BarChart } from "../ui/BarChart";
@@ -294,7 +294,7 @@ export function StatsScreen({ now }: { now?: number }) {
         <View>
           <SectionHeading>{t("stats.byProject")}</SectionHeading>
           {byProject.length === 0 ? (
-            <Text className="text-sm text-neutral-400">{t("stats.noCompletions")}</Text>
+            <Text className="text-sm text-neutral-500">{t("stats.noCompletions")}</Text>
           ) : (
             <View className="gap-1.5">
               {byProject.map((p) => (

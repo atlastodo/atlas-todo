@@ -1,7 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Project } from "@atlas/client-core";
-import { DEFAULT_FOLDER_ICON, flattenProjectTree, resolveProjectColor } from "@atlas/shared";
+import type { Project } from "@atlastodo/client-core";
+import { DEFAULT_FOLDER_ICON, flattenProjectTree, resolveProjectColor } from "@atlastodo/shared";
 import { BottomSheet } from "./BottomSheet";
 import { SheetScrollView } from "./SheetScroll";
 import { projectIconFor } from "./projectIcons";
@@ -52,7 +52,7 @@ export function FolderPicker({
             onPress={() => choose(null)}
             className="flex-row items-center gap-3 py-3 web:cursor-pointer"
           >
-            <Folder size={18} className="text-neutral-400" />
+            <Folder size={18} className="text-neutral-500" />
             <Text className="flex-1 text-sm text-neutral-900 dark:text-neutral-100">
               {t("projects.noFolder")}
             </Text>

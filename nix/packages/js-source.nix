@@ -12,8 +12,5 @@ lib.fileset.toSource {
     (root + "/bun.lock")
     (root + "/apps/mobile")
     (root + "/apps/electron")
-    (root + "/packages")
-    # packages/client-core imports the shared plaintext-field fixture.
-    (root + "/test-vectors")
   ];
 }

@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { quickScheduleOptions, type QuickScheduleOption } from "@atlas/shared";
+import { quickScheduleOptions, type QuickScheduleOption } from "@atlastodo/shared";
 import DateTimePicker, { type DateTimePickerEvent } from "../DateTimePicker";
 import { Calendar, ChevronRight, Check, X } from "../icons";
 import { Panel, PanelButton, SheetOption } from "./parts";
@@ -106,7 +106,7 @@ export function DueSheetBody({
             {custom != null ? dueText(custom) : t("task.scheduleMore")}
           </Text>
         </View>
-        <ChevronRight size={20} className="text-neutral-400" />
+        <ChevronRight size={20} className="text-neutral-500" />
       </Pressable>
 
       {picking && (
@@ -125,7 +125,7 @@ export function DueSheetBody({
         }
       >
         <View className="flex-row items-center gap-3">
-          <X size={22} className="text-neutral-400" />
+          <X size={22} className="text-neutral-500" />
           <Text className="text-base font-medium text-neutral-600 dark:text-neutral-400">
             {t("task.scheduleNoDate")}
           </Text>

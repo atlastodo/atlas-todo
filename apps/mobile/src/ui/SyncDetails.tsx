@@ -1,7 +1,12 @@
 import { useContext, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { batchLinksOf, resolveScope, type EntityKind, type LocalStore } from "@atlas/client-core";
+import {
+  batchLinksOf,
+  resolveScope,
+  type EntityKind,
+  type LocalStore,
+} from "@atlastodo/client-core";
 import { AuthContext } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";
 import { useOnline } from "../hooks/useOnline";
@@ -286,7 +291,7 @@ export function SyncDetails({ open, onClose }: { open: boolean; onClose: () => v
                     <Text className="text-sm text-neutral-800 dark:text-neutral-100">
                       {q.status === 413 ? t("sync.quarantinedTooLarge") : q.message}
                     </Text>
-                    <Text className="text-xs text-neutral-400">
+                    <Text className="text-xs text-neutral-500">
                       {title === null ? `${q.entityId} · ` : ""}
                       {format.dateTime(q.at)}
                     </Text>

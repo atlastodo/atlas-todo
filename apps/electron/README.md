@@ -145,7 +145,9 @@ The tarball is attached to the GitHub Release as `atlas-desktop-<version>.tar.gz
 `atlas-desktop-latest.tar.gz`.
 
 The repository flake ships `atlas-desktop` as a package and as NixOS and Home Manager modules
-(`programs.atlas-desktop`). Each release archive also embeds a self-contained desktop flake.
+(`programs.atlas-desktop`). Each release archive also embeds a self-contained desktop flake. The
+server and its NixOS module (`services.atlas-todo`) are not in this flake: take them from the
+core repository, `github:atlastodo/atlas`.
 
 1. Add the flake to your inputs:
 

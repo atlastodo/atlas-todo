@@ -1,13 +1,13 @@
 /**
- * Project icons for the phone. Icon names are canonical in `@atlas/shared` (`PROJECT_ICON_NAMES`);
+ * Project icons for the phone. Icon names are canonical in `@atlastodo/shared` (`PROJECT_ICON_NAMES`);
  * this maps each to its lucide-react-native component, deep-imported and run through NativeWind's
  * `cssInterop` like `ui/icons.ts`. Keys match the shared names even where lucide 1.x renamed the
- * icon (`home` is `house`, `book` is `book-open`).
+ * icon (`home` is `house`, `book` is `book-open`, `music` is `eighth-notes`).
  */
 
 import { cssInterop } from "nativewind";
 import type { LucideIcon } from "lucide-react-native";
-import { PROJECT_ICON_NAMES } from "@atlas/shared";
+import { PROJECT_ICON_NAMES } from "@atlastodo/shared";
 
 import Hash from "lucide-react-native/icons/hash";
 import ListFilter from "lucide-react-native/icons/list-filter";
@@ -17,7 +17,7 @@ import Heart from "lucide-react-native/icons/heart";
 import Star from "lucide-react-native/icons/star";
 import BookOpen from "lucide-react-native/icons/book-open";
 import Code from "lucide-react-native/icons/code";
-import Music from "lucide-react-native/icons/music";
+import EighthNotes from "lucide-react-native/icons/eighth-notes";
 import ShoppingCart from "lucide-react-native/icons/shopping-cart";
 import Plane from "lucide-react-native/icons/plane";
 import Dumbbell from "lucide-react-native/icons/dumbbell";
@@ -37,7 +37,7 @@ export const PROJECT_ICONS: Record<string, LucideIcon> = {
   star: Star,
   book: BookOpen,
   code: Code,
-  music: Music,
+  music: EighthNotes,
   cart: ShoppingCart,
   plane: Plane,
   dumbbell: Dumbbell,

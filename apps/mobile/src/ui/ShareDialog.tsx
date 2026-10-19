@@ -25,7 +25,7 @@ import {
   type IdentityObservation,
   type MemberRole,
   type MemberView,
-} from "@atlas/client-core";
+} from "@atlastodo/client-core";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";
 import {
@@ -49,7 +49,8 @@ import {
  * server-authoritative and REST-driven; a successful change `kick()`s a sync. Sharing is E2EE:
  * the invite goes first, then the project key is sealed to each invitee's pinned public key and
  * signed with the user's identity key. Each member gets a safety number to verify out of band;
- * removing a member rotates the project key. See docs/architecture.md.
+ * removing a member rotates the project key. See docs/architecture.md in the core repository
+ * (atlastodo/atlas).
  */
 
 const ROLE_KEY: Record<MemberRole, string> = {
@@ -459,7 +460,7 @@ export function ShareDialog({
                       <ShieldCheck
                         size={16}
                         className={
-                          verified ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-400"
+                          verified ? "text-emerald-600 dark:text-emerald-400" : "text-neutral-500"
                         }
                       />
                     </Pressable>
@@ -499,7 +500,7 @@ export function ShareDialog({
                       onPress={() => void remove(m.user_id)}
                       hitSlop={8}
                     >
-                      <Trash2 size={16} className="text-neutral-400" />
+                      <Trash2 size={16} className="text-neutral-500" />
                     </Pressable>
                   )}
                 </View>

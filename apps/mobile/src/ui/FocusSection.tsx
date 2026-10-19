@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlas/client-core";
-import { formatDuration } from "@atlas/shared";
+import type { Task } from "@atlastodo/client-core";
+import { formatDuration } from "@atlastodo/shared";
 import { useFocus } from "../data/FocusProvider";
 import { useFocusSessions } from "../hooks/useFocusSessions";
 import { usePreferences } from "../hooks/usePreferences";
@@ -76,7 +76,7 @@ export function FocusSection({
             accessibilityLabel={t("focus.estimateAria")}
             keyboardType="number-pad"
             placeholder={t("focus.estimatePlaceholder")}
-            placeholderTextColor="#a1a1aa"
+            placeholderTextColor="#737373"
             value={task.estimate_min != null ? String(task.estimate_min) : ""}
             onFocus={() => setEstimateFocused(true)}
             onBlur={() => setEstimateFocused(false)}

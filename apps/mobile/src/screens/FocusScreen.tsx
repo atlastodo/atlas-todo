@@ -4,7 +4,13 @@ import { useColorScheme } from "nativewind";
 import { useTranslation } from "react-i18next";
 import { useKeepAwake } from "expo-keep-awake";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ACCENTS, formatClock, formatDuration, phaseDurationMs, startOfDay } from "@atlas/shared";
+import {
+  ACCENTS,
+  formatClock,
+  formatDuration,
+  phaseDurationMs,
+  startOfDay,
+} from "@atlastodo/shared";
 import { useFocus } from "../data/FocusProvider";
 import { useFocusSessions } from "../hooks/useFocusSessions";
 import { useLocalTasks } from "../hooks/useLocalTasks";
@@ -258,7 +264,7 @@ export function FocusScreen() {
           {/* A pomodoro belongs to one task for its whole length: the picker is offered before a run, the choice reported during one. */}
           {active ? (
             <View className="items-center gap-1">
-              <Text className="text-xs uppercase tracking-wide text-neutral-400">
+              <Text className="text-xs uppercase tracking-wide text-neutral-500">
                 {t("focus.focusingOn")}
               </Text>
               <Text className="text-sm text-neutral-700 dark:text-neutral-200">
@@ -276,7 +282,7 @@ export function FocusScreen() {
           )}
 
           <View className="items-center gap-1 border-t border-neutral-100 pt-4 dark:border-neutral-800">
-            <Text className="text-xs uppercase tracking-wide text-neutral-400">
+            <Text className="text-xs uppercase tracking-wide text-neutral-500">
               {t("focus.today")}
             </Text>
             <Text className="text-sm text-neutral-700 dark:text-neutral-200">

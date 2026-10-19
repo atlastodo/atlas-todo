@@ -9,8 +9,8 @@ import {
   resolveProjectColor,
   sortTasks,
   toProject,
-} from "@atlas/shared";
-import type { Task } from "@atlas/client-core";
+} from "@atlastodo/shared";
+import type { Task } from "@atlastodo/client-core";
 import { useStore } from "../data/StoreProvider";
 import { useAuth } from "../auth/AuthContext";
 import { useTaskListView } from "../hooks/useTaskListView";
@@ -203,7 +203,7 @@ export function ProjectScreen({
   if (!project) {
     return (
       <View className="flex-1 items-center justify-center bg-white dark:bg-zinc-950">
-        <Text className="text-sm text-neutral-400">{t("common.nothingHere")}</Text>
+        <Text className="text-sm text-neutral-500">{t("common.nothingHere")}</Text>
       </View>
     );
   }

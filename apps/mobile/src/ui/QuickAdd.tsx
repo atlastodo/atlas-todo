@@ -7,10 +7,12 @@ import {
   View,
   type TextInputKeyPressEvent,
   type TextInputSelectionChangeEvent,
+  type TextInputInstance,
+  type ViewInstance,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { CreateTaskInput } from "@atlas/client-core";
-import { parseQuickAdd } from "@atlas/shared";
+import type { CreateTaskInput } from "@atlastodo/client-core";
+import { parseQuickAdd } from "@atlastodo/shared";
 import { ArrowUp, Check, Hash, Plus, Tag } from "./icons";
 import { chipColors } from "./chips";
 import { TaskComposeBar } from "./TaskComposeBar";
@@ -24,7 +26,7 @@ import { haptics } from "../lib/haptics";
 /**
  * Quick-add with natural-language parsing: type a title carrying dates, `#project`, `@label`,
  * `p1..p4` or a recurrence phrase and a chip row previews what will be set. Parsing is
- * `@atlas/shared`'s `parseQuickAdd`.
+ * `@atlastodo/shared`'s `parseQuickAdd`.
  *
  * A task created here that is all-day gets an implicit 09:00 reminder
  * (`useQuickAddMorningReminder`, gated on the reminders master toggle); no other creation path does.
@@ -229,8 +231,8 @@ export function QuickAdd(props: QuickAddProps) {
   const [ignoredProjects, setIgnoredProjects] = useState<string[]>([]);
   const [ignoredLabels, setIgnoredLabels] = useState<string[]>([]);
   const selection = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
-  const inputRef = useRef<TextInput>(null);
-  const containerRef = useRef<View>(null);
+  const inputRef = useRef<TextInputInstance>(null);
+  const containerRef = useRef<ViewInstance>(null);
   useQuickAddHotkeyTarget(() => {
     setEngaged(true);
     inputRef.current?.focus();
@@ -670,7 +672,7 @@ export function QuickAdd(props: QuickAddProps) {
             >
               <Plus
                 size={isWeb ? 16 : 18}
-                className="text-neutral-400 dark:text-neutral-500 shrink-0"
+                className="text-neutral-500 dark:text-neutral-400 shrink-0"
               />
             </Pressable>
           )}
@@ -694,7 +696,7 @@ export function QuickAdd(props: QuickAddProps) {
               autoFocus={autoFocus}
               accessibilityLabel={effectiveLabel}
               placeholder={effectivePlaceholder}
-              placeholderTextColor={engaged ? "#64748b" : "#94a3b8"}
+              placeholderTextColor="#64748b"
               value={text}
               onChangeText={(v) => {
                 if (Platform.OS !== "web" && v.length === text.length - 1) {
@@ -773,7 +775,7 @@ export function QuickAdd(props: QuickAddProps) {
                 " " +
                 (engaged
                   ? "text-neutral-900 dark:text-white"
-                  : "text-neutral-800 placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500")
+                  : "text-neutral-800 placeholder:text-neutral-500 dark:text-white dark:placeholder:text-neutral-500")
               }
             />
           </View>
@@ -809,7 +811,7 @@ export function QuickAdd(props: QuickAddProps) {
                 },
                 isWeb ? ({ outline: "none", resize: "none" } as object) : undefined,
               ]}
-              className="w-full border-none bg-transparent text-sm text-neutral-700 placeholder:text-neutral-400 focus:outline-none dark:text-neutral-300 dark:placeholder:text-neutral-500"
+              className="w-full border-none bg-transparent text-sm text-neutral-700 placeholder:text-neutral-500 focus:outline-none dark:text-neutral-300 dark:placeholder:text-neutral-500"
             />
           </View>
         )}

@@ -19,6 +19,8 @@ OUTPUT_DIR="${OUTPUT_DIR:-$ROOT/dist-desktop}"
 # built-in server (users type theirs on the sign-in screen). A distribution that should default to
 # a specific instance sets it here or via CI -- e.g. EXPO_PUBLIC_API_URL=https://todo.example.com/api
 export EXPO_PUBLIC_API_URL="${EXPO_PUBLIC_API_URL:-}"
+# The About screen's source and licence links (the release workflow passes github.repository).
+export EXPO_PUBLIC_REPO_URL="${EXPO_PUBLIC_REPO_URL:-https://github.com/atlastodo/atlas-todo}"
 export CI=1
 export EXPO_NO_TELEMETRY=1
 
@@ -34,7 +36,7 @@ echo ">> 1. Exporting mobile web bundle..."
 (cd "$ROOT/apps/mobile" && rm -rf .expo dist && bunx expo export --platform web --clear && node scripts/postexport-favicon.mjs)
 
 # 2. Compile Electron TypeScript (from clean, so nothing stale rides into the package)
-echo ">> 2. Compiling @atlas/electron..."
+echo ">> 2. Compiling @atlastodo/electron..."
 (cd "$ROOT/apps/electron" && rm -rf dist && bun run build)
 
 # 3. Assemble distribution directory
@@ -47,6 +49,10 @@ cp -r "$ROOT/apps/mobile/dist/"* "$OUTPUT_DIR/web-dist/"
 cp "$ROOT/apps/mobile/assets/icon.png" "$OUTPUT_DIR/assets/icon.png"
 cp "$ROOT/apps/electron/assets/tray"*.png "$OUTPUT_DIR/assets/"
 cp "$ROOT/apps/electron/package.json" "$OUTPUT_DIR/package.json"
+# The licence and the third-party notices for the JavaScript in the package (the desktop app has no
+# Rust; Electron itself comes from nixpkgs).
+cp "$ROOT/LICENSE" "$OUTPUT_DIR/LICENSE"
+node "$ROOT/scripts/third-party-licenses.mjs" --notices "$OUTPUT_DIR/THIRD_PARTY_NOTICES.txt"
 
 # Release marker, read by main.js: it turns off dev mode (--dev, a localhost dev server) for good.
 # Written into the package only -- apps/electron/dist stays a dev build.

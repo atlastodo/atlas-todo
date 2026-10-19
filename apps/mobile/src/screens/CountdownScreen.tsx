@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { COUNTDOWN_PRESETS, countdownTo, presetTarget } from "@atlas/shared";
+import { COUNTDOWN_PRESETS, countdownTo, presetTarget } from "@atlastodo/shared";
 import { CalendarClock, X } from "../ui/icons";
 import { useCountdownPresets } from "../hooks/useCountdownPresets";
 import { usePreferences } from "../hooks/usePreferences";
@@ -12,7 +12,7 @@ import { EmptyState } from "../ui/EmptyState";
 
 /**
  * Countdown-to-deadline widgets: synthetic presets (the weekend, month end, year end) to count
- * down to without a task. Ticks every second via {@link useNow}; duration maths in `@atlas/shared`'s
+ * down to without a task. Ticks every second via {@link useNow}; duration maths in `@atlastodo/shared`'s
  * `countdown` handles timezone/DST. Gated behind the `countdowns` flag at the route.
  */
 
@@ -87,7 +87,7 @@ export function CountdownScreen({ now: nowOverride }: { now?: number }) {
         contentContainerClassName="gap-6 p-4"
       >
         <View className="flex-row flex-wrap items-center gap-2">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
             {t("countdown.presets")}
           </Text>
           {COUNTDOWN_PRESETS.map((id) => {
@@ -132,7 +132,7 @@ export function CountdownScreen({ now: nowOverride }: { now?: number }) {
                       onPress={() => togglePreset(id)}
                       className="rounded p-1"
                     >
-                      <X size={16} className="text-neutral-400" />
+                      <X size={16} className="text-neutral-500" />
                     </Pressable>
                   }
                 />

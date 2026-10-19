@@ -15,7 +15,7 @@ import {
   shiftDateKey,
   type Habit,
   type HabitGroupMember,
-} from "@atlas/shared";
+} from "@atlastodo/shared";
 import { useHabits } from "../hooks/useHabits";
 import { useHabitCheckins } from "../hooks/useHabitCheckins";
 import { usePreferences } from "../hooks/usePreferences";
@@ -186,7 +186,7 @@ export function HabitGroupDetailScreen({
         <View>
           <SectionHeading>{t("habits.groupMembers")}</SectionHeading>
           {members.length === 0 && (
-            <Text className="mb-2 text-sm text-neutral-400">{t("habits.groupEmpty")}</Text>
+            <Text className="mb-2 text-sm text-neutral-500">{t("habits.groupEmpty")}</Text>
           )}
           {members.map((habit) => {
             const Icon = projectIconFor(habit.icon);
@@ -221,7 +221,7 @@ export function HabitGroupDetailScreen({
                   hitSlop={8}
                   className="p-1"
                 >
-                  <X size={16} className="text-neutral-400" />
+                  <X size={16} className="text-neutral-500" />
                 </Pressable>
               </View>
             );

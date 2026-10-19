@@ -7,11 +7,11 @@ import {
   useWindowDimensions,
   type LayoutChangeEvent,
 } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { GestureDetector, usePanGesture } from "react-native-gesture-handler";
 import Animated, { runOnJS } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { formatClock } from "@atlas/shared";
+import { formatClock } from "@atlastodo/shared";
 import { BOTTOM_CHROME_GAP, useBottomChrome } from "../data/BottomChromeContext";
 import { useFocus } from "../data/FocusProvider";
 import { useIsWide } from "../hooks/useIsWide";
@@ -59,19 +59,16 @@ export function FocusBar({ onOpen }: { onOpen?: () => void } = {}) {
     setTucked(false);
   }, []);
 
-  const pan = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetX([-25, 25])
-        .onEnd((e) => {
-          if (e.translationX > 35 || e.velocityX > 350) {
-            runOnJS(dockToEdge)();
-          } else if (e.translationX < -25 || e.velocityX < -250) {
-            runOnJS(undockFromEdge)();
-          }
-        }),
-    [dockToEdge, undockFromEdge],
-  );
+  const pan = usePanGesture({
+    activeOffsetX: [-25, 25],
+    onDeactivate: (e) => {
+      if (e.translationX > 35 || e.velocityX > 350) {
+        runOnJS(dockToEdge)();
+      } else if (e.translationX < -25 || e.velocityX < -250) {
+        runOnJS(undockFromEdge)();
+      }
+    },
+  });
 
   const onLayout = (e: LayoutChangeEvent) => {
     const h = e.nativeEvent.layout.height;
