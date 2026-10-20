@@ -8,6 +8,13 @@ import {
 import { fakeAuth } from "../testutil";
 import { AuthContext, type AuthContextValue } from "./AuthContext";
 import { LoginScreen } from "./LoginScreen";
+import { serverUrlOffersPasskeys } from "./serverCompat";
+
+jest.mock("./serverCompat", () => ({
+  ...jest.requireActual<object>("./serverCompat"),
+  serverUrlOffersPasskeys: jest.fn(async () => true),
+}));
+const offers = jest.mocked(serverUrlOffersPasskeys);
 
 const authenticator = {} as PasskeyAuthenticator;
 
@@ -24,12 +31,19 @@ describe("LoginScreen passkeys", () => {
     expect(screen.queryByText("Sign in with a passkey")).toBeNull();
   });
 
+  it("offers no passkey where the server does not", async () => {
+    offers.mockResolvedValueOnce(false);
+    await render(<LoginScreen />, { wrapper: withAuth({ passkeyAuthenticator: authenticator }) });
+    await waitFor(() => expect(offers).toHaveBeenCalled());
+    expect(screen.queryByText("Sign in with a passkey")).toBeNull();
+  });
+
   it("signs in with a passkey, email-first when one is typed", async () => {
     const loginWithPasskey = jest.fn(async () => {});
     await render(<LoginScreen />, {
       wrapper: withAuth({ passkeyAuthenticator: authenticator, loginWithPasskey }),
     });
-    await fireEvent.press(screen.getByText("Sign in with a passkey"));
+    await fireEvent.press(await screen.findByText("Sign in with a passkey"));
     await waitFor(() => expect(loginWithPasskey).toHaveBeenCalledWith(undefined));
 
     await fireEvent.changeText(screen.getByLabelText("Email"), "ada@example.com");
@@ -42,7 +56,7 @@ describe("LoginScreen passkeys", () => {
     await render(<LoginScreen initialMode="signup" />, {
       wrapper: withAuth({ passkeyAuthenticator: authenticator, signupWithPasskey }),
     });
-    expect(screen.getByText(/Passkey-only accounts cannot sign in on iOS/)).toBeTruthy();
+    expect(await screen.findByText(/Passkey-only accounts cannot sign in on iOS/)).toBeTruthy();
     await fireEvent.changeText(screen.getByLabelText("Name"), "Ada");
     await fireEvent.changeText(screen.getByLabelText("Email"), "ada@example.com");
     await fireEvent.press(screen.getByText("Create account with a passkey"));
@@ -59,7 +73,7 @@ describe("LoginScreen passkeys", () => {
     await render(<LoginScreen />, {
       wrapper: withAuth({ passkeyAuthenticator: authenticator, loginWithPasskey }),
     });
-    await fireEvent.press(screen.getByText("Sign in with a passkey"));
+    await fireEvent.press(await screen.findByText("Sign in with a passkey"));
     expect(await screen.findByText(/does not support the PRF extension/)).toBeTruthy();
     await fireEvent.press(screen.getByText("Sign in with a passkey"));
     expect(await screen.findByText("The passkey prompt was dismissed.")).toBeTruthy();

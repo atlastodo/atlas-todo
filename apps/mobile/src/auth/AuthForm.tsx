@@ -24,6 +24,7 @@ import { defaultServerUrl, isOnlineWeb, loadServerUrl } from "./serverUrl";
 import { readInviteFromLink } from "./inviteLink";
 import { useLocalMode } from "./localMode";
 import { describePasskeyError } from "./passkeyErrors";
+import { serverUrlOffersPasskeys } from "./serverCompat";
 
 /**
  * The sign-in / sign-up / recover form, shared by the standalone `LoginScreen` and the welcome
@@ -253,8 +254,9 @@ export function AuthForm({
     submit,
     handleRestore,
   } = form;
-  // Offered where this device can use passkeys; the server's support is checked on use.
-  const passkeys = useAuth().passkeyAuthenticator !== null;
+  // Offered where this device can use passkeys and the server being signed in to offers them.
+  const deviceCan = useAuth().passkeyAuthenticator !== null;
+  const passkeys = usePasskeysOffered(isOnlineWeb() ? defaultServerUrl : serverUrl, deviceCan);
   // Return on one field moves to the next, as a credential form should.
   const emailRef = useRef<TextInputInstance>(null);
   const phraseRef = useRef<TextInputInstance>(null);
@@ -524,4 +526,30 @@ function Field({ label, value, onChange, inputRef, ...input }: FieldProps) {
       />
     </View>
   );
+}
+
+/** How long the server URL must stay unchanged before the form asks it about passkeys. */
+const PASSKEY_CHECK_DELAY_MS = 400;
+
+/**
+ * Whether to offer passkeys: the device can use them (`enabled`) and the server at `url` lists
+ * the `passkeys` capability. Hidden until the server answers, and whenever it cannot be asked.
+ */
+function usePasskeysOffered(url: string, enabled: boolean): boolean {
+  const target = url.trim().replace(/\/$/, "");
+  const [offered, setOffered] = useState<{ url: string; on: boolean } | null>(null);
+  useEffect(() => {
+    if (!enabled || !/^https?:\/\/\S+$/i.test(target)) return;
+    let live = true;
+    const timer = setTimeout(() => {
+      void serverUrlOffersPasskeys(target).then((on) => {
+        if (live) setOffered({ url: target, on });
+      });
+    }, PASSKEY_CHECK_DELAY_MS);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [enabled, target]);
+  return enabled && offered?.url === target && offered.on;
 }
