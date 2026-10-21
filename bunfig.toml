@@ -2,3 +2,7 @@
 # The React Native app has a separate jest-expo harness; Bun's runner cannot
 # provide its DOM and Expo globals.
 pathIgnorePatterns = ["apps/mobile/**"]
+
+[install]
+# Our own core packages skip the release-age check scripts/update-deps.sh applies (`deps:update`).
+minimumReleaseAgeExcludes = ["@atlastodo/client-core", "@atlastodo/shared"]

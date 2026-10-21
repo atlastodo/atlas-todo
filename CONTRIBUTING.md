@@ -121,6 +121,7 @@ All of these run inside `devenv shell` (without it, see [Without Nix](#without-n
 | `desktop:package`                  | build the desktop tarball                                                  |
 | `web:release-tarball`              | build the release's web app tarball                                        |
 | `nix:bun-lock`                     | regenerate `nix/bun.nix` after a `bun.lock` change                         |
+| `deps:update`                      | refresh what Dependabot can't (locks, Bun, Expo SDK packages, core pin)    |
 | `test:all`                         | every test suite (see below)                                               |
 | `lint`                             | typecheck, oxlint, Prettier check, licences, `nix/bun.nix` freshness       |
 | `fmt`                              | prettier                                                                   |
@@ -156,9 +157,9 @@ Tests live next to the code they test: `apps/electron/src/*.test.ts` and
 ## Core packages
 
 `apps/mobile` depends on `@atlastodo/client-core` and `@atlastodo/shared` from npm, pinned to one
-exact core release version in `apps/mobile/package.json`. Moving to a new core release is a change
-of those two versions (keep them on one version), then `bun install`, `nix:bun-lock`, `test:all`
-and a web export. See [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md#pinning-the-core-packages).
+exact core release version in `apps/mobile/package.json`. They follow the newest core release:
+`deps:update` (run weekly by `deps-refresh.yml`) moves both, `ATLAS_SERVER_IMAGE` in `devenv.nix`,
+`bun.lock` and `nix/bun.nix`, and CI runs `test:all` and a web export on the PR. See [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md#pinning-the-core-packages).
 
 ## Adding or changing UI text
 

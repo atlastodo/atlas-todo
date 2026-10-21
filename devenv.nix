@@ -132,7 +132,7 @@ in
     command -v docker >/dev/null && docker info >/dev/null 2>&1 || { echo "!! screenshots needs a running Docker daemon." >&2; exit 1; }
     # The core release the app pins. It was published before the core repository was renamed, so it
     # exists under the old image name only; later core releases are ghcr.io/atlastodo/atlas:X.Y.Z.
-    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas:0.1.11-rc.9}"
+    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas:0.1.11}"
     work="$(mktemp -d)"
     net="atlas-screenshots-$$"
     cleanup() {
@@ -255,6 +255,10 @@ in
     (cd apps/electron && env -u LD_LIBRARY_PATH "${pkgs.electron}/bin/electron" dist/main.js "$@")
   '';
   scripts."desktop:package".exec = ''bash "$DEVENV_ROOT/scripts/package-desktop.sh" "$@"'';
+  # Refresh everything Dependabot cannot update (the devenv and flake locks, the Bun pins, the whole
+  # bun.lock, the Expo SDK packages, the core pin, nix/bun.nix): scripts/update-deps.sh, which
+  # .github/workflows/deps-refresh.yml runs weekly.
+  scripts."deps:update".exec = ''bash "$DEVENV_ROOT/scripts/update-deps.sh" "$@"'';
   # Refresh nix/flake.desktop.lock, the nixpkgs pin shipped inside the desktop tarball's flake.
   # The template is not named flake.nix, so it is locked from a temporary copy.
   scripts."desktop:flake-update".exec = ''
