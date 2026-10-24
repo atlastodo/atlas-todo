@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Platform, StyleSheet } from "react-native";
-import { fireEvent, render as render, screen, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import {
   ApiError,
   LEGACY_DISCOVERY,

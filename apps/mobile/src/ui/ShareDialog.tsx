@@ -133,13 +133,13 @@ export function ShareDialog({
   // Computed only for the member whose number is open: the derivation is slow.
   const openNumber = useMemo(
     () => (expanded ? safetyNumberWith(expanded) : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [expanded, identities, keyring, myId],
   );
   const trust = useMemo(
     () => readKeyTrust(store),
     // `trustVersion` bumps when this dialog records a verification.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, trustVersion, identities],
   );
   const setVerified = (userId: string, number: string | null) => {

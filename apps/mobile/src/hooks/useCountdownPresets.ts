@@ -24,7 +24,7 @@ export function useCountdownPresets(): UseCountdownPresets {
     return Array.isArray(raw)
       ? (raw.filter((x): x is CountdownPresetId => typeof x === "string") as CountdownPresetId[])
       : [];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [store, version]);
 
   const isEnabled = useCallback((id: CountdownPresetId) => enabled.includes(id), [enabled]);

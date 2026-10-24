@@ -1,8 +1,4 @@
-import {
-  assertServerCompatible,
-  type ApiClient,
-  type ServerRequirements,
-} from "@atlastodo/client-core";
+import { ApiClient, assertServerCompatible, type ServerRequirements } from "@atlastodo/client-core";
 
 /**
  * What this app needs from a server, checked against `GET /discovery` before signing in or up.
@@ -41,4 +37,12 @@ export async function serverOffersPasskeys(client: ApiClient): Promise<boolean> 
   } catch {
     return false;
   }
+}
+
+/**
+ * Whether the server at `url` offers passkeys, asked before signing in (no client is bound to it
+ * yet, so this builds a throwaway one); false when it cannot be asked.
+ */
+export async function serverUrlOffersPasskeys(url: string): Promise<boolean> {
+  return serverOffersPasskeys(new ApiClient({ baseUrl: url }));
 }

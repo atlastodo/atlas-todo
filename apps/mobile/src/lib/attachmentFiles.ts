@@ -26,6 +26,8 @@ const MAX_NAME = 100;
 export function safeFilename(name: string): string {
   let base = name.split(/[/\\]/).pop() ?? "";
   base = base
+    // Matching control characters is the point: they are what gets stripped.
+    // oxlint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]/g, "")
     .replace(/[:*?"<>|]/g, "_")
     .trim()

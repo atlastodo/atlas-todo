@@ -225,7 +225,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const pendingKey = useMemo(
     () => ownPendingProjectIds(store, userId).join(","),
     // `version` bumps on every store change; the ids are re-derived from it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version, userId],
   );
   const seenRows = useRef<Set<string> | null>(null);

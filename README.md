@@ -195,7 +195,7 @@ devenv shell           # enter the environment
 bun install
 web:dev                # the web app with live reload, against EXPO_PUBLIC_API_URL
 test:all               # the electron (vitest) and mobile (jest) suites
-lint                   # typecheck, ESLint, Prettier, licences
+lint                   # typecheck, oxlint, Prettier, licences
 ```
 
 [CONTRIBUTING.md](./CONTRIBUTING.md) covers the setup (including one without Nix), the test

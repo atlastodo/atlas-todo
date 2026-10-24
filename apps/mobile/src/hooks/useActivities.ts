@@ -15,7 +15,7 @@ export function useActivities(): UseActivities {
 
   const activities = useMemo(
     () => store.list("activity").map((e) => toActivity(e.id, e.fields)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
     [store, version],
   );
 

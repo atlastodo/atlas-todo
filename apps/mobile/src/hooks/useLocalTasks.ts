@@ -100,7 +100,7 @@ export function useLocalTasks(actorId?: string): UseLocalTasks {
   const timeZone = usePreferences().timezone || undefined;
 
   // `version` bumps on every store change to force a re-derive.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
   const all = useMemo(() => deriveAll(store), [store, version]);
   const tasks = useMemo(() => deriveVisible(store, all), [store, all]);
   const archived = useMemo(() => deriveArchived(store, all), [store, all]);

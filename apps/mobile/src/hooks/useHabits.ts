@@ -105,7 +105,7 @@ export function useHabits(): UseHabits {
           a.habit.sort_order - b.habit.sort_order || a.habit.created_at - b.habit.created_at,
       );
     // `version` is the store's change signal: it re-reads the mutable store.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [store, version]);
 
   const visible = useMemo(() => all.filter((row) => !row.hidden).map((row) => row.habit), [all]);

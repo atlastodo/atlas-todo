@@ -86,7 +86,7 @@ The devenv scripts are short shell in `devenv.nix`. Without devenv, `test:all` a
 
 # lint
 bun run --parallel --filter '*' typecheck
-bunx eslint .
+bunx oxlint .
 bunx prettier --check .
 node scripts/third-party-licenses.mjs --check
 ```
@@ -121,8 +121,9 @@ All of these run inside `devenv shell` (without it, see [Without Nix](#without-n
 | `desktop:package`                  | build the desktop tarball                                                  |
 | `web:release-tarball`              | build the release's web app tarball                                        |
 | `nix:bun-lock`                     | regenerate `nix/bun.nix` after a `bun.lock` change                         |
+| `deps:update`                      | refresh what Dependabot can't (locks, Bun, Expo SDK packages, core pin)    |
 | `test:all`                         | every test suite (see below)                                               |
-| `lint`                             | typecheck, ESLint, Prettier check, licences, `nix/bun.nix` freshness       |
+| `lint`                             | typecheck, oxlint, Prettier check, licences, `nix/bun.nix` freshness       |
 | `fmt`                              | prettier                                                                   |
 | `screenshots`                      | regenerate `docs/screenshots` (needs Docker: a throwaway server and DB)    |
 | `emulator:start`, `mobile:android` | Android emulator and native dev build (needs the SDK)                      |
@@ -140,7 +141,7 @@ builtin.
 1. vitest in `apps/electron`
 2. jest (jest-expo) in `apps/mobile`
 
-`lint` typechecks `apps/mobile` and `apps/electron` and runs `eslint .`, `prettier --check .`, the
+`lint` typechecks `apps/mobile` and `apps/electron` and runs `oxlint .`, `prettier --check .`, the
 licence check and the `nix/bun.nix` freshness check. `fmt` fixes the formatting.
 
 To run one test:
@@ -156,9 +157,9 @@ Tests live next to the code they test: `apps/electron/src/*.test.ts` and
 ## Core packages
 
 `apps/mobile` depends on `@atlastodo/client-core` and `@atlastodo/shared` from npm, pinned to one
-exact core release version in `apps/mobile/package.json`. Moving to a new core release is a change
-of those two versions (keep them on one version), then `bun install`, `nix:bun-lock`, `test:all`
-and a web export. See [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md#pinning-the-core-packages).
+exact core release version in `apps/mobile/package.json`. They follow the newest core release:
+`deps:update` (run weekly by `deps-refresh.yml`) moves both, `ATLAS_SERVER_IMAGE` in `devenv.nix`,
+`bun.lock` and `nix/bun.nix`, and CI runs `test:all` and a web export on the PR. See [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md#pinning-the-core-packages).
 
 ## Adding or changing UI text
 
@@ -202,7 +203,7 @@ no secrets, so they get the same checks:
 
 | Check             | What it runs                                                       |
 | ----------------- | ------------------------------------------------------------------ |
-| Lint (TypeScript) | typecheck of mobile and electron; ESLint; Prettier check; licences |
+| Lint (TypeScript) | typecheck of mobile and electron; oxlint; Prettier check; licences |
 | Test (TypeScript) | vitest in apps/electron                                            |
 | Test (mobile)     | jest in apps/mobile                                                |
 | Audit (JS)        | `bun audit` (allowed to fail)                                      |

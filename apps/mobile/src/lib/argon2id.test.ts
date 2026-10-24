@@ -37,7 +37,7 @@ jest.mock("../../modules/atlas-argon2", () => ({
   },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// oxlint-disable-next-line typescript/no-require-imports
 const vectors = require("@atlastodo/client-core/test-vectors/password_kdf_vectors.json") as {
   derivations: {
     name: string;

@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+// oxlint-disable-next-line typescript/no-require-imports
 const tailwindConfig = require("../../tailwind.config.js");
 
 describe("accent opacity configuration", () => {
