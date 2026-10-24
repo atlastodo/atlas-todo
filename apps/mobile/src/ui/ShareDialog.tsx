@@ -23,6 +23,7 @@ import {
   unpinMemberKey,
   wrapProjectKey,
   type IdentityObservation,
+  sealInvitePreview,
   type MemberRole,
   type MemberView,
 } from "@atlastodo/client-core";
@@ -261,7 +262,15 @@ export function ShareDialog({
       const key = await canonicalKey(firstShare);
       // Existing content was written under the personal key; re-write it under the project key first.
       if (firstShare) rescopeProject(store, keyring, projectId);
-      const member = await api.inviteMember(projectId, addr, role);
+      // What the invitee sees before accepting: the server cannot read the project's fields.
+      const fields = store.get("project", projectId) ?? {};
+      const preview = sealInvitePreview(key.pek, key.keyId, projectId, {
+        name: fields.name,
+        icon: fields.icon,
+        color: fields.color,
+        kind: fields.kind,
+      });
+      const member = await api.inviteMember(projectId, addr, role, preview);
       setEmail("");
       try {
         await deliverKey({ user_id: member.user_id, email: member.email || addr }, published, key);

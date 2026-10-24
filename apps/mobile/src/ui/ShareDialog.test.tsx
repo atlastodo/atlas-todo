@@ -22,7 +22,9 @@ import {
   type MemberRole,
   type MemberView,
   type ProjectKeysResponse,
+  type SealedInvitePreview,
   type SealedKey,
+  openInvitePreview,
 } from "@atlastodo/client-core";
 import { fakeAuth, withApp } from "../testutil";
 import { ShareDialog } from "./ShareDialog";
@@ -60,19 +62,21 @@ function fakeApi(
 ) {
   const api = {
     listMembers: jest.fn(async () => members),
-    inviteMember: jest.fn(async (_p: string, email: string, role: MemberRole) => {
-      calls.push("inviteMember");
-      const member: MemberView = {
-        user_id: "u-carol",
-        email,
-        display_name: "",
-        role,
-        state: "pending",
-        has_key: false,
-        invited_by: "me",
-      };
-      return member;
-    }),
+    inviteMember: jest.fn(
+      async (_p: string, email: string, role: MemberRole, _preview?: SealedInvitePreview) => {
+        calls.push("inviteMember");
+        const member: MemberView = {
+          user_id: "u-carol",
+          email,
+          display_name: "",
+          role,
+          state: "pending",
+          has_key: false,
+          invited_by: "me",
+        };
+        return member;
+      },
+    ),
     updateMemberRole: jest.fn(async () => members[0]!),
     removeMember: jest.fn(async () => {}),
     listProjectKeys: jest.fn(async () => {
@@ -170,7 +174,12 @@ describe("ShareDialog", () => {
     await inviteCarol();
 
     await waitFor(() =>
-      expect(api.inviteMember).toHaveBeenCalledWith("p1", "carol@example.com", "editor"),
+      expect(api.inviteMember).toHaveBeenCalledWith(
+        "p1",
+        "carol@example.com",
+        "editor",
+        expect.objectContaining({ v: 1 }),
+      ),
     );
   });
 
@@ -213,6 +222,10 @@ describe("ShareDialog", () => {
     const [, wrapped, ownKeyId] = api.putProjectKey.mock.calls[0]!;
     expect(ownKeyId).toBe(keyId);
     expect(unwrapProjectKey(wrapped, keyring!.getDek(), "p1")).toEqual(pek);
+    // The invite carries the project's name sealed under its key, for the invitee only.
+    const [, , , preview] = api.inviteMember.mock.calls[0]!;
+    expect(JSON.stringify(preview)).not.toContain("Home reno");
+    expect(openInvitePreview(pek, "p1", preview!).name).toBe("Home reno");
     // Recorded as the key this account minted, and the invitee's public key pinned.
     expect(readKeyTrust(store).minted.get("p1")).toBe(keyId);
     expect(pinnedMemberKey(readKeyTrust(store), "p1", "u-carol")).toBe(carol.publicKey);

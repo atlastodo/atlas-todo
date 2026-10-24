@@ -431,7 +431,7 @@ describe("AuthProvider", () => {
   it("checks the server's discovery before signing in, and stops at one that lacks todo", async () => {
     routes["/discovery"] = () => [
       200,
-      { protocol_version: 6, capabilities: [], apps: [{ id: "notes", version: 1 }] },
+      { protocol_version: 7, capabilities: [], apps: [{ id: "notes", version: 1 }] },
     ];
     const auth = await renderProvider();
     await expect(auth.current().login(USER.email, PASSWORD)).rejects.toBeInstanceOf(
