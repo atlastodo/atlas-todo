@@ -13,6 +13,9 @@
       packages = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+          # nixpkgs' electron, or a pinned newer release while nixpkgs lacks a security fix
+          # (nix/electron.nix in the source repository, copied in by scripts/package-desktop.sh).
+          electron = pkgs.callPackage ./electron.nix { };
         in
         rec {
           default = self.packages.${system}.atlas-desktop;
@@ -54,7 +57,7 @@
               cp assets/icon.png $out/share/pixmaps/atlas-todo.png
 
               mkdir -p $out/bin
-              makeWrapper ${pkgs.electron}/bin/electron $out/bin/atlas-desktop \
+              makeWrapper ${electron}/bin/electron $out/bin/atlas-desktop \
                 --add-flags "$out/share/atlas-desktop/dist/main.js" \
                 --add-flags "--no-update" \
                 --add-flags "--class=atlas-desktop" \

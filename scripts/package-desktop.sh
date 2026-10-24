@@ -64,6 +64,7 @@ node -e 'require("fs").writeFileSync(process.argv[1], JSON.stringify({ release: 
 echo ">> 4. Generating embedded flake.nix..."
 sed "s/@VERSION@/$VERSION/g" "$ROOT/nix/flake.desktop.nix" > "$OUTPUT_DIR/flake.nix"
 cp "$ROOT/nix/flake.desktop.lock" "$OUTPUT_DIR/flake.lock"
+cp "$ROOT/nix/electron.nix" "$OUTPUT_DIR/electron.nix"
 
 # 5. Create release tarball archives
 echo ">> 5. Creating release archives..."
