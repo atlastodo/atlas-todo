@@ -25,6 +25,8 @@ let
       echo "   shows the sign-in screen's server field." >&2
     fi
   '';
+  # The electron the desktop builds run (nix/electron.nix): nixpkgs' or a pinned newer release.
+  electron = pkgs.callPackage ./nix/electron.nix { };
 in
 {
   # ---------------------------------------------------------------------------
@@ -75,7 +77,7 @@ in
   ];
 
   env = {
-    ELECTRON_OVERRIDE_DIST_PATH = "${pkgs.electron}/bin";
+    ELECTRON_OVERRIDE_DIST_PATH = "${electron}/bin";
   } // lib.optionalAttrs config.android.enable {
     # Gradle/JVM heap for native Android builds; mkForce replaces the android module's GRADLE_OPTS.
     GRADLE_OPTS = lib.mkForce "-Dorg.gradle.jvmargs=\"-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+HeapDumpOnOutOfMemoryError\" -XX:MaxMetaspaceSize=1024m -Xmx4096m";
@@ -240,7 +242,7 @@ in
 
     echo ">> Launching Atlas Todo desktop app..."
     # devenv's LD_LIBRARY_PATH points Electron at libraries built against another glibc.
-    (cd apps/electron && env -u LD_LIBRARY_PATH "${pkgs.electron}/bin/electron" dist/main.js --dev "$@")
+    (cd apps/electron && env -u LD_LIBRARY_PATH "${electron}/bin/electron" dist/main.js --dev "$@")
   '';
 
   scripts."desktop:start".exec = ''
@@ -252,7 +254,7 @@ in
     (cd apps/electron && bun run build)
     echo ">> Starting Atlas Todo desktop..."
     # devenv's LD_LIBRARY_PATH points Electron at libraries built against another glibc.
-    (cd apps/electron && env -u LD_LIBRARY_PATH "${pkgs.electron}/bin/electron" dist/main.js "$@")
+    (cd apps/electron && env -u LD_LIBRARY_PATH "${electron}/bin/electron" dist/main.js "$@")
   '';
   scripts."desktop:package".exec = ''bash "$DEVENV_ROOT/scripts/package-desktop.sh" "$@"'';
   # Refresh everything Dependabot cannot update (the devenv and flake locks, the Bun pins, the whole
