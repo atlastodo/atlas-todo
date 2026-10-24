@@ -7,6 +7,7 @@ import {
   generatePek,
   generateUserKeypair,
   projectKeyId,
+  sealInvitePreview,
   sealKey,
   type ApiClient,
   type InviteView,
@@ -139,6 +140,20 @@ describe("NotificationsScreen", () => {
     await waitFor(() => expect(screen.getByText("Secret plans")).toBeTruthy());
     expect(screen.queryByLabelText("Encrypted project name")).toBeNull();
     expect(renderedText()).not.toMatch(/__enc|\[object Object\]/);
+  });
+
+  it("opens the preview the inviter sealed under the project key", async () => {
+    // Sync protocol 7: the server cannot read the project's fields, so the inviter seals them.
+    const pek = generatePek();
+    const sealed: InviteView = {
+      ...encryptedInvite(pek, me.publicKey),
+      project: { name: null, icon: null, color: null, kind: null },
+      preview: sealInvitePreview(pek, projectKeyId(pek), "p1", { name: "Sealed plans" }),
+    };
+    await mount([sealed], { keyring: myKeyring() });
+    await waitFor(() => expect(screen.getByText("Sealed plans")).toBeTruthy());
+    expect(screen.queryByLabelText("Encrypted project name")).toBeNull();
+    expect(renderedText()).not.toMatch(/\[object Object\]/);
   });
 
   it("shows a locked, generic name when the key cannot be opened", async () => {
