@@ -1,13 +1,14 @@
 import { contextBridge, ipcRenderer } from "electron";
 // Type-only: a sandboxed preload can require nothing of ours at runtime.
 import type { CloseToTrayState } from "./desktopSettings";
+import type { OpenedBytes } from "./keyWrap";
 import type { UpdateState } from "./updater";
 
 /**
  * The renderer-facing desktop bridge: only what a plain browser tab cannot do and the renderer reads.
  * `isElectron` distinguishes the shell from a tab; `focusWindow` raises the window on a
  * Notification click (the OS does not for renderer-created ones); `safeStorage` encrypts one byte
- * string with the OS key store (null when unusable); `closeToTray` backs Settings' toggle;
+ * string with the OS key store (null when unusable; decrypt also says when to seal again); `closeToTray` backs Settings' toggle;
  * `updates` provides release check, download and install status; `serverUrl.set` reports the
  * server the renderer resolved, so the window allows plain-http content only for an http server
  * (true when the window is being rebuilt for it).
@@ -21,7 +22,7 @@ contextBridge.exposeInMainWorld("atlasDesktop", {
   safeStorage: {
     encrypt: (plain: Uint8Array): Promise<Uint8Array | null> =>
       ipcRenderer.invoke("atlas:safe-storage:encrypt", plain),
-    decrypt: (sealed: Uint8Array): Promise<Uint8Array | null> =>
+    decrypt: (sealed: Uint8Array): Promise<OpenedBytes | null> =>
       ipcRenderer.invoke("atlas:safe-storage:decrypt", sealed),
   },
   closeToTray: {

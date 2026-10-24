@@ -98,8 +98,8 @@ export async function readSession(): Promise<Session | null> {
     const session = await fromStored(stored);
     const sealed = stored.sealedKeys;
     if (session.dek && sealed && !isPreferredSeal(sealed)) {
-      // Browser-wrapped in the desktop app: seal with the OS key store now, unless it is unusable
-      // or something else was written meanwhile.
+      // Browser-wrapped in the desktop app, or sealed under an OS key since rotated: seal with the
+      // OS key store now, unless it is unusable or something else was written meanwhile.
       void enqueue(async () => {
         const next = await toStored(session);
         if (next.sealedKeys?.v === 2 && readRaw() === raw) {

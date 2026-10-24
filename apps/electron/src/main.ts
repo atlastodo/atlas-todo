@@ -355,6 +355,7 @@ ipcMain.handle("atlas:get-device-name", (event) => {
 
 // The session key set wrapped with the OS key store (webKeyStore.ts). Both answer null when the
 // key store is unusable or the sender is not the app; the renderer then keeps its WebCrypto wrap.
+// Decrypt answers `{ plain, reseal }`: `reseal` after an OS key rotation, so the renderer seals again.
 ipcMain.handle("atlas:safe-storage:encrypt", (event, plain: unknown) =>
   isTrustedSender(event) ? encryptBytes(safeStorage, process.platform, plain) : null,
 );
