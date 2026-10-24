@@ -13,7 +13,7 @@
     },
     "apps/electron": {
       "name": "@atlastodo/electron",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "devDependencies": {
         "@types/node": "^26.6.5",
         "electron": "^45.0.0",
@@ -23,7 +23,7 @@
     },
     "apps/mobile": {
       "name": "@atlastodo/mobile",
-      "version": "0.1.13",
+      "version": "0.1.14",
       "dependencies": {
         "@atlastodo/client-core": "0.1.11",
         "@atlastodo/shared": "0.1.11",
