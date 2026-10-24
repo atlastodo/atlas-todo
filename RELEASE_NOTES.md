@@ -1,6 +1,7 @@
-## v0.1.12
-
-An urgent fix: opening the app at its address (and every desktop start) showed a blank page after onboarding or sign-in. Links straight to a view, such as `/today`, still worked. Your data was never affected.
+## v0.1.13
 
 ### Fixes
-- Declare the landing index as a drawer screen, so `/` opens your default view again
+- Offer passkey sign-in only where the server has passkeys
+
+### Maintenance
+- 5 dependency updates, 3 maintenance commits (CI, build, tests) ([full list](https://github.com/atlastodo/atlas-todo/compare/v0.1.12...v0.1.13))
