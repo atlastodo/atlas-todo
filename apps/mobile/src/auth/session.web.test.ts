@@ -251,15 +251,19 @@ describe("web session keys at rest", () => {
     /**
      * The preload's `atlasDesktop.safeStorage`, with a toy cipher: a marker byte, then the bytes
      * XOR-ed. `usable: false` is a machine without an OS key store (Linux without a keyring).
+     * Each seal records the OS key version it was made under; one older than `keyVersion` opens
+     * with `reseal`, as after a key rotation.
      */
-    function installOsKeyStore(usable = true) {
+    function installOsKeyStore(usable = true, keyVersion = 1) {
       const xor = (bytes: Uint8Array) => Uint8Array.from(bytes, (b) => b ^ 0x5a);
       const bridge = {
         encrypt: jest.fn(async (plain: Uint8Array) =>
-          usable ? Uint8Array.of(0xee, ...xor(plain)) : null,
+          usable ? Uint8Array.of(0xee, keyVersion, ...xor(plain)) : null,
         ),
         decrypt: jest.fn(async (sealed: Uint8Array) =>
-          usable && sealed[0] === 0xee ? xor(sealed.slice(1)) : null,
+          usable && sealed[0] === 0xee
+            ? { plain: xor(sealed.slice(2)), reseal: sealed[1]! < keyVersion }
+            : null,
         ),
       };
       desktop.atlasDesktop = { isElectron: true, safeStorage: bridge };
@@ -313,6 +317,37 @@ describe("web session keys at rest", () => {
       installOsKeyStore(false);
       expect(await readSession()).toEqual(UNLOCKED);
       await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(raw()).toBe(before);
+    });
+
+    it("seals the keys again when the OS key was rotated since", async () => {
+      installOsKeyStore(true, 1);
+      await writeSession(UNLOCKED);
+      const before = raw();
+
+      const bridge = installOsKeyStore(true, 2);
+      expect(await readSession()).toEqual(UNLOCKED);
+      await waitFor(() => expect(raw()).not.toBe(before));
+      expect(bridge.encrypt).toHaveBeenCalledTimes(1);
+      expect(sealedVersion()).toBe(2);
+      expect(raw()).not.toContain(DEK);
+
+      // Now under the current key, it opens without asking for another seal.
+      const current = installOsKeyStore(true, 2);
+      expect(await readSession()).toEqual(UNLOCKED);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(current.encrypt).not.toHaveBeenCalled();
+    });
+
+    it("leaves a sealed session alone when the OS key store opens it under the current key", async () => {
+      installOsKeyStore();
+      await writeSession(UNLOCKED);
+      const before = raw();
+
+      const bridge = installOsKeyStore();
+      expect(await readSession()).toEqual(UNLOCKED);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(bridge.encrypt).not.toHaveBeenCalled();
       expect(raw()).toBe(before);
     });
 
