@@ -62,7 +62,12 @@ updates:
       - dependency-name: "react-native-svg"
       - dependency-name: "@react-native-async-storage/async-storage"
       - dependency-name: "@react-native-community/datetimepicker"
-      # The one real hold: nativewind 4 is built on Tailwind 3, and Tailwind 4 needs nativewind 5,
+      # Held: Electron stays on the major the desktop app runs on. nix/electron.nix (nixpkgs'
+      # electron, or the release binary pinned there) is what the flake and the release tarball
+      # ship, and the typings and dev binary here must match it; move both together.
+      - dependency-name: "electron"
+        update-types: ["version-update:semver-major"]
+      # Held: nativewind 4 is built on Tailwind 3, and Tailwind 4 needs nativewind 5,
       # which is only a release candidate so far. Drop this with the move to a stable nativewind 5.
       - dependency-name: "tailwindcss"
         update-types: ["version-update:semver-major"]
