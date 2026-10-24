@@ -101,10 +101,13 @@ async function loadOrCreateKey({ subtle, idb }: Env): Promise<CryptoKey> {
   }
 }
 
-/** The desktop app's OS key store bridge (apps/electron's preload), or null in a browser. */
+/**
+ * The desktop app's OS key store bridge (apps/electron's preload), or null in a browser. Decrypt
+ * also reports `reseal` when the OS key has been rotated since the bytes were sealed.
+ */
 interface DesktopKeyStore {
   encrypt(plain: Uint8Array): Promise<Uint8Array | null>;
-  decrypt(sealed: Uint8Array): Promise<Uint8Array | null>;
+  decrypt(sealed: Uint8Array): Promise<{ plain: Uint8Array; reseal: boolean } | null>;
 }
 
 function desktopKeyStore(): DesktopKeyStore | null {
@@ -114,24 +117,33 @@ function desktopKeyStore(): DesktopKeyStore | null {
   return bridge as DesktopKeyStore;
 }
 
+/** `out` as bytes, or null when it is anything else. */
+function asBytes(out: unknown): Uint8Array | null {
+  return ArrayBuffer.isView(out)
+    ? new Uint8Array(out.buffer, out.byteOffset, out.byteLength)
+    : null;
+}
+
 /** The bridge's answer as bytes, or null for a refusal, a failure or anything else. */
-async function viaBridge(call: () => Promise<Uint8Array | null>): Promise<Uint8Array | null> {
+async function viaBridge(call: () => Promise<unknown>): Promise<Uint8Array | null> {
   try {
-    const out = await call();
-    return ArrayBuffer.isView(out)
-      ? new Uint8Array(out.buffer, out.byteOffset, out.byteLength)
-      : null;
+    return asBytes(await call());
   } catch {
     return null;
   }
 }
 
+/** OS-key-store seals that opened under a rotated key, to be sealed again with the current one. */
+const staleSeals = new WeakSet<SealedKeys>();
+
 /**
  * Whether keys sealed as `sealed` are in the best form this page can store: false for a browser
- * wrap in the desktop app, which the OS key store may be able to seal instead.
+ * wrap in the desktop app, which the OS key store may be able to seal instead, and for an OS key
+ * store seal that {@link openSessionKeys} found to be under a rotated key.
  */
 export function isPreferredSeal(sealed: SealedKeys): boolean {
-  return sealed.v === 2 || desktopKeyStore() === null;
+  if (sealed.v === 2) return !staleSeals.has(sealed);
+  return desktopKeyStore() === null;
 }
 
 const encoder = new TextEncoder();
@@ -171,7 +183,11 @@ export async function openSessionKeys(
   sealed: SealedKeys,
   userId: string,
 ): Promise<SessionKeys | null> {
-  if (sealed.v === 2) return openWithOsKeyStore(sealed.ct, userId);
+  if (sealed.v === 2) {
+    const opened = await openWithOsKeyStore(sealed.ct, userId);
+    if (opened?.reseal) staleSeals.add(sealed);
+    return opened?.keys ?? null;
+  }
   const wrapping = wrappingKey();
   const key = await wrapping?.key;
   if (!wrapping || !key || sealed.v !== 1) return null;
@@ -191,17 +207,25 @@ export async function openSessionKeys(
   }
 }
 
-async function openWithOsKeyStore(ct: string, userId: string): Promise<SessionKeys | null> {
+async function openWithOsKeyStore(
+  ct: string,
+  userId: string,
+): Promise<{ keys: SessionKeys; reseal: boolean } | null> {
   const desktop = desktopKeyStore();
   if (!desktop) return null;
   try {
-    const plain = await viaBridge(() => desktop.decrypt(base64ToBytes(ct)));
+    const out = (await desktop.decrypt(base64ToBytes(ct))) as {
+      plain?: unknown;
+      reseal?: unknown;
+    } | null;
+    const plain = asBytes(out?.plain);
     if (!plain) return null;
     const opened = JSON.parse(new TextDecoder().decode(plain)) as {
       user?: unknown;
       keys?: unknown;
     };
-    return opened.user === userId ? sessionKeysFrom(opened.keys) : null;
+    const keys = opened.user === userId ? sessionKeysFrom(opened.keys) : null;
+    return keys ? { keys, reseal: out?.reseal === true } : null;
   } catch {
     return null;
   }

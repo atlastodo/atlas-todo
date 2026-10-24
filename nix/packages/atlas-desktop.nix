@@ -1,5 +1,6 @@
 # The Electron desktop app, built from source: the compiled Electron main
-# process plus the web export, run with nixpkgs' electron.
+# process plus the web export, run with the electron of nix/electron.nix (nixpkgs' electron, or a
+# pinned newer release while nixpkgs lacks a security fix), which the flake passes in.
 {
   lib,
   stdenv,

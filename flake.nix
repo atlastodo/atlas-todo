@@ -39,6 +39,8 @@
         atlas-desktop = final.callPackage ./nix/packages/atlas-desktop.nix {
           inherit version;
           bun2nix = bun2nix.packages.${final.stdenv.hostPlatform.system}.default;
+          # nixpkgs' electron, or a pinned newer release while nixpkgs lacks a security fix.
+          electron = final.callPackage ./nix/electron.nix { };
         };
       };
 
