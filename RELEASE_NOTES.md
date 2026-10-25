@@ -1,11 +1,11 @@
-## v0.1.16
+## v0.1.17-rc.1
 
-**Breaking:** this release speaks sync protocol 7 (core v0.1.14), which hides item kinds, field names
-and links from the server. It needs a server on core v0.1.14 or later, and such a server refuses
-older apps. Existing data migrates itself on the first sync.
-
-### Features
-- Seal the invite preview for sync protocol 7
+### Fixes
+- Group a task row's markers, date and hover actions
+- Slide a task row's meta aside for its hover actions
+- Tidy keyboard focus on the Today page
+- Inset the app-wide keyboard focus ring
+- Inset the sidebar rows' keyboard focus ring
 
 ### Maintenance
-- 1 dependency update ([full list](https://github.com/atlastodo/atlas-todo/compare/v0.1.15...v0.1.16))
+- 3 dependency updates ([full list](https://github.com/atlastodo/atlas-todo/compare/v0.1.16...v0.1.17-rc.1))
