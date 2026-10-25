@@ -177,26 +177,47 @@ html.light ::-webkit-scrollbar-thumb:hover {
  * Keyboard focus: an accent ring that follows each control's corner radius (outlines track
  * `border-radius`), in place of the browser's square black/white default. Text inputs and text
  * areas get none: the caret already marks them, and browsers count a clicked field as keyboard
- * focus. Everything else gets a small gap. `--accent-500-rgb` is inherited from
- * `ThemeProvider`/`ThemeScope`; the fallback is the default accent.
+ * focus. The ring is inset, drawn just inside the control's edge: an outside ring is cut off by
+ * any clipping ancestor (a horizontal ScrollView such as the compose bar's chips, an
+ * `overflow-hidden` card) and painted over by a touching neighbour (the sidebar's active row).
+ * Inside the ring, a 2px line in the page colour (an inset shadow under the outline) keeps it
+ * visible on a control filled with the accent itself, such as a selected segment.
+ * `--accent-500-rgb` is inherited from `ThemeProvider`/`ThemeScope`; the fallback is the default
+ * accent.
  *
  * In the base layer, after Tailwind's preflight: its `:-moz-focusring { outline: auto }` is
  * `:focus-visible` in Firefox and would otherwise put the native ring back. Utilities come later,
  * so a component's own `web:outline-none` or `web:focus-visible:outline-*` class still wins.
  */
 @layer base {
+  :root,
+  html.light {
+    --focus-gap: #ffffff;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --focus-gap: #09090b;
+    }
+  }
+
+  html.dark {
+    --focus-gap: #09090b;
+  }
+
   :focus-visible {
     outline: 2px solid rgb(var(--accent-500-rgb, 99 102 241) / 0.9);
-    outline-offset: 2px;
+    outline-offset: -2px;
+    box-shadow: inset 0 0 0 4px var(--focus-gap);
   }
 
   input:focus-visible,
   textarea:focus-visible {
     outline: none;
+    box-shadow: none;
   }
 
   select:focus-visible {
     outline-color: rgb(var(--accent-500-rgb, 99 102 241) / 0.6);
-    outline-offset: 0;
   }
 }

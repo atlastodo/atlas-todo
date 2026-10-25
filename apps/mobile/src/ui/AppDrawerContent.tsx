@@ -44,13 +44,6 @@ export interface AppDrawerContentProps {
   collapsed?: boolean;
 }
 
-/**
- * Keyboard focus ring for sidebar rows. Rows touch, so an outline drawn outside the row is painted
- * over by the next row's background (the active row's highlight hides its bottom edge); inset it.
- */
-const FOCUS_RING =
-  "web:focus-visible:outline web:focus-visible:outline-2 web:focus-visible:outline-offset-[-2px] web:focus-visible:outline-accent-500";
-
 /** One navigation row; its own component so `useContextMenu` is one hook per row. */
 function SidebarRow({
   item,
@@ -93,7 +86,7 @@ function SidebarRow({
         onPress={press}
         onHoverIn={tip.onHoverIn}
         onHoverOut={tip.onHoverOut}
-        className={`mx-2 my-0.5 items-center justify-center rounded-lg py-2.5 web:cursor-pointer ${FOCUS_RING} ${
+        className={`mx-2 my-0.5 items-center justify-center rounded-lg py-2.5 web:cursor-pointer ${
           active
             ? "bg-neutral-100 dark:bg-neutral-800"
             : "web:hover:bg-neutral-100 dark:web:hover:bg-neutral-900"
@@ -117,7 +110,7 @@ function SidebarRow({
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
       // `web:` scopes pointer affordances to the browser. The active row uses a neutral highlight so the label stays legible.
-      className={`mx-2 flex-row items-center gap-3 rounded-lg px-3 py-2.5 web:cursor-pointer ${FOCUS_RING} ${
+      className={`mx-2 flex-row items-center gap-3 rounded-lg px-3 py-2.5 web:cursor-pointer ${
         active
           ? "bg-neutral-100 dark:bg-neutral-800"
           : "web:hover:bg-neutral-100 dark:web:hover:bg-neutral-900"
