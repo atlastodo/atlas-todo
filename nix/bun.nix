@@ -25,15 +25,15 @@
     url = "https://registry.npmjs.org/@asamuzakjp/css-color/-/css-color-3.2.0.tgz";
     hash = "sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw==";
   };
-  "@atlastodo/client-core@0.1.14-rc.1" = fetchurl {
-    url = "https://registry.npmjs.org/@atlastodo/client-core/-/client-core-0.1.14-rc.1.tgz";
-    hash = "sha512-JjOhRIeO3WbDrOiXMVUcPJ1S/zHatKN+IrMrK7q7wisy4qyFh1RrIlurowa97ui3L1tAA0jyF9cZNELeI82pKQ==";
+  "@atlastodo/client-core@0.1.14" = fetchurl {
+    url = "https://registry.npmjs.org/@atlastodo/client-core/-/client-core-0.1.14.tgz";
+    hash = "sha512-8kUIUODgfGKUlqLSfkMICmIiEygToluYZ8NP4NBtlNzOTIkjJRNQZkxBC0BHEMbeH63sNwy6aDQQGY55rlalLw==";
   };
   "@atlastodo/electron" = copyPathToStore ../apps/electron;
   "@atlastodo/mobile" = copyPathToStore ../apps/mobile;
-  "@atlastodo/shared@0.1.14-rc.1" = fetchurl {
-    url = "https://registry.npmjs.org/@atlastodo/shared/-/shared-0.1.14-rc.1.tgz";
-    hash = "sha512-7BoHpxcMx3SWhw3o2mA3KvmUG2X+KHWH+xL++ATgTfglV4gWIuiNDSEEbED5eJLhPnhGHJsoRUGQueWq7uJ8Fg==";
+  "@atlastodo/shared@0.1.14" = fetchurl {
+    url = "https://registry.npmjs.org/@atlastodo/shared/-/shared-0.1.14.tgz";
+    hash = "sha512-bX+2QT42FANTtzHHgiONyLs2Juuz/0nwVRswgaeoOGCEfPK8+M1t0PDtQ/KH4OakJYVYxARCH712GEbhPBYtfQ==";
   };
   "@babel/code-frame@7.29.7" = fetchurl {
     url = "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.7.tgz";
