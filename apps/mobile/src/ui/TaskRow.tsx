@@ -788,6 +788,55 @@ function TaskRowView({
               </View>
             )}
 
+            {/* In the flow, between the date and the caret: no room until the row is hovered or
+                keyboard focus is inside it, then it widens and slides the flag and date left
+                rather than covering them. `!` beats global.css's colour-only `transition-property`
+                on every div; `motion-safe` keeps reduced motion instant. The vertical padding
+                (cancelled by the negative margin) leaves the clipped box room for focus rings. */}
+            {hoverActions && (
+              <View
+                className={
+                  "-my-1 -ml-3 max-w-0 flex-row items-center gap-1 overflow-hidden py-1 opacity-0 " +
+                  "group-hover:ml-0 group-hover:max-w-[52px] group-hover:opacity-100 " +
+                  "web:focus-within:ml-0 web:focus-within:max-w-[52px] web:focus-within:opacity-100 " +
+                  "motion-safe:!transition-[margin,max-width,opacity]"
+                }
+              >
+                {onOpen && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("task.details", "Task details")}
+                    onPress={(e) => {
+                      e?.stopPropagation?.();
+                      onOpen(task);
+                    }}
+                    className="rounded-md p-1 web:cursor-pointer"
+                  >
+                    <Info
+                      size={16}
+                      className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200"
+                    />
+                  </Pressable>
+                )}
+                {onSchedule && !locked && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("task.reschedule")}
+                    onPress={(e) => {
+                      e?.stopPropagation?.();
+                      onSchedule(task);
+                    }}
+                    className="rounded-md p-1 web:cursor-pointer"
+                  >
+                    <CalendarClock
+                      size={16}
+                      className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200"
+                    />
+                  </Pressable>
+                )}
+              </View>
+            )}
+
             {onToggleExpand ? (
               <Pressable
                 accessibilityRole="button"
@@ -818,75 +867,6 @@ function TaskRowView({
             ) : null}
           </View>
         </View>
-
-        {/* Out of the layout flow: it takes no room until hovered or focused, then covers the meta
-            (with the row's hover background) and repeats the caret so it stays reachable. */}
-        {hoverActions && (
-          <View
-            className={
-              "absolute bottom-0 right-9 top-0 flex-row items-center gap-2 pl-3 opacity-0 group-hover:opacity-100 web:focus-within:opacity-100 " +
-              // Unfocused, its background is the row's hover colour reached through the same hover
-              // (and global.css's same 250ms fade). It fades from the list's opaque surface, not from
-              // transparent: two half-faded layers stacked over the row would light this box up
-              // ahead of the row.
-              (focused
-                ? "bg-neutral-100 dark:bg-neutral-800"
-                : "bg-white dark:bg-zinc-950 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900 web:focus-within:bg-neutral-50 dark:web:focus-within:bg-neutral-900")
-            }
-          >
-            {onOpen && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("task.details", "Task details")}
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onOpen(task);
-                }}
-                className="web:cursor-pointer"
-              >
-                <Info
-                  size={16}
-                  className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200"
-                />
-              </Pressable>
-            )}
-            {onSchedule && !locked && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("task.reschedule")}
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onSchedule(task);
-                }}
-                className="web:cursor-pointer"
-              >
-                <CalendarClock
-                  size={16}
-                  className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200"
-                />
-              </Pressable>
-            )}
-            {onToggleExpand && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  expanded ? t("task.collapseSubtasks") : t("task.expandSubtasks")
-                }
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onToggleExpand(task);
-                }}
-                className="p-1 rounded web:cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              >
-                {expanded ? (
-                  <ChevronDown size={16} className="text-neutral-500" />
-                ) : (
-                  <ChevronRight size={16} className="text-neutral-500" />
-                )}
-              </Pressable>
-            )}
-          </View>
-        )}
       </Pressable>
     </SwipeableRow>
   );
