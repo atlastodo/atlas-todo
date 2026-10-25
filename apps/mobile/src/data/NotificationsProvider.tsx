@@ -15,6 +15,7 @@ import {
   isEncryptedEnvelope,
   isFieldEnvelopeV2,
   openFieldValue,
+  openInvitePreview,
   openProjectKeyRow,
   projectKeyId,
   recordAcceptedProject,
@@ -147,12 +148,37 @@ function readString(
   return read.ok && typeof read.value === "string" && read.value !== "" ? read.value : null;
 }
 
+/** A string field of an opened preview, or null. */
+const previewString = (v: unknown): string | null => (typeof v === "string" && v !== "" ? v : null);
+
 /**
  * Decrypt an invite's project fields with the key sealed to this user, falling back to the keys the
- * keyring already holds. Anything that stays unreadable comes back null, never as envelope JSON.
+ * keyring already holds: the preview the inviter sealed, else the fields of the inviter's rows from
+ * before sync protocol 7. Anything that stays unreadable comes back null, never as envelope JSON.
  */
 function readInviteProject(invite: InviteView, keyring: Keyring | null): InviteProject {
   const key = inviteKey(invite, keyring);
+  const sealed = invite.preview;
+  if (sealed) {
+    const keys = [
+      key?.keyId === sealed.kid ? key.key : undefined,
+      keyring?.projectKey(invite.project_id, sealed.kid),
+    ];
+    for (const k of keys) {
+      if (!k) continue;
+      try {
+        const preview = openInvitePreview(k, invite.project_id, sealed);
+        return {
+          name: previewString(preview.name),
+          icon: previewString(preview.icon),
+          color: previewString(preview.color),
+          kind: previewString(preview.kind),
+        };
+      } catch {
+        // not under this key
+      }
+    }
+  }
   return {
     name: readString(invite, "name", key, keyring),
     icon: readString(invite, "icon", key, keyring),
