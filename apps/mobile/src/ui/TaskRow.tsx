@@ -496,8 +496,8 @@ function TaskRowView({
         style={depth > 0 ? { paddingLeft: ROW_EDGE + depth * INDENT_STEP } : undefined}
         className={
           "group relative flex-row items-center border-b border-neutral-100 dark:border-neutral-800 " +
-          // `pr-9` keeps the drag grip (DraggableTaskRow.web) clear of the meta.
-          (isWeb ? "pl-4 py-3 gap-3 " + (canHover ? "pr-9 " : "pr-4 ") : "px-4 py-3.5 gap-3.5 ") +
+          // `pr-6` keeps the drag grip (DraggableTaskRow.web, as wide) clear of the meta.
+          (isWeb ? "pl-4 py-3 gap-3 " + (canHover ? "pr-6 " : "pr-4 ") : "px-4 py-3.5 gap-3.5 ") +
           (onOpen || selectMode ? "web:cursor-pointer " : "") +
           (!isEditing ? "web:select-none " : "") +
           (selected
@@ -751,54 +751,62 @@ function TaskRowView({
               </Pressable>
             )}
 
-            {task.recurrence !== null && (
-              <Marker label={t("task.recurring")}>
-                <Repeat size={iconSize} className="text-neutral-500" />
-              </Marker>
-            )}
+            {/* Markers and date are one group: on wide layouts it takes a fixed-width column,
+                right-aligned so dates line up across rows, the markers pack against the date and
+                the hover actions follow it. A row without a date reserves nothing. */}
+            {(task.recurrence !== null || hasReminder || task.priority < 4 || dateMs !== null) && (
+              <View
+                style={columns && dateMs !== null ? { minWidth: isWeb ? 80 : 104 } : undefined}
+                className={"flex-row items-center justify-end " + (isWeb ? "gap-3" : "gap-3.5")}
+              >
+                {task.recurrence !== null && (
+                  <Marker label={t("task.recurring")}>
+                    <Repeat size={iconSize} className="text-neutral-500" />
+                  </Marker>
+                )}
 
-            {hasReminder && (
-              <Marker label={t("task.hasReminder")}>
-                <Bell size={iconSize} className="text-neutral-500" />
-              </Marker>
-            )}
+                {hasReminder && (
+                  <Marker label={t("task.hasReminder")}>
+                    <Bell size={iconSize} className="text-neutral-500" />
+                  </Marker>
+                )}
 
-            {task.priority < 4 && (
-              <Marker label={t("task.priority", { level: task.priority })}>
-                <Flag size={iconSize} className={PRIORITY_COLOR[task.priority] ?? ""} />
-              </Marker>
-            )}
+                {task.priority < 4 && (
+                  <Marker label={t("task.priority", { level: task.priority })}>
+                    <Flag size={iconSize} className={PRIORITY_COLOR[task.priority] ?? ""} />
+                  </Marker>
+                )}
 
-            {/* On wide layouts the date takes a fixed-width column, left-aligned so the markers
-                pack right up against it and dates still line up across rows. A row without a date
-                reserves nothing, so its markers sit at the edge. */}
-            {dateMs !== null && (
-              <View style={columns ? { minWidth: isWeb ? 80 : 104 } : undefined}>
-                <Text
-                  accessibilityLabel={
-                    showCompletedAt ? t("task.completedOn", { date: formatDue(dateMs) }) : undefined
-                  }
-                  className={
-                    (isWeb ? "text-xs " : "text-base font-normal ") +
-                    (overdue && !showCompletedAt ? "text-red-500" : "text-neutral-500")
-                  }
-                >
-                  {formatDue(dateMs)}
-                </Text>
+                {dateMs !== null && (
+                  <Text
+                    accessibilityLabel={
+                      showCompletedAt
+                        ? t("task.completedOn", { date: formatDue(dateMs) })
+                        : undefined
+                    }
+                    className={
+                      (isWeb ? "text-xs " : "text-base font-normal ") +
+                      (overdue && !showCompletedAt ? "text-red-500" : "text-neutral-500")
+                    }
+                  >
+                    {formatDue(dateMs)}
+                  </Text>
+                )}
               </View>
             )}
 
             {/* In the flow, between the date and the caret: no room until the row is hovered or
                 keyboard focus is inside it, then it widens and slides the flag and date left
-                rather than covering them. `!` beats global.css's colour-only `transition-property`
+                rather than covering them, a small gap after the date (the negative margin eats most
+                of the row's gap). `!` beats global.css's colour-only `transition-property`
                 on every div; `motion-safe` keeps reduced motion instant. The vertical padding
                 (cancelled by the negative margin) leaves the clipped box room for focus rings. */}
             {hoverActions && (
               <View
                 className={
                   "-my-1 -ml-3 max-w-0 flex-row items-center gap-1 overflow-hidden py-1 opacity-0 " +
-                  "group-hover:ml-0 group-hover:max-w-[52px] group-hover:opacity-100 " +
-                  "web:focus-within:ml-0 web:focus-within:max-w-[52px] web:focus-within:opacity-100 " +
+                  "group-hover:-ml-2 group-hover:max-w-[52px] group-hover:opacity-100 " +
+                  "web:focus-within:-ml-2 web:focus-within:max-w-[52px] web:focus-within:opacity-100 " +
                   "motion-safe:!transition-[margin,max-width,opacity]"
                 }
               >
