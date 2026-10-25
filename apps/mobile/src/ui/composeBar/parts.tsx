@@ -63,18 +63,22 @@ export function ChipButton({
   return (
     <View
       className={
-        "flex-row items-center gap-1.5 border " +
-        (isWeb ? "rounded-full px-2.5 py-1 " : "rounded-full px-3.5 py-2 ") +
+        "flex-row items-center rounded-full border " +
         (set ? c.chip : "border-slate-300/80 bg-white dark:border-slate-700/80 dark:bg-zinc-900")
       }
     >
+      {/* The chip's padding sits on its two buttons rather than on this wrapper, so each one's
+          focus ring follows the pill instead of hugging the label or the X. */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={field}
         accessibilityValue={set ? { text: value } : undefined}
         onPress={onPress}
         hitSlop={6}
-        className="flex-row items-center gap-1.5 active:opacity-75 web:cursor-pointer"
+        className={
+          "flex-row items-center gap-1.5 rounded-full pr-1.5 active:opacity-75 " +
+          (isWeb ? "py-1 pl-2.5 web:cursor-pointer" : "py-2 pl-3.5")
+        }
       >
         <Icon
           size={isWeb ? 13 : 17}
@@ -98,7 +102,7 @@ export function ChipButton({
           onRemove();
         }}
         hitSlop={isWeb ? 6 : 10}
-        className="web:cursor-pointer ml-0.5"
+        className={"rounded-full p-0.5 " + (isWeb ? "mr-2 web:cursor-pointer" : "mr-3")}
       >
         <X size={isWeb ? 12 : 15} className={set ? c.text : "text-slate-500 dark:text-slate-400"} />
       </Pressable>

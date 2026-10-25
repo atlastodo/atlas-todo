@@ -44,7 +44,7 @@ export default function TabsLayout() {
             accessibilityLabel={t("palette.title")}
             onPress={openPalette}
             hitSlop={8}
-            className="px-4"
+            className="mx-3 rounded-md p-1"
           >
             <Search size={20} className="text-neutral-500" />
           </Pressable>

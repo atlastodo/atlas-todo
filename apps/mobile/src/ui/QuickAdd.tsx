@@ -669,6 +669,8 @@ export function QuickAdd(props: QuickAddProps) {
               hitSlop={6}
               accessible={false}
               importantForAccessibility="no"
+              // Not a Tab stop: it only focuses the field, which is the next stop anyway.
+              {...({ tabIndex: -1 } as object)}
             >
               <Plus
                 size={isWeb ? 16 : 18}
