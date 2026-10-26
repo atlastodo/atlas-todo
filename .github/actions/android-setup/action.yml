@@ -17,8 +17,6 @@ description: Java, the Android SDK, Node, Bun, deps, the prebuilt native project
 inputs:
   node-version:
     required: true
-  bun-version:
-    required: true
 
 outputs:
   sdk-paths:
@@ -47,7 +45,7 @@ runs:
         package-manager-cache: false
     - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       with:
-        bun-version: ${{ inputs.bun-version }}
+        bun-version-file: .bun-version
     - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache
