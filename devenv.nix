@@ -59,6 +59,9 @@ in
     systemImages.enable = true;
     reactNative.enable = true;
   };
+  # android turns on languages.java, whose language server (on by default) nothing here uses; its
+  # default package also passes `jdk` to jdt-language-server, which nixpkgs renamed to `jdk25`.
+  languages.java.lsp.enable = false;
 
   languages.javascript = {
     enable = true;
