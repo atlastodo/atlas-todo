@@ -1,11 +1,12 @@
-## v0.1.17-rc.1
+## v0.1.17-rc.2
 
 ### Fixes
-- Group a task row's markers, date and hover actions
-- Slide a task row's meta aside for its hover actions
-- Tidy keyboard focus on the Today page
-- Inset the app-wide keyboard focus ring
-- Inset the sidebar rows' keyboard focus ring
+- Turn off the Java language server
+- Fall back to nix run when devenv is not on PATH
+
+### Documentation
+- Play the trailer inline in the README
+- Add the trailer to the README
 
 ### Maintenance
-- 3 dependency updates ([full list](https://github.com/atlastodo/atlas-todo/compare/v0.1.16...v0.1.17-rc.1))
+- 1 dependency update, 2 maintenance commits (CI, build, tests) ([full list](https://github.com/atlastodo/atlas-todo/compare/v0.1.17-rc.1...v0.1.17-rc.2))
