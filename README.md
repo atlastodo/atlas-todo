@@ -28,6 +28,10 @@ and ideas go to [Discussions](https://github.com/atlastodo/atlas-todo/discussion
 [Getting help](#getting-help).
 
 <p>
+  <a href="docs/video/atlas-todo-trailer.mp4"><img src="docs/video/trailer-poster.png" alt="Play the 30-second Atlas Todo trailer: adding a task on the Today page, a project board and more"></a>
+</p>
+
+<p>
   <img src="docs/screenshots/task-detail.png" alt="The task detail: notes, subtasks, attachments and comments next to a properties panel with due date, priority, labels, repeat and reminders">
 </p>
 
