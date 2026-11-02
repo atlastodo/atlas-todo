@@ -10,7 +10,7 @@ import {
   formatDuration,
   phaseDurationMs,
   startOfDay,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useFocus } from "../data/FocusProvider";
 import { useFocusSessions } from "../hooks/useFocusSessions";
 import { useLocalTasks } from "../hooks/useLocalTasks";

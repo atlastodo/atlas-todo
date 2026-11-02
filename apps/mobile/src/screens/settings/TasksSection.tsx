@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { useTranslation } from "react-i18next";
-import { SMART_VIEWS, type SmartView, type TaskSwipeAction } from "@atlastodo/shared";
+import { SMART_VIEWS, type SmartView, type TaskSwipeAction } from "@atlastodo/todo-core";
 import { ACTIVITY_RETENTION_DAYS, usePreferences } from "../../hooks/usePreferences";
 import { effectiveActivityRetention, useInstancePolicy } from "../../hooks/useInstancePolicy";
 import { ListPicker, type PickerOption } from "../../ui/ListPicker";

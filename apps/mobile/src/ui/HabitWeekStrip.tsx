@@ -9,7 +9,7 @@ import {
   weekdayOfKey,
   type CheckinState,
   type Habit,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 
 /**
  * The seven days ending on the shown one, as labelled circles (weekday and date), the smallest

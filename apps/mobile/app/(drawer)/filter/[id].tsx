@@ -1,7 +1,7 @@
 import { useLayoutEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { DEFAULT_FILTER_ICON, resolveProjectColor } from "@atlastodo/shared";
+import { DEFAULT_FILTER_ICON, resolveProjectColor } from "@atlastodo/todo-core";
 import { FilterScreen } from "../../../src/screens/FilterScreen";
 import { useSavedFilters } from "../../../src/hooks/useSavedFilters";
 import { usePreferences } from "../../../src/hooks/usePreferences";

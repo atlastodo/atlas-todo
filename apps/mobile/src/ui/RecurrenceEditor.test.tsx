@@ -1,9 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { parseRule } from "@atlastodo/shared";
+import { parseRule } from "@atlastodo/todo-core";
 import { RecurrenceEditor } from "./RecurrenceEditor";
 
 /**
- * The recurrence engine (parse/format/roll-forward) is `@atlastodo/shared`, tested there; these assert
+ * The recurrence engine (parse/format/roll-forward) is `@atlastodo/todo-core`, tested there; these assert
  * the editor emits the right rule string for a choice and turns recurrence off. The rule string is
  * parsed back with the shared `parseRule` so the test never hard-codes the wire format.
  */

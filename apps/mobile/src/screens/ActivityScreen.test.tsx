@@ -6,12 +6,12 @@ import {
   moveTaskToProject,
   updateTask,
   writeProjectActivity,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { fakeAuth, withApp } from "../testutil";
 import { ActivityScreen } from "./ActivityScreen";
 
 /**
- * Over a real in-memory store. The feed, undo and recording rules are `@atlastodo/shared`'s
+ * Over a real in-memory store. The feed, undo and recording rules are `@atlastodo/todo-core`'s
  * (tested there); these assert the screen scopes to its view, words entries, offers undo only on
  * the latest change to a field, and records the undo.
  */

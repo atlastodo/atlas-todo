@@ -1,5 +1,6 @@
+import { rescopeSection, type Section } from "@atlastodo/todo-core";
 import { useCallback, useContext, useMemo } from "react";
-import { rescopeNeeded, rescopeSection, type Section } from "@atlastodo/client-core";
+import { rescopeNeeded } from "@atlastodo/client-core";
 import {
   isTrashed,
   moveSectionToProject as moveSectionToProjectOp,
@@ -12,7 +13,7 @@ import {
   toSection,
   toTask,
   writeProjectActivity,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 

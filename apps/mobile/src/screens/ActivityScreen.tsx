@@ -7,7 +7,7 @@ import {
   type Activity,
   type ActivityGroup,
   type FeedItem,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useActivityFeed, type FeedTarget } from "../hooks/useActivityFeed";
 import { useFormat } from "../hooks/useFormat";
 import { usePreferences } from "../hooks/usePreferences";

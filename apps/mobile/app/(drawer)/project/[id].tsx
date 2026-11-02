@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { DEFAULT_FOLDER_ICON, resolveProjectColor } from "@atlastodo/shared";
+import { DEFAULT_FOLDER_ICON, resolveProjectColor } from "@atlastodo/todo-core";
 import { ProjectScreen } from "../../../src/screens/ProjectScreen";
 import { ProjectsScreen } from "../../../src/screens/ProjectsScreen";
 import { useProjects } from "../../../src/hooks/useProjects";

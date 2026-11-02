@@ -1,8 +1,9 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useMemo, useState } from "react";
 import { TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlastodo/client-core";
-import { completedHistory } from "@atlastodo/shared";
+
+import { completedHistory } from "@atlastodo/todo-core";
 import { useTaskListView } from "../hooks/useTaskListView";
 import { useProjects } from "../hooks/useProjects";
 import { GroupedTaskList } from "../ui/GroupedTaskList";

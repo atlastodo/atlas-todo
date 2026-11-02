@@ -27,7 +27,7 @@ import {
   type SmartView,
   type ThemePref,
   type TimeFormatPref,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { usePreferences } from "../hooks/usePreferences";
 import { useOnboarding } from "../data/OnboardingContext";

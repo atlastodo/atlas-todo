@@ -1,6 +1,7 @@
+import { type Task } from "@atlastodo/todo-core";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { LocalStore, type Task } from "@atlastodo/client-core";
-import { allTasks, createTask, type GroupBy } from "@atlastodo/shared";
+import { LocalStore } from "@atlastodo/client-core";
+import { allTasks, createTask, type GroupBy } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { useCursor, type CursorContextValue } from "../data/CursorProvider";
 import { ScreenFocusContext } from "../data/ScreenFocusContext";

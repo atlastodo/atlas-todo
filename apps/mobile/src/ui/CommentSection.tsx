@@ -1,8 +1,9 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Activity, Comment } from "@atlastodo/shared";
-import type { Task } from "@atlastodo/client-core";
+import type { Activity, Comment } from "@atlastodo/todo-core";
+
 import { useAuth } from "../auth/AuthContext";
 import { useComments } from "../hooks/useComments";
 import { useActivities } from "../hooks/useActivities";

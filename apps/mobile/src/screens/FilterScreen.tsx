@@ -1,3 +1,4 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -7,8 +8,8 @@ import {
   parse,
   resolveProjectColor,
   type EvalContext,
-} from "@atlastodo/shared";
-import type { Task } from "@atlastodo/client-core";
+} from "@atlastodo/todo-core";
+
 import { useTaskListView } from "../hooks/useTaskListView";
 import { useProjects } from "../hooks/useProjects";
 import { useLabels } from "../hooks/useLabels";

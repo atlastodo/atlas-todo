@@ -1,7 +1,8 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlastodo/client-core";
-import { assignedToMe } from "@atlastodo/shared";
+
+import { assignedToMe } from "@atlastodo/todo-core";
 import { useAuth } from "../auth/AuthContext";
 import { useTaskListView } from "../hooks/useTaskListView";
 import { UserRound } from "../ui/icons";

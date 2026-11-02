@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { ApiError, LocalStore, type ApiClient, type PasskeyProof } from "@atlastodo/client-core";
-import { PREFERENCES_ID } from "@atlastodo/shared";
+import { PREFERENCES_ID } from "@atlastodo/todo-core";
 import { fakeAuth, withApp } from "../testutil";
 import { settingsSections, type SettingsSectionId } from "../nav/settingsNav";
 import { relativeLabel, SettingsScreen } from "./SettingsScreen";

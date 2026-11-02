@@ -1,8 +1,9 @@
+import { type Label } from "@atlastodo/todo-core";
 import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { PROJECT_COLORS } from "@atlastodo/shared";
-import type { Label } from "@atlastodo/client-core";
+import { PROJECT_COLORS } from "@atlastodo/todo-core";
+
 import { useLabels } from "../hooks/useLabels";
 import { useToast } from "../data/ToastProvider";
 import { Plus, Trash2 } from "./icons";

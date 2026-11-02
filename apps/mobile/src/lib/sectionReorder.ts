@@ -1,4 +1,4 @@
-import { rankMoveWrites, type RankWrite } from "@atlastodo/shared";
+import { rankMoveWrites, type RankWrite } from "@atlastodo/todo-core";
 
 /**
  * Cross-section drag maths for the project list view.

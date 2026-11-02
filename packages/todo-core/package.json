@@ -1,0 +1,30 @@
+{
+  "name": "@atlastodo/todo-core",
+  "version": "0.1.17-rc.2",
+  "private": true,
+  "description": "Atlas Todo's domain on Atlas core: its app definition, entity models, task rules, recurrence, quick add, filters, i18n catalogs and the headless SDK client",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./sdk": "./src/sdk/index.ts",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@atlastodo/client-core": "0.1.15",
+    "@atlastodo/sdk": "0.1.15",
+    "@noble/hashes": "^2.4.0",
+    "fflate": "^0.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

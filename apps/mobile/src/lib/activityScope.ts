@@ -1,4 +1,4 @@
-import type { Task } from "@atlastodo/client-core";
+import { type Task } from "@atlastodo/todo-core";
 import {
   assignedToMe,
   evaluate,
@@ -8,7 +8,7 @@ import {
   type EvalContext,
   type FeedScope,
   type FilterNode,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 
 /** How long a task completed or deleted out of a view still counts as the view's. */
 export const RECENT_MS = 7 * 24 * 60 * 60 * 1000;

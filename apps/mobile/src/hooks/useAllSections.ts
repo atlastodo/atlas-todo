@@ -1,6 +1,7 @@
+import { type Section } from "@atlastodo/todo-core";
 import { useMemo } from "react";
-import type { Section } from "@atlastodo/client-core";
-import { isTrashed, toSection } from "@atlastodo/shared";
+
+import { isTrashed, toSection } from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 
 export interface UseAllSections {

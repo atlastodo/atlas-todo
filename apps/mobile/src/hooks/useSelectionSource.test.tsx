@@ -1,5 +1,6 @@
+import { type Task } from "@atlastodo/todo-core";
 import { render, act } from "@testing-library/react-native";
-import type { Task } from "@atlastodo/client-core";
+
 import { SelectionProvider, useSelection, type SelectionApi } from "../data/SelectionProvider";
 import { ScreenFocusContext } from "../data/ScreenFocusContext";
 import { useSelectionSource } from "./useSelectionSource";

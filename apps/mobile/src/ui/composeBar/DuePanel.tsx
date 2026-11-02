@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { quickScheduleOptions, type QuickScheduleOption } from "@atlastodo/shared";
+import { quickScheduleOptions, type QuickScheduleOption } from "@atlastodo/todo-core";
 import DateTimePicker, { type DateTimePickerEvent } from "../DateTimePicker";
 import { Calendar, ChevronRight, Check, X } from "../icons";
 import { Panel, PanelButton, SheetOption } from "./parts";

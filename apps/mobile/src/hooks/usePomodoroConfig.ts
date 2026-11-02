@@ -3,7 +3,7 @@ import {
   DEFAULT_POMODORO,
   PREFERENCES_ID as PREF_ID,
   type PomodoroConfig,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 
 export interface UsePomodoroConfig {

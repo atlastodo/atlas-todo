@@ -7,7 +7,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { clampOffset, classifySwipe, DEFAULT_SWIPE } from "@atlastodo/shared";
+import { clampOffset, classifySwipe, DEFAULT_SWIPE } from "@atlastodo/todo-core";
 import { Calendar, Check } from "./icons";
 import { haptics } from "../lib/haptics";
 

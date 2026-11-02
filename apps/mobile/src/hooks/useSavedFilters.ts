@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { defaultColorForIndex, isTrashed, softDelete } from "@atlastodo/shared";
+import { defaultColorForIndex, isTrashed, softDelete } from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 
 /**

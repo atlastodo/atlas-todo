@@ -19,7 +19,7 @@ import {
   type TaskSwipeAction,
   type ThemePref,
   type TimeFormatPref,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 
 /**
@@ -27,7 +27,7 @@ import { useStore } from "../data/StoreProvider";
  *
  * Every setting is a field on the one synced `preference` entity. Each field is read behind a type
  * guard with a default, because the value arrives over sync and can be anything; an unreadable
- * value degrades to the default. The guards live in `@atlastodo/shared` and pin field names and defaults.
+ * value degrades to the default. The guards live in `@atlastodo/todo-core` and pin field names and defaults.
  */
 
 /** What the habits screen lists: only what is in play today, or every habit. */

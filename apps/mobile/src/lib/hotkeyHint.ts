@@ -1,9 +1,9 @@
 import { Platform } from "react-native";
-import { HOTKEY_BINDINGS, type HotkeyHandlers } from "@atlastodo/shared";
+import { HOTKEY_BINDINGS, type HotkeyHandlers } from "@atlastodo/todo-core";
 
 /**
  * A compact hint for an action's keyboard shortcut ("T", "Del", "Ctrl+D", "⌘D"), read from
- * `@atlastodo/shared`'s `HOTKEY_BINDINGS` so a menu's hints track the real bindings. `pick` chooses
+ * `@atlastodo/todo-core`'s `HOTKEY_BINDINGS` so a menu's hints track the real bindings. `pick` chooses
  * which of a binding's display keys to show when it lists alternatives (Delete shows "⌫" and "Del").
  */
 export function hotkeyHint(action: keyof HotkeyHandlers, pick?: string): string | undefined {

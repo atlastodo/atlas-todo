@@ -1,6 +1,7 @@
+import { type Task } from "@atlastodo/todo-core";
 import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlastodo/client-core";
+
 import { useProjectMembers } from "../hooks/useProjectMembers";
 import { UserRound } from "./icons";
 

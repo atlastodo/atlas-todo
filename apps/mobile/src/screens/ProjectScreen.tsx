@@ -1,3 +1,4 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Platform, Pressable, Switch, Text, View, type LayoutChangeEvent } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -9,8 +10,8 @@ import {
   resolveProjectColor,
   sortTasks,
   toProject,
-} from "@atlastodo/shared";
-import type { Task } from "@atlastodo/client-core";
+} from "@atlastodo/todo-core";
+
 import { useStore } from "../data/StoreProvider";
 import { useAuth } from "../auth/AuthContext";
 import { useTaskListView } from "../hooks/useTaskListView";

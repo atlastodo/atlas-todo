@@ -1,3 +1,4 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
@@ -36,8 +37,8 @@ import {
   weekdayLabels,
   zonedParts,
   type DayCell,
-} from "@atlastodo/shared";
-import type { Task } from "@atlastodo/client-core";
+} from "@atlastodo/todo-core";
+
 import { useLocalTasks } from "../hooks/useLocalTasks";
 import { usePreferences } from "../hooks/usePreferences";
 import { useFormat } from "../hooks/useFormat";

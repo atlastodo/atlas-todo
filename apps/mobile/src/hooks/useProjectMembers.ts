@@ -1,5 +1,10 @@
 import { useCallback, useMemo } from "react";
-import { isOwnerDeletionScheduled, isProjectOwner, toMember, type Member } from "@atlastodo/shared";
+import {
+  isOwnerDeletionScheduled,
+  isProjectOwner,
+  toMember,
+  type Member,
+} from "@atlastodo/todo-core";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";
 

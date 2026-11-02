@@ -1,9 +1,10 @@
 # Contributing to Atlas Todo
 
 Thanks for your interest. This repository is the Atlas Todo app: one React Native + Expo UI for
-Android, iOS and the web (`apps/mobile`) and the Electron desktop shell (`apps/electron`). The
-sync server, the core client packages (`@atlastodo/client-core`, `@atlastodo/shared`) and their
-docs are in the core repository, [atlastodo/atlas](https://github.com/atlastodo/atlas), which has
+Android, iOS and the web (`apps/mobile`), the Electron desktop shell (`apps/electron`), the todo
+domain (`packages/todo-core`: the task rules, models and UI catalogs) and the `atlas-todo` CLI
+(`crates/`). The sync server, the core client packages (`@atlastodo/client-core`,
+`@atlastodo/sdk`) and their docs are in the core repository, [atlastodo/atlas](https://github.com/atlastodo/atlas), which has
 its own contributing guide. For a map of how the pieces fit, start with its
 [architecture notes](https://github.com/atlastodo/atlas/blob/main/docs/architecture.md).
 
@@ -40,8 +41,8 @@ the app picks it up with the next core release (see [Core packages](#core-packag
 - Issues labelled [`good first issue`](https://github.com/atlastodo/atlas-todo/labels/good%20first%20issue)
   are small and self-contained; [`help wanted`](https://github.com/atlastodo/atlas-todo/labels/help%20wanted)
   ones are bigger.
-- Translations: the catalogs live in `@atlastodo/shared`, in the core repository
-  (`packages/shared/src/locales/`); its contributing guide has the steps.
+- Translations: the catalogs are `packages/todo-core/src/locales/`; see
+  [Adding or changing UI text](#adding-or-changing-ui-text).
 - Not code: testing a pre-release (the Android closed test, an `-rc` APK or desktop tarball),
   reproducing someone else's bug report, or answering a question in Discussions all help.
 - Accessibility: [ACCESSIBILITY.md](./ACCESSIBILITY.md) lists the known gaps.
@@ -156,16 +157,29 @@ Tests live next to the code they test: `apps/electron/src/*.test.ts` and
 
 ## Core packages
 
-`apps/mobile` depends on `@atlastodo/client-core` and `@atlastodo/shared` from npm, pinned to one
-exact core release version in `apps/mobile/package.json`. They follow the newest core release:
-`deps:update` (run weekly by `deps-refresh.yml`) moves both, `ATLAS_SERVER_IMAGE` in `devenv.nix`,
-`bun.lock` and `nix/bun.nix`, and CI runs `test:all` and a web export on the PR. See [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md#pinning-the-core-packages).
+`apps/mobile` and `packages/todo-core` depend on `@atlastodo/client-core` (and todo-core on
+`@atlastodo/sdk`) from npm, pinned to one exact core release version; the CLI on core's
+`atlas-client` crate at the same release's git tag (`Cargo.toml`). They follow the newest core
+release: `deps:update` (run weekly by `deps-refresh.yml`) moves them, `ATLAS_SERVER_IMAGE` in
+`devenv.nix`, `bun.lock`, `Cargo.lock` and `nix/bun.nix`, and CI runs `test:all` and a web export on the PR. See [apps/mobile/RELEASE.md](./apps/mobile/RELEASE.md#pinning-the-core-packages).
 
 ## Adding or changing UI text
 
-All user-facing text goes through i18next, and the catalogs are part of `@atlastodo/shared`, in
-the core repository. Add the keys there first (its contributing guide says how); once a core
-release carries them, bump the pin here and use them with `t("section.key")`.
+All user-facing text goes through i18next. The catalogs are in `packages/todo-core/src/locales/`:
+English (`en.json`, the base), Danish, German, Spanish, French, Italian, Dutch, Polish and
+Brazilian Portuguese (`pt.json`).
+
+1. Add the key to every catalog, at the same path. For a plural, `en.json` has `_one`/`_other`;
+   each other catalog has its own language's plural forms (Polish `_one`/`_few`/`_many`/`_other`).
+   If you can't write a language, add the English text to its catalog and say so in the PR.
+2. Use it with `t("section.key")`.
+3. Run `cd packages/todo-core && bunx --bun vitest run src/i18n.test.ts`: every locale must have
+   exactly the English keys, in its own plural forms.
+
+A new language also needs an entry in `packages/todo-core/src/i18n.ts` and a quick-add lexicon in
+`packages/todo-core/src/quickAddLexicons.ts` (then
+`bun packages/todo-core/scripts/export-quick-add-lexicons.ts` for the CLI), with cases in the
+"every UI language" table of `quickAddParse.test.ts`.
 `cd apps/mobile && bun run test -- i18n/keys` checks that every literal key the app uses exists in
 every locale.
 

@@ -1,5 +1,6 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useCallback, useMemo } from "react";
-import { isTrashed, softDelete } from "@atlastodo/shared";
+import { isTrashed, softDelete } from "@atlastodo/todo-core";
 import {
   BlobIntegrityError,
   decryptMeta,
@@ -11,7 +12,6 @@ import {
   type AttachmentMetaPayload,
   type Keyring,
   type PersistedAttachmentUpload,
-  type Task,
 } from "@atlastodo/client-core";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";

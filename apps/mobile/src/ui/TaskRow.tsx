@@ -1,3 +1,4 @@
+import { type Label, type Task } from "@atlastodo/todo-core";
 import {
   memo,
   useCallback,
@@ -19,14 +20,14 @@ import {
   type TextInputInstance,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Label, Task } from "@atlastodo/client-core";
+
 import {
   PRIORITY_COLOR,
   isOverdue,
   resolveTaskSwipe,
   type AvatarColor,
   type TaskSwipeAction,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import {
   Bell,
   CalendarClock,

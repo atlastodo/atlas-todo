@@ -1,3 +1,4 @@
+import { type Task } from "@atlastodo/todo-core";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import {
   ApiError,
@@ -16,7 +17,6 @@ import {
   type ApiClient,
   type AttachmentCiphertext,
   type BlobTransport,
-  type Task,
 } from "@atlastodo/client-core";
 import * as DocumentPicker from "expo-document-picker";
 import { fakeAuth, withApp } from "../testutil";

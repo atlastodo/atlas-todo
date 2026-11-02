@@ -12,7 +12,7 @@ import {
   projectDescendantIds,
   purge,
   resolveProjectColor,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { DRAWER_EXTRA, FEATURE_VIEWS, NAV, PRIMARY_TABS, viewPath } from "../../src/nav/navModel";
 import { activityHref } from "../../src/ui/ActivityButton";
 import type { SmartView } from "../../src/nav/navModel";

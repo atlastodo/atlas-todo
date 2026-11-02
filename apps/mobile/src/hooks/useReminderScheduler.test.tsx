@@ -14,7 +14,7 @@ import {
   makeInstant,
   softDeleteTask,
   zonedParts,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import i18n from "../i18n";
 import { withApp } from "../testutil";
 import {

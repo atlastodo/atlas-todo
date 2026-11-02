@@ -1,0 +1,22 @@
+{
+  "_doc": "Atlas Todo's app definition (docs/architecture.md#app-definitions in atlastodo/atlas): its kinds beyond the bundled manifest's, how each finds the share scope whose key encrypts it, and the writer field of its entries. Registered with core by src/app.ts (TypeScript) and crates/atlas-todo-rules (Rust). A new kind, field or link goes here, not in core.",
+  "app": "todo",
+  "kinds": {
+    "project": { "scope": "self" },
+    "task": { "scope": [{ "field": "project_id" }] },
+    "section": { "scope": [{ "field": "project_id" }] },
+    "label": {},
+    "comment": { "scope": [{ "field": "task_id", "kind": "task" }] },
+    "preference": {},
+    "saved_filter": {},
+    "reminder": {},
+    "activity": {
+      "scope": [{ "field": "task_id", "kind": "task" }, { "field": "project_id" }],
+      "actor_field": "actor_id"
+    },
+    "focus_session": {},
+    "habit": {},
+    "habit_checkin": {},
+    "attachment": { "scope": [{ "field": "task_id", "kind": "task" }] }
+  }
+}

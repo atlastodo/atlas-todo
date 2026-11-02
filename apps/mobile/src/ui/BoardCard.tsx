@@ -1,8 +1,9 @@
+import { type Label, type Task } from "@atlastodo/todo-core";
 import { useRef, useState } from "react";
 import { Platform, Pressable, Text, View, type GestureResponderEvent } from "react-native";
 import { useTranslation } from "react-i18next";
-import { PRIORITY_COLOR, isOverdue } from "@atlastodo/shared";
-import type { Label, Task } from "@atlastodo/client-core";
+import { PRIORITY_COLOR, isOverdue } from "@atlastodo/todo-core";
+
 import { useContextMenu, type MenuPos } from "../hooks/useContextMenu";
 import { useSelectionOptional } from "../data/SelectionProvider";
 import { haptics } from "../lib/haptics";

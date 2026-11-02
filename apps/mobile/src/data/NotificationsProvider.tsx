@@ -24,7 +24,7 @@ import {
   type Keyring,
   type LocalStore,
 } from "@atlastodo/client-core";
-import { writeProjectActivity } from "@atlastodo/shared";
+import { writeProjectActivity } from "@atlastodo/todo-core";
 import { isProjectShared } from "@atlastodo/client-core";
 import { useAuth } from "../auth/AuthContext";
 import { loadProjectKeys } from "../hooks/useProjectKeyMaintenance";

@@ -1,10 +1,11 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useMemo } from "react";
-import type { Task } from "@atlastodo/client-core";
-import { openTasks } from "@atlastodo/shared";
+
+import { openTasks } from "@atlastodo/todo-core";
 import { useTaskListView } from "../hooks/useTaskListView";
 import { QuickAddTaskList } from "./ViewTaskList";
 
-/** All tasks: every open task across every project (`@atlastodo/shared`'s `openTasks`). Grouping by project is natural here, though the default stays none. */
+/** All tasks: every open task across every project (`@atlastodo/todo-core`'s `openTasks`). Grouping by project is natural here, though the default stays none. */
 
 export interface AllTasksScreenProps {
   onOpenTask?: (task: Task) => void;

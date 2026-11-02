@@ -71,10 +71,15 @@ in
     bun.enable = true;
   };
 
+  # The atlas-todo CLI (crates/): nixpkgs' Rust here, rust-toolchain.toml's in CI and the release
+  # builds (it follows core's, whose atlas-client crate the CLI builds on).
+  languages.rust.enable = true;
+
   # --- Packages / tooling ----------------------------------------------------
   packages = with pkgs; [
     git
     curl
+    cargo-nextest
     # Desktop tooling
     electron
   ];
@@ -135,9 +140,8 @@ in
     set -euo pipefail
     cd "$DEVENV_ROOT"
     command -v docker >/dev/null && docker info >/dev/null 2>&1 || { echo "!! screenshots needs a running Docker daemon." >&2; exit 1; }
-    # The core release the app pins. It was published before the core repository was renamed, so it
-    # exists under the old image name only; later core releases are ghcr.io/atlastodo/atlas:X.Y.Z.
-    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas:0.1.14}"
+    # The core release the app pins.
+    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas:0.1.15}"
     work="$(mktemp -d)"
     net="atlas-screenshots-$$"
     cleanup() {
@@ -169,16 +173,22 @@ in
     set -euo pipefail
     cd "$DEVENV_ROOT"
     # `--bun` runs vitest itself under Bun's runtime (supported since Bun 1.4), matching CI.
+    cargo nextest run --workspace
+    (cd packages/todo-core && bunx --bun vitest run)
     (cd apps/electron && bunx --bun vitest run)
     # jest-expo must run under real Node (`bun run` only starts it).
     (cd apps/mobile && bun run test)
   '';
-  # Every workspace's typecheck (mobile and electron, as CI's `Lint (TypeScript)`), oxlint
+  # rustfmt and clippy (the CLI, as CI's `Lint (Rust)`), every workspace's typecheck (todo-core,
+  # mobile and electron, as CI's `Lint (TypeScript)`), oxlint
   # (`.oxlintrc.json`), `prettier --check` and the shipped licences.
   # One command per line: under `set -e` a failure on the left of `&&` would not stop the script.
   scripts.lint.exec = ''
     set -euo pipefail
     cd "$DEVENV_ROOT"
+    cargo fmt --all -- --check
+    cargo clippy --workspace --all-targets --no-deps -- -D warnings
+    (cd packages/todo-core && bun run typecheck)
     (cd apps/mobile && bun run typecheck)
     (cd apps/electron && bun run typecheck)
     bunx oxlint .
@@ -196,6 +206,7 @@ in
   '';
   scripts.fmt.exec = ''
     cd "$DEVENV_ROOT"
+    cargo fmt --all
     bunx prettier --write .
   '';
   scripts."build:ios".exec = "cd \"$DEVENV_ROOT/apps/mobile\" && bunx eas-cli build --profile preview --platform ios \"$@\"";
