@@ -1,9 +1,10 @@
 /**
  * Metro config for the Bun workspace (apps/mobile, apps/electron).
  *
- * `@atlastodo/client-core` and `@atlastodo/shared` are the core release's built packages (their
- * ESM `dist/`), installed like any other dependency. Bun keeps every installed package in the
- * workspace root's `node_modules/.bun`, so Metro watches the workspace root, resolves from both
+ * `@atlastodo/client-core` is the core release's built package (its ESM `dist/`), installed like any
+ * other dependency; `@atlastodo/todo-core` is this workspace's `packages/todo-core`, TypeScript
+ * sources Metro transforms like the app's. Bun keeps every installed package in the workspace root's
+ * `node_modules/.bun`, so Metro watches the workspace root, resolves from both
  * the app's and the root's `node_modules`, and honours the package `exports` field.
  *
  * Hierarchical lookup must stay enabled: Bun's isolated linker puts each package's dependencies

@@ -4,7 +4,7 @@
  */
 import { act, fireEvent, renderHook, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { PREFERENCES_ID } from "@atlastodo/shared";
+import { PREFERENCES_ID } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { PermissionExplainerHost } from "../ui/PermissionExplainerHost";
 import { useQuickAddMorningReminder } from "./useReminders";

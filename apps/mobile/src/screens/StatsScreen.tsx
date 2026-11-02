@@ -14,7 +14,7 @@ import {
   shiftDateKey,
   totalCompleted,
   type Habit,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import type { LucideIcon } from "../ui/icons";
 import { CircleCheckBig, Flame, Timer } from "../ui/icons";
 import { BarChart } from "../ui/BarChart";

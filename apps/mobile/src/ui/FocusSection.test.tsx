@@ -1,14 +1,15 @@
+import { type Task } from "@atlastodo/todo-core";
 import { fireEvent, render as rtlRender, screen } from "@testing-library/react-native";
 import type { ReactElement, ReactNode } from "react";
-import { LocalStore, type Task } from "@atlastodo/client-core";
-import { PREFERENCES_ID } from "@atlastodo/shared";
+import { LocalStore } from "@atlastodo/client-core";
+import { PREFERENCES_ID } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { FocusProvider } from "../data/FocusProvider";
 import { FocusSection } from "./FocusSection";
 
 /**
  * Over a real in-memory store and the real `FocusProvider` (no mocks). The pomodoro maths lives in
- * `@atlastodo/shared` and is tested there; these assert the section's wiring: the feature gate, starting a
+ * `@atlastodo/todo-core` and is tested there; these assert the section's wiring: the feature gate, starting a
  * run on this task, and that logged sessions surface as tracked time.
  */
 

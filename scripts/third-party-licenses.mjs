@@ -4,16 +4,18 @@
 // Every package reachable through `dependencies` (and installed peer and optional dependencies)
 // from the workspace packages that end up in a build: the app and the desktop shell. Dev
 // dependencies (build tools, tests) are not shipped or listed. The Atlas core packages
-// (@atlastodo/client-core, @atlastodo/shared, from the core repository's release) are Atlas's own
+// (@atlastodo/client-core, @atlastodo/todo-core, from the core repository's release) are Atlas's own
 // code under the same licence, so they are walked for their dependencies but not listed. The
 // server's and the CLI's notices (Rust crates) ship with the core repository's releases.
 //
 // Usage:
 //   node scripts/third-party-licenses.mjs --check          # fail on a licence outside ALLOW
-//   node scripts/third-party-licenses.mjs --notices FILE   # write the notices file
+//   node scripts/third-party-licenses.mjs --notices FILE   # write the notices file (JS)
+//   node scripts/third-party-licenses.mjs --notices FILE --rust   # and the CLI's Rust crates (cargo on PATH)
 //
 // Run `bun install` first. `--check` mirrors the core repository's allow-list (its deny.toml plus
 // the licences only JS packages use); a new licence fails it for a human to review.
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -128,7 +130,50 @@ function licenseTexts(dir) {
     .map((f) => fs.readFileSync(path.join(dir, f), "utf8").trim());
 }
 
-function writeNotices(file) {
+function rustPackages() {
+  const meta = JSON.parse(
+    execFileSync(
+      "cargo",
+      [
+        "metadata",
+        "--format-version",
+        "1",
+        "--locked",
+        "--filter-platform",
+        "x86_64-unknown-linux-gnu",
+      ],
+      { cwd: ROOT, encoding: "utf8", maxBuffer: 256 * 1024 * 1024 },
+    ),
+  );
+  const byId = new Map(meta.packages.map((p) => [p.id, p]));
+  const nodes = new Map(meta.resolve.nodes.map((n) => [n.id, n]));
+  // The Rust program a release ships: the `atlas-todo` CLI (with core's atlas-client).
+  const shipped = ["atlas-todo-cli"];
+  const roots = meta.packages.filter((p) => shipped.includes(p.name));
+  const seen = new Set();
+  const queue = roots.map((p) => p.id);
+  while (queue.length) {
+    const id = queue.shift();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    for (const dep of nodes.get(id)?.deps ?? []) {
+      if (dep.dep_kinds.some((k) => k.kind === null)) queue.push(dep.pkg);
+    }
+  }
+  const workspace = new Set(meta.workspace_members);
+  return [...seen]
+    .filter((id) => !workspace.has(id))
+    .map((id) => byId.get(id))
+    .map((p) => ({
+      name: p.name,
+      version: p.version,
+      license: p.license ?? (p.license_file ? `see ${p.license_file}` : "UNKNOWN"),
+      dir: path.dirname(p.manifest_path),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.version.localeCompare(b.version));
+}
+
+function writeNotices(file, withRust = false) {
   const out = [
     "Atlas Todo third-party notices",
     "",
@@ -154,6 +199,7 @@ function writeNotices(file) {
     }
   };
   section("JavaScript packages (web, Android and desktop apps)", jsPackages());
+  if (withRust) section("Rust crates (the atlas-todo CLI)", rustPackages());
   fs.writeFileSync(file, out.join("\n"));
   console.log(`Wrote ${file} (${(fs.statSync(file).size / 1024).toFixed(0)} KiB)`);
 }
@@ -173,9 +219,9 @@ if (import.meta.main ?? process.argv[1] === import.meta.filename) {
     console.log("Every shipped JS package has an allowed licence.");
   }
   const at = args.indexOf("--notices");
-  if (at >= 0) writeNotices(args[at + 1]);
+  if (at >= 0) writeNotices(args[at + 1], args.includes("--rust"));
   if (!args.includes("--check") && at < 0) {
-    console.error("usage: third-party-licenses.mjs [--check] [--notices FILE]");
+    console.error("usage: third-party-licenses.mjs [--check] [--notices FILE [--rust]]");
     process.exit(2);
   }
 }

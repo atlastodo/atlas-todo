@@ -1,5 +1,6 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useEffect, useRef } from "react";
-import type { Task } from "@atlastodo/client-core";
+
 import { useSelection } from "../data/SelectionProvider";
 import { useScreenFocused } from "../data/ScreenFocusContext";
 

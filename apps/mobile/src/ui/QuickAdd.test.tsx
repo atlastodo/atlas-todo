@@ -7,13 +7,13 @@ import {
   reminderFireAt,
   toReminder,
   toTask,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { QuickAdd } from "./QuickAdd";
 
 /**
  * `now` is injected everywhere so "tomorrow" is a fixed instant rather than whatever the clock says
- * when CI runs. The parsing itself is `@atlastodo/shared`'s and tested there; these assert the wiring --
+ * when CI runs. The parsing itself is `@atlastodo/todo-core`'s and tested there; these assert the wiring --
  * that what the parser understood is what actually gets created.
  */
 const NOW = Date.parse("2026-07-17T12:00:00Z"); // a Friday

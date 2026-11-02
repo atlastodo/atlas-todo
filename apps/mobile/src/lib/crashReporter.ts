@@ -15,7 +15,7 @@ import {
   createBreadcrumbTrail,
   emptyDiagnostics,
   type BreadcrumbTrail,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import type {
   ApiClient,
   BreadcrumbCode,

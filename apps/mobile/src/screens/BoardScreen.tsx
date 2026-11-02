@@ -1,3 +1,4 @@
+import { type CreateTaskInput, type Label, type Section, type Task } from "@atlastodo/todo-core";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   FlatList,
@@ -22,8 +23,8 @@ import {
   openTasks,
   rankBetween,
   type BoardMoveWrite,
-} from "@atlastodo/shared";
-import type { CreateTaskInput, Label, Section, Task } from "@atlastodo/client-core";
+} from "@atlastodo/todo-core";
+
 import { useSections } from "../hooks/useSections";
 import { useTaskListView } from "../hooks/useTaskListView";
 import { useDragLift, useDragSource, useDropTarget } from "../hooks/useCardDnd";

@@ -1,6 +1,7 @@
+import { type Label } from "@atlastodo/todo-core";
 import { useCallback, useMemo } from "react";
-import type { Label } from "@atlastodo/client-core";
-import { defaultColorForIndex, isTrashed, softDelete } from "@atlastodo/shared";
+
+import { defaultColorForIndex, isTrashed, softDelete } from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { useAuth } from "../auth/AuthContext";
 

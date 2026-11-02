@@ -1,0 +1,6 @@
+# The Rust that builds the atlas-todo CLI: rustup reads this file in CI and the release builds.
+# Keep it with core's (atlastodo/atlas), whose atlas-client crate this builds on.
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

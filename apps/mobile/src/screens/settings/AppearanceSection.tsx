@@ -7,7 +7,7 @@ import {
   LANGUAGES,
   type AccentName,
   type ThemePref,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { usePreferences } from "../../hooks/usePreferences";
 import { deviceLanguage } from "../../i18n";
 import { ListPicker, type PickerOption } from "../../ui/ListPicker";

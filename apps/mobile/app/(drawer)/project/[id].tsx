@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { DEFAULT_FOLDER_ICON, resolveProjectColor } from "@atlastodo/shared";
+import { DEFAULT_FOLDER_ICON, resolveProjectColor } from "@atlastodo/todo-core";
 import { ProjectScreen } from "../../../src/screens/ProjectScreen";
 import { ProjectsScreen } from "../../../src/screens/ProjectsScreen";
 import { useProjects } from "../../../src/hooks/useProjects";
 import { projectIconFor } from "../../../src/ui/projectIcons";
 import { useHeaderRight, useHeaderTitle } from "../../../src/ui/useHeaderTitle";
 import { ScreenFocusBoundary } from "../../../src/ui/ScreenFocusBoundary";
+import { activityHref } from "../../../src/ui/ActivityButton";
 
 /**
  * A single project's tasks, as a drawer screen rather than pushed over the shell: a project is a
@@ -61,6 +62,7 @@ export default function ProjectRoute() {
         mode={mode === "board" || mode === "list" ? mode : (project?.default_view ?? "list")}
         onSetMode={(m) => router.setParams({ mode: m })}
         onHeaderActions={setHeaderRight}
+        onOpenActivity={() => router.push(activityHref({ project: id }))}
       />
     </ScreenFocusBoundary>
   );

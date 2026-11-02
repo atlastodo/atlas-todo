@@ -13,13 +13,16 @@ import { SkeletonRows } from "../ui/Skeleton";
 import { EmptyState } from "../ui/EmptyState";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Section } from "../ui/Section";
-import { Check, CircleAlert, CircleX, History, Plus, Send, UserPlus } from "../ui/icons";
+import { Activity, Check, CircleAlert, CircleX, History, Plus, Send, UserPlus } from "../ui/icons";
+import { ListPicker } from "../ui/ListPicker";
+import { ACTIVITY_RETENTION_DAYS } from "../hooks/usePreferences";
 import { copyText } from "../lib/clipboard";
 
-/** The admin panel's instance section: the runtime signup toggle, signup invites, and the audit trail of admin actions. REST-driven (instance state, not a user's replica). */
+/** The admin panel's instance section: the runtime signup toggle, the activity retention every app enforces, signup invites, and the audit trail of admin actions. REST-driven (instance state, not a user's replica). */
 export function AdminSettingsScreen() {
   const { t } = useTranslation();
-  const { settings, loading, failed, refresh, setSignupEnabled } = useAdminSettings();
+  const { settings, loading, failed, refresh, setSignupEnabled, setActivityRetentionDays } =
+    useAdminSettings();
   const { invites, create, revoke } = useAdminInvites();
   const { entries } = useAdminAudit();
   const format = useFormat();
@@ -86,6 +89,34 @@ export function AdminSettingsScreen() {
             />
           </Section>
         )}
+
+        {/* An older server sends no retention and takes none: no picker then. */}
+        {settings && !loading && !failed && typeof settings.activity_retention_days === "number" ? (
+          <Section icon={Activity} title={t("activity.title")}>
+            <ListPicker
+              label={t("activity.adminRetention")}
+              description={t("activity.adminRetentionHint")}
+              value={String(settings.activity_retention_days)}
+              // An env value off the list (ACTIVITY_RETENTION_DAYS=45) is shown as it is.
+              options={[
+                ...new Set<number>([...ACTIVITY_RETENTION_DAYS, settings.activity_retention_days]),
+              ]
+                .sort((a, b) => (a === 0 ? -1 : b === 0 ? 1 : a - b))
+                .map((days) => ({
+                  value: String(days),
+                  label:
+                    days === 0
+                      ? t("activity.retentionNever")
+                      : t("activity.retentionDays", { days }),
+                }))}
+              onChange={(v) =>
+                void setActivityRetentionDays(Number(v)).then((ok) => {
+                  if (!ok) toast.show(t("admin.actionFailed"));
+                })
+              }
+            />
+          </Section>
+        ) : null}
 
         <InviteSection invites={invites} onCreate={onCreate} onRevoke={onRevoke} />
 

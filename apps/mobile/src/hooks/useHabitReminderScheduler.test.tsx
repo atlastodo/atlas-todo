@@ -4,7 +4,7 @@
  */
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { PREFERENCES_ID } from "@atlastodo/shared";
+import { PREFERENCES_ID } from "@atlastodo/todo-core";
 import i18n from "../i18n";
 import { withApp } from "../testutil";
 import { useHabitReminderScheduler } from "./useHabitReminderScheduler";

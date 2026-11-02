@@ -12,7 +12,7 @@ import {
   type HabitGroupMember,
   type HabitListRow,
   type PeriodResult,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useHabits } from "./useHabits";
 import { useHabitCheckins } from "./useHabitCheckins";
 import { usePreferences, type HabitsScope } from "./usePreferences";

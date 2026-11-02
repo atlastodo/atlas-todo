@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react-native";
 import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from "react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { PREFERENCES_ID, TOAST_TTL_MS } from "@atlastodo/shared";
+import { PREFERENCES_ID, TOAST_TTL_MS } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { ToastProvider, useToast } from "./ToastProvider";
 

@@ -1,13 +1,14 @@
+import { type ProjectView } from "@atlastodo/todo-core";
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { ProjectView } from "@atlastodo/client-core";
+
 import {
   DEFAULT_FOLDER_ICON,
   DEFAULT_PROJECT_ICON,
   defaultColorForIndex,
   flattenProjectTree,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useProjects } from "../hooks/useProjects";
 import { useCancelOnEscape } from "../hooks/useCancelOnEscape";
 import { haptics } from "../lib/haptics";

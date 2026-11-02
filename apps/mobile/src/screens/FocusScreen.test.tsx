@@ -1,12 +1,12 @@
 import { act, fireEvent, render as rtlRender, screen } from "@testing-library/react-native";
 import type { ReactElement, ReactNode } from "react";
 import { LocalStore } from "@atlastodo/client-core";
-import { PREFERENCES_ID } from "@atlastodo/shared";
+import { PREFERENCES_ID } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { FocusProvider } from "../data/FocusProvider";
 import { FocusScreen } from "./FocusScreen";
 
-// Over a real in-memory store and the real `FocusProvider`; pomodoro maths is tested in `@atlastodo/shared`.
+// Over a real in-memory store and the real `FocusProvider`; pomodoro maths is tested in `@atlastodo/todo-core`.
 
 /** Render the screen inside the real FocusProvider, over the given store. */
 function renderScreen(store: LocalStore) {

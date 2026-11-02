@@ -1,3 +1,4 @@
+import { type Project } from "@atlastodo/todo-core";
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { FlatList, Platform, Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -7,9 +8,9 @@ import {
   flattenProjectTree,
   projectDescendantIds,
   resolveProjectColor,
-} from "@atlastodo/shared";
-import type { FlatProjectRow } from "@atlastodo/shared";
-import type { Project } from "@atlastodo/client-core";
+} from "@atlastodo/todo-core";
+import type { FlatProjectRow } from "@atlastodo/todo-core";
+
 import { useProjects } from "../hooks/useProjects";
 import { usePreferences } from "../hooks/usePreferences";
 import { useProjectMembers } from "../hooks/useProjectMembers";
@@ -318,10 +319,10 @@ export function ProjectsScreen({
                 onPress={() => {
                   if (!editing) return;
                   const id = editing.id;
-                  setProjectArchived(id, true);
+                  const undoArchive = setProjectArchived(id, true);
                   toast.show(t("toast.projectArchived"), {
                     label: t("common.undo"),
-                    run: () => setProjectArchived(id, false),
+                    run: undoArchive,
                   });
                   close();
                 }}

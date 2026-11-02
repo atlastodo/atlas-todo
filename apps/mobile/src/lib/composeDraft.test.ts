@@ -1,4 +1,4 @@
-import { parseQuickAdd, type QuickAddResult } from "@atlastodo/shared";
+import { parseQuickAdd, type QuickAddResult } from "@atlastodo/todo-core";
 import { composeInput, composeValue, mergeDraft, type ComposeDraft } from "./composeDraft";
 
 /**

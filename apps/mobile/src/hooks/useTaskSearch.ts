@@ -1,6 +1,7 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlastodo/client-core";
+
 import { useLocalTasks } from "./useLocalTasks";
 import { useProjects } from "./useProjects";
 import { useFormat } from "./useFormat";
@@ -10,7 +11,7 @@ import { useFormat } from "./useFormat";
  * root hotkey shell and the tab-header search button) share one wiring.
  *
  * `tasks` is the store's visible list (completed included, minus trash/archive: a result must be
- * reachable). Matching and ranking live in `@atlastodo/shared`'s `searchTasks`; this hook supplies the
+ * reachable). Matching and ranking live in `@atlastodo/todo-core`'s `searchTasks`; this hook supplies the
  * candidates and per-row context, and no navigation (the containers own `router`).
  */
 export interface TaskSearchSource {

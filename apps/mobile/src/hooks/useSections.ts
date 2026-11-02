@@ -1,5 +1,6 @@
+import { rescopeSection, type Section } from "@atlastodo/todo-core";
 import { useCallback, useContext, useMemo } from "react";
-import { rescopeNeeded, rescopeSection, type Section } from "@atlastodo/client-core";
+import { rescopeNeeded } from "@atlastodo/client-core";
 import {
   isTrashed,
   moveSectionToProject as moveSectionToProjectOp,
@@ -11,7 +12,8 @@ import {
   softDelete,
   toSection,
   toTask,
-} from "@atlastodo/shared";
+  writeProjectActivity,
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 
@@ -41,7 +43,9 @@ export interface UseSections {
 
 export function useSections(projectId: string): UseSections {
   const { store, version, kick } = useStore();
-  const keyring = useContext(AuthContext)?.keyring ?? null;
+  const auth = useContext(AuthContext);
+  const keyring = auth?.keyring ?? null;
+  const actorId = auth?.session?.user.id;
 
   const sections = useMemo(
     () =>
@@ -73,10 +77,22 @@ export function useSections(projectId: string): UseSections {
 
   const renameSection = useCallback(
     (id: string, name: string) => {
+      const fields = store.get("section", id);
+      if (fields?.name === name) return;
       store.set("section", id, "name", name);
+      if (typeof fields?.project_id === "string") {
+        writeProjectActivity(
+          store,
+          actorId,
+          { projectId: fields.project_id, sectionId: id },
+          "section_renamed",
+          typeof fields.name === "string" ? fields.name : null,
+          name,
+        );
+      }
       kick();
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   const duplicateSection = useCallback(
@@ -101,20 +117,21 @@ export function useSections(projectId: string): UseSections {
   );
 
   const removeSection = useCallback(
-    (id: string) => softDelete(store, kick, "section", id),
-    [store, kick],
+    (id: string) => softDelete(store, kick, "section", id, actorId),
+    [store, kick, actorId],
   );
 
   const archiveSection = useCallback(
     (id: string) => {
-      setSectionArchived(store, id, true);
+      setSectionArchived(store, id, true, Date.now(), actorId);
       kick();
+      // The unarchive reverses the archive within a minute, so it takes its entry back.
       return () => {
-        setSectionArchived(store, id, false);
+        setSectionArchived(store, id, false, Date.now(), actorId);
         kick();
       };
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   const moveSectionToProject = useCallback(
@@ -123,14 +140,14 @@ export function useSections(projectId: string): UseSections {
       // project is re-sent under its new scope's key.
       const move = (from: string, to: string) => {
         const rescope = rescopeNeeded(store, keyring, from, to);
-        moveSectionToProjectOp(store, id, to);
-        if (rescope) rescopeSection(store, keyring, id, from);
+        moveSectionToProjectOp(store, id, to, Date.now(), undefined, actorId);
+        if (rescope) rescopeSection(store, keyring, id, from, actorId);
         kick();
       };
       move(projectId, targetProjectId);
       return () => move(targetProjectId, projectId);
     },
-    [store, kick, projectId, keyring],
+    [store, kick, projectId, keyring, actorId],
   );
 
   const reorderSection = useCallback(

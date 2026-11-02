@@ -1,7 +1,8 @@
+import { type Task } from "@atlastodo/todo-core";
 import { act, fireEvent, render as rtlRender, screen } from "@testing-library/react-native";
 import type { ReactNode } from "react";
-import { LocalStore, type Task } from "@atlastodo/client-core";
-import { PREFERENCES_ID, createTask, visibleTasks } from "@atlastodo/shared";
+import { LocalStore } from "@atlastodo/client-core";
+import { PREFERENCES_ID, createTask, visibleTasks } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { FocusProvider } from "../data/FocusProvider";
 import { FocusBar } from "./FocusBar";

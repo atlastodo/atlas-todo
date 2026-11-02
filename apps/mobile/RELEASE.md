@@ -232,15 +232,15 @@ All are optional. An unset or empty variable means the default.
 
 ### Pinning the core packages
 
-The app depends on the core packages (`@atlastodo/client-core`, `@atlastodo/shared`) of a core
+The app depends on the core packages (`@atlastodo/client-core`, and `@atlastodo/sdk` through
+`packages/todo-core`) of a core
 release, from npm at the release's exact version (a pre-release is published under the `next`
 dist-tag):
 
 ```json
 {
   "dependencies": {
-    "@atlastodo/client-core": "X.Y.Z",
-    "@atlastodo/shared": "X.Y.Z"
+    "@atlastodo/client-core": "X.Y.Z"
   }
 }
 ```

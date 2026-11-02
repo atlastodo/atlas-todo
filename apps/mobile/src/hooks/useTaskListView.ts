@@ -1,7 +1,14 @@
+import {
+  type Label,
+  type Priority,
+  type Project,
+  type Section,
+  type Task,
+} from "@atlastodo/todo-core";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Label, Priority, Project, Section, Task } from "@atlastodo/client-core";
-import type { GroupBy } from "@atlastodo/shared";
+
+import type { GroupBy } from "@atlastodo/todo-core";
 import { useAuth } from "../auth/AuthContext";
 import { useLocalTasks } from "./useLocalTasks";
 import { useLabels } from "./useLabels";

@@ -26,9 +26,12 @@ async function setup(api: Partial<ApiClient>) {
 
 describe("AdminSettingsScreen", () => {
   it("toggles the signup gate through the API", async () => {
-    const updateAdminSettings = jest.fn(async (s: { signup_enabled: boolean }) => s);
+    const updateAdminSettings = jest.fn(async (s: { signup_enabled?: boolean }) => ({
+      signup_enabled: s.signup_enabled ?? true,
+      activity_retention_days: 0,
+    }));
     await setup({
-      getAdminSettings: async () => ({ signup_enabled: true }),
+      getAdminSettings: async () => ({ signup_enabled: true, activity_retention_days: 0 }),
       updateAdminSettings,
     });
 
@@ -40,10 +43,28 @@ describe("AdminSettingsScreen", () => {
     );
   });
 
+  it("sets the activity retention every app enforces", async () => {
+    const updateAdminSettings = jest.fn(async (s: { activity_retention_days?: number }) => ({
+      signup_enabled: true,
+      activity_retention_days: s.activity_retention_days ?? 0,
+    }));
+    await setup({
+      getAdminSettings: async () => ({ signup_enabled: true, activity_retention_days: 0 }),
+      updateAdminSettings,
+    });
+
+    await screen.findByText("Delete activity after");
+    await fireEvent.press(screen.getByLabelText(/Delete activity after/));
+    await fireEvent.press(screen.getByText("90 days"));
+    await waitFor(() =>
+      expect(updateAdminSettings).toHaveBeenCalledWith({ activity_retention_days: 90 }),
+    );
+  });
+
   it("lists pending invites with a revoke action, but no copy: the list never carries the code", async () => {
     const revokeSignupInvite = jest.fn(async () => {});
     await setup({
-      getAdminSettings: async () => ({ signup_enabled: true }),
+      getAdminSettings: async () => ({ signup_enabled: true, activity_retention_days: 0 }),
       listSignupInvites: async () => [invite({ code: null })],
       revokeSignupInvite,
     });
@@ -57,7 +78,7 @@ describe("AdminSettingsScreen", () => {
   it("mints an invite and surfaces the code for copying", async () => {
     const fresh = invite({ id: "i-2", code: "b".repeat(64) });
     await setup({
-      getAdminSettings: async () => ({ signup_enabled: true }),
+      getAdminSettings: async () => ({ signup_enabled: true, activity_retention_days: 0 }),
       listSignupInvites: async () => [],
       createSignupInvite: async () => fresh,
     });
@@ -87,7 +108,7 @@ describe("AdminSettingsScreen", () => {
     await setServerUrlOverride("https://todo.example.com/api/");
     try {
       await setup({
-        getAdminSettings: async () => ({ signup_enabled: true }),
+        getAdminSettings: async () => ({ signup_enabled: true, activity_retention_days: 0 }),
         listSignupInvites: async () => [],
         createSignupInvite: async () => invite({ id: "i-3", code: "c".repeat(64) }),
       });
@@ -105,7 +126,7 @@ describe("AdminSettingsScreen", () => {
 
   it("names the system, not an anonymous user, for entries no admin made", async () => {
     await setup({
-      getAdminSettings: async () => ({ signup_enabled: true }),
+      getAdminSettings: async () => ({ signup_enabled: true, activity_retention_days: 0 }),
       listAudit: async () => [
         {
           id: 2,

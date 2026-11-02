@@ -1,5 +1,6 @@
+import { type Task } from "@atlastodo/todo-core";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { LocalStore, type Task } from "@atlastodo/client-core";
+import { LocalStore } from "@atlastodo/client-core";
 import { withApp } from "../testutil";
 import { AssigneePicker } from "./AssigneePicker";
 

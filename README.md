@@ -27,6 +27,8 @@ Try it at [app.atlastodo.dev](https://app.atlastodo.dev) (a test server that may
 and ideas go to [Discussions](https://github.com/atlastodo/atlas-todo/discussions); see
 [Getting help](#getting-help).
 
+https://github.com/user-attachments/assets/64eb8e44-dfdd-4231-9dc5-579d463a158e
+
 <p>
   <img src="docs/screenshots/task-detail.png" alt="The task detail: notes, subtasks, attachments and comments next to a properties panel with due date, priority, labels, repeat and reminders">
 </p>
@@ -108,23 +110,27 @@ flowchart TB
       web["Web app (react-native-web)"]
     end
     electron["apps/electron<br/>desktop shell"]
+    todocore["packages/todo-core<br/>app definition, task rules, recurrence, quick add, i18n"]
+    cli["crates/atlas-todo-cli<br/>the atlas-todo CLI"]
   end
   subgraph core["atlastodo/atlas (core)"]
     clientcore["@atlastodo/client-core<br/>local store, sync client, E2EE"]
-    shared["@atlastodo/shared<br/>recurrence, filters, quick add, i18n"]
     server["atlas-server (Rust, Axum) + PostgreSQL"]
   end
 
   electron -.->|wraps| web
   android --> clientcore
   web --> clientcore
-  android --> shared
-  web --> shared
+  android --> todocore
+  web --> todocore
+  todocore --> clientcore
+  cli <-->|"HTTPS<br/>(ciphertext ops)"| server
   clientcore <-->|"HTTPS + WebSocket<br/>(ciphertext ops)"| server
 ```
 
-The app installs `@atlastodo/client-core` and `@atlastodo/shared` from a core release (pinned in
-`apps/mobile/package.json`). The core repository's
+The app installs `@atlastodo/client-core` from a core release (pinned in
+`apps/mobile/package.json`). Core is an app-agnostic sync engine: todo's rules, models and app
+definition (which kinds scope to a shared project, and how) are `packages/todo-core` here. The core repository's
 [architecture notes](https://github.com/atlastodo/atlas/blob/main/docs/architecture.md) cover
 sync, the clock and the key hierarchy, and its
 [sync protocol](https://github.com/atlastodo/atlas/blob/main/docs/sync-protocol.md) the wire format.

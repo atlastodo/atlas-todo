@@ -1,11 +1,13 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Activity, Comment } from "@atlastodo/shared";
-import type { Task } from "@atlastodo/client-core";
+import type { Activity, Comment } from "@atlastodo/todo-core";
+
 import { useAuth } from "../auth/AuthContext";
 import { useComments } from "../hooks/useComments";
 import { useActivities } from "../hooks/useActivities";
+import { useActivityText } from "../hooks/useActivityText";
 import { useProjectMembers } from "../hooks/useProjectMembers";
 import { useFormat } from "../hooks/useFormat";
 import { useToast } from "../data/ToastProvider";
@@ -15,7 +17,8 @@ import { useCancelOnEscape } from "../hooks/useCancelOnEscape";
 
 /**
  * Task discussion: a time-ordered feed of comments and activity entries, plus a box to add a
- * comment. Activity entries are written by `useLocalTasks` (`writeActivity`). Roles are enforced
+ * comment. Activity entries are written by `useLocalTasks` (`writeActivity`); the view-wide feed
+ * with undo is `ActivityScreen`. Roles are enforced
  * server-side, so the client writes optimistically. Names resolve to "You", a collaborator's name
  * via `useProjectMembers`, or "Someone" off a shared project.
  */
@@ -32,6 +35,7 @@ export function CommentSection({ task }: { task: Task }) {
   const { byUserId } = useProjectMembers();
   const fmt = useFormat();
   const toast = useToast();
+  const text = useActivityText();
   const [draft, setDraft] = useState("");
 
   const comments = commentsForTask(task.id);
@@ -63,6 +67,8 @@ export function CommentSection({ task }: { task: Task }) {
         return a.to
           ? t("comment.assignedThis", { name: nameOf(a.to) })
           : t("comment.unassignedThis");
+      default:
+        return text.describe(a);
     }
   };
 

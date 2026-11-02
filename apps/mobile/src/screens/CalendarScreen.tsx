@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type Task } from "@atlastodo/todo-core";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
   Pressable,
@@ -20,6 +21,7 @@ import Animated, {
 import { useTranslation } from "react-i18next";
 import { useDragSource, useDropTarget } from "../hooks/useCardDnd";
 import { displayTitle } from "../lib/taskTitle";
+import { AuthContext } from "../auth/AuthContext";
 import {
   addDays,
   endOfDay,
@@ -35,8 +37,8 @@ import {
   weekdayLabels,
   zonedParts,
   type DayCell,
-} from "@atlastodo/shared";
-import type { Task } from "@atlastodo/client-core";
+} from "@atlastodo/todo-core";
+
 import { useLocalTasks } from "../hooks/useLocalTasks";
 import { usePreferences } from "../hooks/usePreferences";
 import { useFormat } from "../hooks/useFormat";
@@ -61,7 +63,8 @@ const COMPACT_MAX_WIDTH = 600;
 export function CalendarScreen({ onOpenTask }: { onOpenTask?: (task: Task) => void }) {
   const { t } = useTranslation();
   const now = useNow();
-  const { tasks, move } = useLocalTasks();
+  const actorId = useContext(AuthContext)?.session?.user.id;
+  const { tasks, move } = useLocalTasks(actorId);
   const { weekStartsOn, timezone, showWeekNumbers } = usePreferences();
   const fmt = useFormat();
   const [mode, setMode] = useState<CalendarMode>("month");

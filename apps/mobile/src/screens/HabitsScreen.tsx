@@ -14,7 +14,7 @@ import {
   type Habit,
   type HabitKind,
   type HabitListRow,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useHabits } from "../hooks/useHabits";
 import { useHabitGroups, type HabitGroupSummary, type HabitSummary } from "../hooks/useHabitGroups";
 import { useHabitCheckins } from "../hooks/useHabitCheckins";
@@ -51,7 +51,7 @@ import { resolveHabitDrop } from "../lib/habitReorder";
 
 /**
  * Habits & streaks. Each habit is one row: today's check, the name, the streak, the current
- * period, and the last seven days as circles. Schedule and streak maths is `@atlastodo/shared`'s
+ * period, and the last seven days as circles. Schedule and streak maths is `@atlastodo/todo-core`'s
  * `habits.ts`.
  *
  * Every recorded day is reversible (a tap cycles the day and raises an undo toast). The strip

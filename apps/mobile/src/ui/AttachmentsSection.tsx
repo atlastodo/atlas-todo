@@ -1,3 +1,4 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Image, Modal, Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -9,7 +10,6 @@ import {
   maxAttachmentBytes,
   unwrapAekAny,
   type AttachmentUploadState,
-  type Task,
 } from "@atlastodo/client-core";
 import * as DocumentPicker from "expo-document-picker";
 import type { DocumentPickerAsset } from "expo-document-picker";

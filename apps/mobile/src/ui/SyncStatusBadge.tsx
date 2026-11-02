@@ -53,7 +53,7 @@ export function SyncStatusBadge() {
           accessibilityLabel={`${t("localMode.badgeTitle")} - ${t("localMode.badgeHint")}`}
           onPress={() => setDetailsOpen(true)}
           {...(Platform.OS === "web" ? ({ title: t("localMode.badgeHint") } as object) : {})}
-          className="flex-row items-center gap-1.5 web:cursor-pointer shrink min-w-0 max-w-[120px]"
+          className="-mx-1.5 -my-1 flex-row items-center gap-1.5 rounded-md px-1.5 py-1 web:cursor-pointer shrink min-w-0 max-w-[132px]"
         >
           <View className="h-2 w-2 rounded-full shrink-0 bg-neutral-400" />
           <Text
@@ -88,7 +88,7 @@ export function SyncStatusBadge() {
         accessibilityLabel={`${label} - ${t("sync.detailsTitle")}`}
         onPress={() => setDetailsOpen(true)}
         {...(Platform.OS === "web" ? ({ title: label } as object) : {})}
-        className="flex-row items-center gap-1.5 web:cursor-pointer shrink min-w-0 max-w-[120px]"
+        className="-mx-1.5 -my-1 flex-row items-center gap-1.5 rounded-md px-1.5 py-1 web:cursor-pointer shrink min-w-0 max-w-[132px]"
       >
         {isSyncing ? (
           <>

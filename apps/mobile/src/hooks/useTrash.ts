@@ -15,14 +15,14 @@ import {
   restoreFromTrash,
   sweepExpiredTrash,
   type TrashItem,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";
 import { useFirstSyncDone } from "./useFirstSyncDone";
 
 /**
  * Recently Deleted / Trash. The rules (soft-delete vs tombstone, the 30-day window, the container
- * cascade) live in `@atlastodo/shared`'s `trash.ts`; this hook is only the React wiring.
+ * cascade) live in `@atlastodo/todo-core`'s `trash.ts`; this hook is only the React wiring.
  */
 
 export interface UseTrash {
@@ -51,7 +51,7 @@ function attachmentName(store: LocalStore, keyring: Keyring | null, id: string):
 
 export function useTrash(): UseTrash {
   const { store, version, kick } = useStore();
-  const { keyring } = useAuth();
+  const { keyring, session } = useAuth();
 
   const items = useMemo(
     () =>
@@ -65,8 +65,8 @@ export function useTrash(): UseTrash {
   );
 
   const restore = useCallback(
-    (kind: EntityKind, id: string) => restoreFromTrash(store, kick, kind, id),
-    [store, kick],
+    (kind: EntityKind, id: string) => restoreFromTrash(store, kick, kind, id, session?.user.id),
+    [store, kick, session?.user.id],
   );
   const purgeItem = useCallback(
     (kind: EntityKind, id: string) => purge(store, kick, kind, id),

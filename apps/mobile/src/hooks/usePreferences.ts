@@ -19,7 +19,7 @@ import {
   type TaskSwipeAction,
   type ThemePref,
   type TimeFormatPref,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 
 /**
@@ -27,7 +27,7 @@ import { useStore } from "../data/StoreProvider";
  *
  * Every setting is a field on the one synced `preference` entity. Each field is read behind a type
  * guard with a default, because the value arrives over sync and can be anything; an unreadable
- * value degrades to the default. The guards live in `@atlastodo/shared` and pin field names and defaults.
+ * value degrades to the default. The guards live in `@atlastodo/todo-core` and pin field names and defaults.
  */
 
 /** What the habits screen lists: only what is in play today, or every habit. */
@@ -37,6 +37,18 @@ export type HabitsScope = "today" | "all";
  * Whether the reminders master toggle is on for a raw preference bag. Default-on, so a fresh store
  * has reminders. Gates `usePreferences`, quick-add's implicit reminder and `useReminderScheduler`.
  */
+/** The "delete my activity after" choices, in days; 0 keeps activity forever. */
+export const ACTIVITY_RETENTION_DAYS = [0, 30, 90, 365] as const;
+
+/**
+ * The retention a preferences record holds, or 0 (forever) for anything else. Any whole number of
+ * days up to ten years counts: a server limit off the list above (45) is offered as a choice too.
+ */
+export function activityRetentionIn(prefs: Record<string, unknown> | null | undefined): number {
+  const v = prefs?.activity_retention_days;
+  return typeof v === "number" && Number.isInteger(v) && v > 0 && v <= 3650 ? v : 0;
+}
+
 export function remindersEnabledIn(prefs: Record<string, unknown> | null | undefined): boolean {
   return prefs?.reminders_enabled !== false;
 }
@@ -126,6 +138,12 @@ export interface UsePreferences {
   /** Whether the habits screen shows only what is in play today (default) or everything. */
   habitsScope: HabitsScope;
   setHabitsScope: (value: HabitsScope) => void;
+  /**
+   * Delete the user's own activity entries older than this many days (one of
+   * {@link ACTIVITY_RETENTION_DAYS}, or the server's limit); 0, the default, keeps them forever.
+   */
+  activityRetentionDays: number;
+  setActivityRetentionDays: (value: number) => void;
   /** Whether a project has a sidebar row (default true) -- a per-user choice, see below. */
   projectPinned: (projectId: string) => boolean;
   setProjectPinned: (projectId: string, value: boolean) => void;
@@ -313,6 +331,11 @@ export function usePreferences(): UsePreferences {
   const habitsScope: HabitsScope = prefs.habits_scope === "all" ? "all" : "today";
   const setHabitsScope = useCallback(
     (value: HabitsScope) => setField("habits_scope", value),
+    [setField],
+  );
+  const activityRetentionDays = activityRetentionIn(prefs);
+  const setActivityRetentionDays = useCallback(
+    (value: number) => setField("activity_retention_days", value),
     [setField],
   );
 
@@ -513,6 +536,8 @@ export function usePreferences(): UsePreferences {
     setHabitGroupExpanded,
     habitsScope,
     setHabitsScope,
+    activityRetentionDays,
+    setActivityRetentionDays,
     projectPinned,
     setProjectPinned,
     isFavorite,

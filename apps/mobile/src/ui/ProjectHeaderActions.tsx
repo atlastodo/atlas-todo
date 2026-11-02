@@ -11,6 +11,7 @@ import { Segmented } from "./Segmented";
 import { SelectButton } from "./SelectButton";
 import { StyleEditButton } from "./StyleEditor";
 import {
+  Activity,
   EllipsisVertical,
   Kanban,
   ListChecks,
@@ -53,6 +54,8 @@ export interface ProjectHeaderActionsProps {
   onEdit: () => void;
   /** Absent when the project cannot be shared (local-only mode): the action is not offered. */
   onShare?: () => void;
+  /** Open the project's activity feed; absent, the action is not offered. */
+  onActivity?: () => void;
   /** Whether Select is offered: the list has tasks and is not already selecting. Never on the board. */
   canSelect: boolean;
   listPref?: ListPref;
@@ -69,6 +72,7 @@ export function ProjectHeaderActions({
   onToggleFavorite,
   onEdit,
   onShare,
+  onActivity,
   canSelect,
   listPref,
   onChangeListPref,
@@ -138,6 +142,17 @@ export function ProjectHeaderActions({
             <UserPlus size={18} className="text-neutral-500" />
           </Pressable>
         )}
+        {onActivity && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("activity.title")}
+            onPress={onActivity}
+            hitSlop={8}
+            className="p-1 web:cursor-pointer"
+          >
+            <Activity size={18} className="text-neutral-500" />
+          </Pressable>
+        )}
         {canSelect && <SelectButton />}
         {listPref && onChangeListPref && (
           <ListPrefMenu value={listPref} onChange={onChangeListPref} />
@@ -152,6 +167,9 @@ export function ProjectHeaderActions({
     { key: "edit", label: t("workspace.editProject"), icon: SlidersHorizontal, onPress: onEdit },
     ...(onShare
       ? [{ key: "share", label: t("workspace.shareProject"), icon: UserPlus, onPress: onShare }]
+      : []),
+    ...(onActivity
+      ? [{ key: "activity", label: t("activity.title"), icon: Activity, onPress: onActivity }]
       : []),
     ...(canSelect
       ? [

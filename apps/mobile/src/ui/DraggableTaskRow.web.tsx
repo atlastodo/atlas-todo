@@ -1,7 +1,8 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useRef, type ReactNode } from "react";
 import { View, type ViewInstance } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlastodo/client-core";
+
 import { useDragSource, useDropTarget } from "../hooks/useCardDnd";
 import { useCanHover } from "../hooks/useCanHover";
 import { GripVertical } from "./icons";
@@ -43,7 +44,7 @@ export function DraggableTaskRow({
           accessible
           accessibilityLabel={t("task.dragToNest")}
           className={
-            "absolute bottom-0 right-1 top-0 w-6 items-center justify-center opacity-0 group-hover:opacity-100 web:cursor-grab " +
+            "absolute bottom-0 right-0 top-0 w-6 items-center justify-center opacity-0 group-hover:opacity-100 web:cursor-grab " +
             (dragging ? "opacity-100" : "")
           }
         >

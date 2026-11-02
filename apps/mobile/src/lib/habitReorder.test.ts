@@ -1,4 +1,4 @@
-import { flattenHabitGroups, type Habit } from "@atlastodo/shared";
+import { flattenHabitGroups, type Habit } from "@atlastodo/todo-core";
 import { resolveHabitDrop } from "./habitReorder";
 
 /**

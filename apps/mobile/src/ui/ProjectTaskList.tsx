@@ -1,9 +1,10 @@
+import { type CreateTaskInput, type Priority, type Section, type Task } from "@atlastodo/todo-core";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { FlatList, Keyboard, Platform, Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import ReorderableList, { type ReorderableListReorderEvent } from "react-native-reorderable-list";
 import { scheduleOnRN } from "react-native-worklets";
-import type { CreateTaskInput, Priority, Section, Task } from "@atlastodo/client-core";
+
 import {
   flattenTree,
   indentTarget,
@@ -16,7 +17,7 @@ import {
   wouldCycle,
   type FlatTaskRow,
   type RankWrite,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useSelection } from "../data/SelectionProvider";
 import { useSelectionSource } from "../hooks/useSelectionSource";
 import { useOutsidePressExit } from "../hooks/useOutsidePressExit";

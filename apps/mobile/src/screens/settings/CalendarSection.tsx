@@ -6,7 +6,7 @@ import {
   timeZoneOptions,
   type DateFormatPref,
   type TimeFormatPref,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { usePreferences } from "../../hooks/usePreferences";
 import { deviceLanguage } from "../../i18n";
 import { ListPicker, type PickerOption } from "../../ui/ListPicker";

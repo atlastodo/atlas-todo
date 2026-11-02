@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { PREFERENCES_ID, columnCards, createTask, toSection, toTask } from "@atlastodo/shared";
+import { PREFERENCES_ID, columnCards, createTask, toSection, toTask } from "@atlastodo/todo-core";
 import { lastCopiedText, withApp } from "../testutil";
 import { useCursor, type CursorContextValue } from "../data/CursorProvider";
 import { haptics } from "../lib/haptics";

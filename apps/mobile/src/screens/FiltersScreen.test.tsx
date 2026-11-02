@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { isTrashed, PREFERENCES_ID } from "@atlastodo/shared";
+import { isTrashed, PREFERENCES_ID } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { FiltersScreen } from "./FiltersScreen";
 

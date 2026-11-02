@@ -110,7 +110,7 @@ function SidebarRow({
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
       // `web:` scopes pointer affordances to the browser. The active row uses a neutral highlight so the label stays legible.
-      className={`mx-2 flex-row items-center gap-3 rounded-lg px-3 py-2.5 web:cursor-pointer web:focus-visible:outline web:focus-visible:outline-2 web:focus-visible:outline-accent-500 ${
+      className={`mx-2 flex-row items-center gap-3 rounded-lg px-3 py-2.5 web:cursor-pointer ${
         active
           ? "bg-neutral-100 dark:bg-neutral-800"
           : "web:hover:bg-neutral-100 dark:web:hover:bg-neutral-900"

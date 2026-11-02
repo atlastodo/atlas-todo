@@ -58,10 +58,11 @@ import { AuthGate } from "../src/auth/AuthGate";
 import { LOCAL_SCOPE, LocalModeProvider } from "../src/auth/localMode";
 import { RecoveryPhraseModal } from "../src/auth/RecoveryPhraseModal";
 import { withAccent, headerThemeOptions, isDark, sceneBackground } from "../src/theme/navTheme";
-import { DEFAULT_ACCENT } from "@atlastodo/shared";
+import { DEFAULT_ACCENT } from "@atlastodo/todo-core";
 import { useI18nLanguage } from "../src/hooks/useI18nLanguage";
 import { useHapticsPref } from "../src/hooks/useHapticsPref";
 import { useTrashSweep } from "../src/hooks/useTrash";
+import { useActivityPrune } from "../src/hooks/useActivityPrune";
 import { ProjectKeyMaintenance } from "../src/hooks/useProjectKeyMaintenance";
 import { useReminderScheduler } from "../src/hooks/useReminderScheduler";
 import { useHabitReminderScheduler } from "../src/hooks/useHabitReminderScheduler";
@@ -107,6 +108,12 @@ function SyncedHaptics() {
 /** Runs the once-per-session sweep that permanently purges items soft-deleted over 30 days ago. */
 function TrashSweep() {
   useTrashSweep();
+  return null;
+}
+
+/** Deletes the user's own activity entries past the "delete my activity after" setting. */
+function ActivityPrune() {
+  useActivityPrune();
   return null;
 }
 
@@ -247,6 +254,7 @@ function Gate() {
           <SyncedHaptics />
           <CrashDiagnostics />
           <TrashSweep />
+          <ActivityPrune />
           <ProjectKeyMaintenance />
           <ReminderScheduler />
           <HabitReminderScheduler />

@@ -6,7 +6,7 @@ import {
   softDelete,
   toReminder,
   type Reminder,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore, useStoreOptional, type StoreContextValue } from "../data/StoreProvider";
 import {
   ensureNotifyPermission,

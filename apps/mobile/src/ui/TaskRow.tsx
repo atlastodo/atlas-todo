@@ -1,3 +1,4 @@
+import { type Label, type Task } from "@atlastodo/todo-core";
 import {
   memo,
   useCallback,
@@ -19,14 +20,14 @@ import {
   type TextInputInstance,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Label, Task } from "@atlastodo/client-core";
+
 import {
   PRIORITY_COLOR,
   isOverdue,
   resolveTaskSwipe,
   type AvatarColor,
   type TaskSwipeAction,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import {
   Bell,
   CalendarClock,
@@ -496,8 +497,8 @@ function TaskRowView({
         style={depth > 0 ? { paddingLeft: ROW_EDGE + depth * INDENT_STEP } : undefined}
         className={
           "group relative flex-row items-center border-b border-neutral-100 dark:border-neutral-800 " +
-          // `pr-9` keeps the drag grip (DraggableTaskRow.web) clear of the meta.
-          (isWeb ? "pl-4 py-3 gap-3 " + (canHover ? "pr-9 " : "pr-4 ") : "px-4 py-3.5 gap-3.5 ") +
+          // `pr-6` keeps the drag grip (DraggableTaskRow.web, as wide) clear of the meta.
+          (isWeb ? "pl-4 py-3 gap-3 " + (canHover ? "pr-6 " : "pr-4 ") : "px-4 py-3.5 gap-3.5 ") +
           (onOpen || selectMode ? "web:cursor-pointer " : "") +
           (!isEditing ? "web:select-none " : "") +
           (selected
@@ -751,40 +752,97 @@ function TaskRowView({
               </Pressable>
             )}
 
-            {task.recurrence !== null && (
-              <Marker label={t("task.recurring")}>
-                <Repeat size={iconSize} className="text-neutral-500" />
-              </Marker>
+            {/* Markers and date are one group: on wide layouts it takes a fixed-width column,
+                right-aligned so dates line up across rows, the markers pack against the date and
+                the hover actions follow it. A row without a date reserves nothing. */}
+            {(task.recurrence !== null || hasReminder || task.priority < 4 || dateMs !== null) && (
+              <View
+                style={columns && dateMs !== null ? { minWidth: isWeb ? 80 : 104 } : undefined}
+                className={"flex-row items-center justify-end " + (isWeb ? "gap-3" : "gap-3.5")}
+              >
+                {task.recurrence !== null && (
+                  <Marker label={t("task.recurring")}>
+                    <Repeat size={iconSize} className="text-neutral-500" />
+                  </Marker>
+                )}
+
+                {hasReminder && (
+                  <Marker label={t("task.hasReminder")}>
+                    <Bell size={iconSize} className="text-neutral-500" />
+                  </Marker>
+                )}
+
+                {task.priority < 4 && (
+                  <Marker label={t("task.priority", { level: task.priority })}>
+                    <Flag size={iconSize} className={PRIORITY_COLOR[task.priority] ?? ""} />
+                  </Marker>
+                )}
+
+                {dateMs !== null && (
+                  <Text
+                    accessibilityLabel={
+                      showCompletedAt
+                        ? t("task.completedOn", { date: formatDue(dateMs) })
+                        : undefined
+                    }
+                    className={
+                      (isWeb ? "text-xs " : "text-base font-normal ") +
+                      (overdue && !showCompletedAt ? "text-red-500" : "text-neutral-500")
+                    }
+                  >
+                    {formatDue(dateMs)}
+                  </Text>
+                )}
+              </View>
             )}
 
-            {hasReminder && (
-              <Marker label={t("task.hasReminder")}>
-                <Bell size={iconSize} className="text-neutral-500" />
-              </Marker>
-            )}
-
-            {task.priority < 4 && (
-              <Marker label={t("task.priority", { level: task.priority })}>
-                <Flag size={iconSize} className={PRIORITY_COLOR[task.priority] ?? ""} />
-              </Marker>
-            )}
-
-            {/* On wide layouts the date takes a fixed-width column, left-aligned so the markers
-                pack right up against it and dates still line up across rows. A row without a date
-                reserves nothing, so its markers sit at the edge. */}
-            {dateMs !== null && (
-              <View style={columns ? { minWidth: isWeb ? 80 : 104 } : undefined}>
-                <Text
-                  accessibilityLabel={
-                    showCompletedAt ? t("task.completedOn", { date: formatDue(dateMs) }) : undefined
-                  }
-                  className={
-                    (isWeb ? "text-xs " : "text-base font-normal ") +
-                    (overdue && !showCompletedAt ? "text-red-500" : "text-neutral-500")
-                  }
-                >
-                  {formatDue(dateMs)}
-                </Text>
+            {/* In the flow, between the date and the caret: no room until the row is hovered or
+                keyboard focus is inside it, then it widens and slides the flag and date left
+                rather than covering them, a small gap after the date (the negative margin eats most
+                of the row's gap). `!` beats global.css's colour-only `transition-property`
+                on every div; `motion-safe` keeps reduced motion instant. The vertical padding
+                (cancelled by the negative margin) leaves the clipped box room for focus rings. */}
+            {hoverActions && (
+              <View
+                className={
+                  "-my-1 -ml-3 max-w-0 flex-row items-center gap-1 overflow-hidden py-1 opacity-0 " +
+                  "group-hover:-ml-2 group-hover:max-w-[52px] group-hover:opacity-100 " +
+                  "web:focus-within:-ml-2 web:focus-within:max-w-[52px] web:focus-within:opacity-100 " +
+                  "motion-safe:!transition-[margin,max-width,opacity]"
+                }
+              >
+                {onOpen && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("task.details", "Task details")}
+                    onPress={(e) => {
+                      e?.stopPropagation?.();
+                      onOpen(task);
+                    }}
+                    className="rounded-md p-1 web:cursor-pointer"
+                  >
+                    <Info
+                      size={16}
+                      className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200"
+                    />
+                  </Pressable>
+                )}
+                {onSchedule && !locked && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t("task.reschedule")}
+                    onPress={(e) => {
+                      e?.stopPropagation?.();
+                      onSchedule(task);
+                    }}
+                    className="rounded-md p-1 web:cursor-pointer"
+                  >
+                    <CalendarClock
+                      size={16}
+                      className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200"
+                    />
+                  </Pressable>
+                )}
               </View>
             )}
 
@@ -818,75 +876,6 @@ function TaskRowView({
             ) : null}
           </View>
         </View>
-
-        {/* Out of the layout flow: it takes no room until hovered or focused, then covers the meta
-            (with the row's hover background) and repeats the caret so it stays reachable. */}
-        {hoverActions && (
-          <View
-            className={
-              "absolute bottom-0 right-9 top-0 flex-row items-center gap-2 pl-3 opacity-0 group-hover:opacity-100 web:focus-within:opacity-100 " +
-              // Unfocused, its background is the row's hover colour reached through the same hover
-              // (and global.css's same 250ms fade). It fades from the list's opaque surface, not from
-              // transparent: two half-faded layers stacked over the row would light this box up
-              // ahead of the row.
-              (focused
-                ? "bg-neutral-100 dark:bg-neutral-800"
-                : "bg-white dark:bg-zinc-950 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900 web:focus-within:bg-neutral-50 dark:web:focus-within:bg-neutral-900")
-            }
-          >
-            {onOpen && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("task.details", "Task details")}
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onOpen(task);
-                }}
-                className="web:cursor-pointer"
-              >
-                <Info
-                  size={16}
-                  className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200"
-                />
-              </Pressable>
-            )}
-            {onSchedule && !locked && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t("task.reschedule")}
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onSchedule(task);
-                }}
-                className="web:cursor-pointer"
-              >
-                <CalendarClock
-                  size={16}
-                  className="text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200"
-                />
-              </Pressable>
-            )}
-            {onToggleExpand && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  expanded ? t("task.collapseSubtasks") : t("task.expandSubtasks")
-                }
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onToggleExpand(task);
-                }}
-                className="p-1 rounded web:cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              >
-                {expanded ? (
-                  <ChevronDown size={16} className="text-neutral-500" />
-                ) : (
-                  <ChevronRight size={16} className="text-neutral-500" />
-                )}
-              </Pressable>
-            )}
-          </View>
-        )}
       </Pressable>
     </SwipeableRow>
   );

@@ -1,3 +1,4 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Platform, Pressable, Switch, Text, View, type LayoutChangeEvent } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -9,8 +10,8 @@ import {
   resolveProjectColor,
   sortTasks,
   toProject,
-} from "@atlastodo/shared";
-import type { Task } from "@atlastodo/client-core";
+} from "@atlastodo/todo-core";
+
 import { useStore } from "../data/StoreProvider";
 import { useAuth } from "../auth/AuthContext";
 import { useTaskListView } from "../hooks/useTaskListView";
@@ -54,6 +55,8 @@ export interface ProjectScreenProps {
   onSetMode?: (mode: "list" | "board") => void;
   /** Receives the project's header actions (`null` on unmount) for the nav header's `headerRight`. Only changes when what it shows changes. */
   onHeaderActions?: (actions: ReactElement | null) => void;
+  /** Open the project's activity feed (the route navigates); absent, the action is not offered. */
+  onOpenActivity?: () => void;
 }
 
 export function ProjectScreen({
@@ -63,6 +66,7 @@ export function ProjectScreen({
   mode: modeProp,
   onSetMode,
   onHeaderActions,
+  onOpenActivity,
 }: ProjectScreenProps) {
   const { t } = useTranslation();
   const { store, version, kick, localOnly } = useStore();
@@ -171,8 +175,9 @@ export function ProjectScreen({
   // Memoised on what they show, with handlers read through a ref: the route passes the element to
   // `navigation.setOptions`, so a fresh element each render would re-set the header. The board
   // lacks Select and group/sort.
-  const latest = useRef({ toggleFav, setMode, setListPref: view.setListPref });
-  latest.current = { toggleFav, setMode, setListPref: view.setListPref };
+  const latest = useRef({ toggleFav, setMode, setListPref: view.setListPref, onOpenActivity });
+  latest.current = { toggleFav, setMode, setListPref: view.setListPref, onOpenActivity };
+  const hasActivity = onOpenActivity !== undefined;
   const hasProject = project !== null;
   const canSelect = mode === "list" && tasks.length > 0 && !selection.mode;
   const { group, sort } = view.listPref;
@@ -186,6 +191,7 @@ export function ProjectScreen({
           onToggleFavorite={() => latest.current.toggleFav()}
           onEdit={() => setEditing(true)}
           onShare={localOnly ? undefined : () => setSharing(true)}
+          onActivity={hasActivity ? () => latest.current.onOpenActivity?.() : undefined}
           canSelect={canSelect}
           listPref={mode === "list" ? { group, sort } : undefined}
           onChangeListPref={(patch) => latest.current.setListPref(patch)}
@@ -193,7 +199,7 @@ export function ProjectScreen({
           layout={headerLayout}
         />
       ) : null,
-    [hasProject, mode, isFav, canSelect, group, sort, accent, headerLayout, localOnly],
+    [hasProject, mode, isFav, canSelect, group, sort, accent, headerLayout, localOnly, hasActivity],
   );
   useLayoutEffect(() => {
     onHeaderActions?.(headerActions);
@@ -277,11 +283,11 @@ export function ProjectScreen({
               label={t("common.archive")}
               accessibilityLabel={t("workspace.archiveProject")}
               onPress={() => {
-                setProjectArchived(project.id, true);
+                const undoArchive = setProjectArchived(project.id, true);
                 onLeave?.();
                 toast.show(t("toast.projectArchived"), {
                   label: t("common.undo"),
-                  run: () => setProjectArchived(project.id, false),
+                  run: undoArchive,
                 });
                 close();
               }}

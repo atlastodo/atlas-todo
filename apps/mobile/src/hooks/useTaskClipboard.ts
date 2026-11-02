@@ -1,7 +1,12 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlastodo/client-core";
-import { formatRule, serializeTasksForClipboard, type ClipboardContext } from "@atlastodo/shared";
+
+import {
+  formatRule,
+  serializeTasksForClipboard,
+  type ClipboardContext,
+} from "@atlastodo/todo-core";
 import { useToast } from "../data/ToastProvider";
 import { useLabels } from "./useLabels";
 import { useProjects } from "./useProjects";
@@ -12,7 +17,7 @@ import { copyText } from "../lib/clipboard";
 
 /**
  * Copy tasks to the clipboard as the shared human-readable block, with every resolver the serializer
- * supports filled in. The serialization is `@atlastodo/shared`'s `serializeTasksForClipboard`; the
+ * supports filled in. The serialization is `@atlastodo/todo-core`'s `serializeTasksForClipboard`; the
  * {@link ClipboardContext} is built once here so the same task copied from two screens gives the
  * same text, and a new copy surface inherits the full set.
  *

@@ -3,7 +3,7 @@
 # Bump the app's version across EVERY manifest in lockstep (the root package.json and every
 # workspace package.json the root `workspaces` globs match -- apps/*, so a new workspace is picked
 # up without editing this script -- apps/mobile/app.json and bun.lock), ensuring all manifests stay
-# synchronized with the release tag. The core packages (@atlastodo/client-core, @atlastodo/shared)
+# synchronized with the release tag. The core packages (@atlastodo/client-core, @atlastodo/todo-core)
 # are pinned to a core release by URL and have their own version line: this never touches them. Also regenerates nix/bun.nix (the
 # flake's npm dependency set) from bun.lock when nix is available.
 #
@@ -121,6 +121,17 @@ if (OLD !== NEW) {
   // Every new version needs a higher Android versionCode (stores reject a reused or lower one):
   // derived from the version, see scripts/version-code.mjs.
   edit("apps/mobile/app.json", (s) => s.replace(/("versionCode": )(\d+)/, `$1${VERSION_CODE}`));
+  // The CLI's Cargo workspace version -- line-anchored so dependency pins are left alone -- and its
+  // crates in Cargo.lock (only atlas-todo-*: core's atlas-* crates there have core's version).
+  edit("Cargo.toml", (s) =>
+    s.replace(new RegExp(`^version = "${esc(OLD)}"`, "m"), `version = "${NEW}"`),
+  );
+  edit("Cargo.lock", (s) =>
+    s.replace(
+      new RegExp(`(name = "atlas-todo-[a-z]+"\\nversion = )"${esc(OLD)}"`, "g"),
+      `$1"${NEW}"`,
+    ),
+  );
 }
 
 // Verify by asserting every manifest now *equals* the new version, rather than grepping for
@@ -134,6 +145,9 @@ const check = (label, actual) => {
   console.log(`  ${ok ? "ok  " : "FAIL"} ${label.padEnd(34)} ${actual}${ok ? "" : ` (expected ${NEW})`}`);
 };
 for (const f of packageManifests) check(f, JSON.parse(read(f)).version ?? "");
+check("Cargo.toml", (read("Cargo.toml").match(/^version = "(.*)"$/m) ?? [])[1] ?? "");
+for (const [, name, ver] of read("Cargo.lock").matchAll(/name = "(atlas-todo-[^"]+)"\nversion = "([^"]+)"/g))
+  check(`Cargo.lock ${name}`, ver);
 check("apps/mobile/app.json", JSON.parse(read("apps/mobile/app.json")).expo?.version ?? "");
 // (Not when merely verifying: v0.1.3 and older carry the legacy +1 codes.)
 if (OLD !== NEW) {

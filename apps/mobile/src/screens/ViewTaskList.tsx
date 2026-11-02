@@ -1,7 +1,8 @@
+import { type Task } from "@atlastodo/todo-core";
 import type { ComponentProps } from "react";
 import { Platform, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlastodo/client-core";
+
 import type { UseTaskListView } from "../hooks/useTaskListView";
 import { GroupedTaskList } from "../ui/GroupedTaskList";
 import { QuickAdd } from "../ui/QuickAdd";

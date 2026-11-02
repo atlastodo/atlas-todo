@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import { quickScheduleOptions } from "@atlastodo/shared";
+import { quickScheduleOptions } from "@atlastodo/todo-core";
 import { TaskComposeBar } from "./TaskComposeBar";
 import type { ComposeValue } from "../lib/composeDraft";
 

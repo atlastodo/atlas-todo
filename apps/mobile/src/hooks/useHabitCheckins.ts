@@ -4,7 +4,7 @@ import {
   toHabitCheckin,
   type CheckinState,
   type HabitCheckin,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 
 /** The three states a day can be put into; `null` clears it back to "no data". */

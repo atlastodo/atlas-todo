@@ -1,4 +1,4 @@
-import type { ScheduleIO } from "@atlastodo/shared";
+import type { ScheduleIO } from "@atlastodo/todo-core";
 import type { NotifyPermission, ReminderResponse } from "./reminderActions";
 
 /**

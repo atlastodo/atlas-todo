@@ -1,7 +1,8 @@
+import { type Label } from "@atlastodo/todo-core";
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Label } from "@atlastodo/client-core";
+
 import { useLabels } from "../hooks/useLabels";
 import { Plus, Tag, X } from "./icons";
 import { KEEP_FOCUS_SUBMIT } from "../lib/submitBehavior";

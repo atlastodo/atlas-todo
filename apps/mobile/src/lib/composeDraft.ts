@@ -1,5 +1,5 @@
-import type { CreateTaskInput, Priority } from "@atlastodo/client-core";
-import type { QuickAddResult } from "@atlastodo/shared";
+import { type CreateTaskInput, type Priority } from "@atlastodo/todo-core";
+import type { QuickAddResult } from "@atlastodo/todo-core";
 
 /**
  * What quick-add's compose bar has been set to by hand, and how that combines with the screen's

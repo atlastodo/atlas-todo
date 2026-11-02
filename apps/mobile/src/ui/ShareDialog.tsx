@@ -27,6 +27,7 @@ import {
   type MemberRole,
   type MemberView,
 } from "@atlastodo/client-core";
+import { writeProjectActivity } from "@atlastodo/todo-core";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";
 import {
@@ -261,7 +262,7 @@ export function ShareDialog({
       const firstShare = !isProjectShared(store, projectId);
       const key = await canonicalKey(firstShare);
       // Existing content was written under the personal key; re-write it under the project key first.
-      if (firstShare) rescopeProject(store, keyring, projectId);
+      if (firstShare) rescopeProject(store, keyring, projectId, myId);
       // What the invitee sees before accepting: the server cannot read the project's fields.
       const fields = store.get("project", projectId) ?? {};
       const preview = sealInvitePreview(key.pek, key.keyId, projectId, {
@@ -271,6 +272,15 @@ export function ShareDialog({
         kind: fields.kind,
       });
       const member = await api.inviteMember(projectId, addr, role, preview);
+      writeProjectActivity(
+        store,
+        myId,
+        { projectId },
+        "member_invited",
+        null,
+        // The user id, never the address: the entry outlives a declined invite.
+        member.user_id,
+      );
       setEmail("");
       try {
         await deliverKey({ user_id: member.user_id, email: member.email || addr }, published, key);
@@ -318,6 +328,7 @@ export function ShareDialog({
     setError(null);
     try {
       await api.removeMember(projectId, userId);
+      writeProjectActivity(store, myId, { projectId }, "member_removed", null, userId);
       unpinMemberKey(store, projectId, userId);
       // Removing a member whose keys changed is how the user accepts the new ones; a new invite pins afresh.
       if (identities.get(userId)?.status === "changed") forgetIdentity(store, userId);

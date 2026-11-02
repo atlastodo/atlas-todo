@@ -1,5 +1,6 @@
-import { useCallback, useMemo } from "react";
-import type { Project, ProjectView } from "@atlastodo/client-core";
+import { type Project, type ProjectView } from "@atlastodo/todo-core";
+import { useCallback, useContext, useMemo } from "react";
+
 import {
   DEFAULT_FOLDER_ICON,
   DEFAULT_PROJECT_ICON,
@@ -15,8 +16,10 @@ import {
   toProject,
   toSection,
   toTask,
-} from "@atlastodo/shared";
+  writeProjectActivity,
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
+import { AuthContext } from "../auth/AuthContext";
 
 /**
  * Projects from the shared store: list, create (default icon, rotated colour), rename, icon/colour,
@@ -25,7 +28,10 @@ import { useStore } from "../data/StoreProvider";
  * `projects` is real projects only; folders come back separately, because only a project gets a
  * board/list. Trashed projects are filtered out, and so is anything behind an archived or trashed
  * folder at any depth; the tasks follow via the read-time cascade in `taskOps`. The tree rules
- * live in `@atlastodo/shared`'s `projectTree`.
+ * live in `@atlastodo/todo-core`'s `projectTree`.
+ *
+ * Renames, archives and trash moves record activity entries as the signed-in user; a toast's undo
+ * of an archive or delete takes its entry back.
  */
 
 export interface UseProjects {
@@ -60,11 +66,13 @@ export interface UseProjects {
   reorderProject: (id: string, direction: "up" | "down") => void;
   /** Soft-delete a project to Trash (its sections/tasks hide via the cascade); returns an undo closure. */
   removeProject: (id: string) => () => void;
-  setProjectArchived: (id: string, archived: boolean) => void;
+  /** Archive or unarchive; returns the toast's undo, which takes the entry back. */
+  setProjectArchived: (id: string, archived: boolean) => () => void;
 }
 
 export function useProjects(): UseProjects {
   const { store, version, kick } = useStore();
+  const actorId = useContext(AuthContext)?.session?.user.id;
 
   const allProjects = useMemo(
     () =>
@@ -136,10 +144,20 @@ export function useProjects(): UseProjects {
 
   const renameProject = useCallback(
     (id: string, name: string) => {
+      const before = store.get("project", id)?.name;
+      if (before === name) return;
       store.set("project", id, "name", name);
+      writeProjectActivity(
+        store,
+        actorId,
+        { projectId: id },
+        "project_renamed",
+        typeof before === "string" ? before : null,
+        name,
+      );
       kick();
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   const duplicateProject = useCallback(
@@ -217,16 +235,32 @@ export function useProjects(): UseProjects {
   );
 
   const removeProject = useCallback(
-    (id: string) => softDelete(store, kick, "project", id),
-    [store, kick],
+    (id: string) => softDelete(store, kick, "project", id, actorId),
+    [store, kick, actorId],
   );
 
   const setProjectArchived = useCallback(
     (id: string, archived: boolean) => {
-      store.set("project", id, "archived_at", archived ? Date.now() : null);
-      kick();
+      const write = (archive: boolean) => {
+        const fields = store.get("project", id);
+        const before = fields?.archived_at;
+        store.set("project", id, "archived_at", archive ? Date.now() : null);
+        writeProjectActivity(
+          store,
+          actorId,
+          { projectId: id },
+          archive ? "project_archived" : "project_unarchived",
+          // An unarchive keeps when it had been archived, so undoing it from the feed restores it.
+          !archive && typeof before === "number" ? String(before) : null,
+          typeof fields?.name === "string" ? fields.name : null,
+        );
+        kick();
+      };
+      write(archived);
+      // The reverse within a minute takes the entry back (`writeProjectActivity`'s cancel).
+      return () => write(!archived);
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   return {

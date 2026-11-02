@@ -1,4 +1,5 @@
 import {
+  Activity,
   Archive,
   Bell,
   CalendarClock,
@@ -19,13 +20,13 @@ import {
 } from "../ui/icons";
 import type { LucideIcon } from "../ui/icons";
 import type { FeatureFlag } from "../hooks/useFeature";
-import { isSmartView, type SmartView } from "@atlastodo/shared";
+import { isSmartView, type SmartView } from "@atlastodo/todo-core";
 
 /**
  * The app's selectable views: which exist, what they are called and which icon. The paths live in
  * the `app/` route tree, so the route segment doubles as the view id (`viewPath` relies on it).
  *
- * The smart-view list and its type guard come from `@atlastodo/shared` (`views.ts`), so the nav cannot
+ * The smart-view list and its type guard come from `@atlastodo/todo-core` (`views.ts`), so the nav cannot
  * drift from the stored `default_view` validation; only the nav shape is this app's own.
  */
 
@@ -35,7 +36,7 @@ export type { SmartView };
 
 export interface NavItem {
   view: SmartView;
-  /** i18n key (catalogs in `@atlastodo/shared/locales`); `label` is the fallback until translated. */
+  /** i18n key (catalogs in `@atlastodo/todo-core/locales`); `label` is the fallback until translated. */
   labelKey: string;
   label: string;
   icon: LucideIcon;
@@ -70,6 +71,7 @@ export const DRAWER_EXTRA: DrawerExtra[] = [
   { name: "calendar", labelKey: "nav.calendar", label: "Calendar", icon: CalendarDays },
   { name: "filters", labelKey: "nav.filters", label: "Filters", icon: ListFilter },
   { name: "notifications", labelKey: "nav.notifications", label: "Notifications", icon: Bell },
+  { name: "activity", labelKey: "activity.title", label: "Activity", icon: Activity },
   { name: "archive", labelKey: "nav.archive", label: "Archive", icon: Archive },
   { name: "trash", labelKey: "nav.trash", label: "Recently deleted", icon: Trash2 },
   { name: "about", labelKey: "nav.about", label: "About", icon: Info },

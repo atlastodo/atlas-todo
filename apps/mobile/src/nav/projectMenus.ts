@@ -1,5 +1,6 @@
 import type { ContextMenuItem } from "../ui/ContextMenu";
 import {
+  Activity,
   Archive,
   CopyPlus,
   FolderInput,
@@ -45,6 +46,8 @@ export interface ProjectMenuDeps {
   /** Toggle `key`; `wasFavorite` is the state the menu read (for the undoing toast). */
   onToggleFavorite: (key: string, wasFavorite: boolean) => void;
   onOpen: (projectId: string) => void;
+  /** Open the project's activity feed; without it the item is not offered. */
+  onActivity?: (projectId: string) => void;
   onDuplicate: (projectId: string) => void;
   /** Create a project inside the folder (the folder menu only). */
   onNewProjectHere: (folderId: string) => void;
@@ -112,7 +115,7 @@ function destructiveItems(
   ];
 }
 
-/** A project row's menu: open, favorite, duplicate, move, then the gated tail. */
+/** A project row's menu: open, activity, favorite, duplicate, move, then the gated tail. */
 export function projectMenuItems(
   deps: ProjectMenuDeps,
   id: string,
@@ -125,6 +128,16 @@ export function projectMenuItems(
       icon: SquareArrowOutUpRight,
       onPress: () => deps.onOpen(id),
     },
+    ...(deps.onActivity
+      ? [
+          {
+            key: "activity",
+            label: deps.t("activity.title"),
+            icon: Activity,
+            onPress: () => deps.onActivity!(id),
+          },
+        ]
+      : []),
     favoriteItem(deps, id),
     {
       key: "duplicate",

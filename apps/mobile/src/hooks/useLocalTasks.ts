@@ -1,11 +1,6 @@
+import { rescopeTask, type CreateTaskInput, type Task } from "@atlastodo/todo-core";
 import { useCallback, useContext, useMemo } from "react";
-import {
-  rescopeNeeded,
-  rescopeTask,
-  type CreateTaskInput,
-  type SyncStatus,
-  type Task,
-} from "@atlastodo/client-core";
+import { rescopeNeeded, type SyncStatus } from "@atlastodo/client-core";
 import {
   allTasks as deriveAll,
   archivedTasks as deriveArchived,
@@ -26,7 +21,7 @@ import {
   type RecurEditScope,
   type TaskMove,
   type TaskProjectMove,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 import { usePreferences } from "./usePreferences";
@@ -49,10 +44,10 @@ const createdThisSession = new Set<string>();
  * against the in-memory store while the provider's `SyncClient` syncs in the background.
  *
  * The rules (what completing a recurring task means, which tasks a list may show) live in
- * `@atlastodo/shared`'s `taskOps`; this hook only subscribes, memoises and kicks a sync after a write.
+ * `@atlastodo/todo-core`'s `taskOps`; this hook only subscribes, memoises and kicks a sync after a write.
  *
- * @param actorId Current user id; when given, status/due/assignee changes record an `activity`
- *   entry attributed to them.
+ * @param actorId Current user id; when given, every change (create, fields, moves, delete) records
+ *   an `activity` entry attributed to them.
  *
  * A task this device cannot decrypt is read-only (`taskOps` refuses the writes), so the writers
  * report whether anything was written; an undo toast must only count what really changed.
@@ -71,7 +66,10 @@ export interface UseLocalTasks {
   skip: (task: Task) => void;
   /** Soft-delete a task to Trash (recoverable for 30 days), hidden from every list. */
   remove: (task: Task) => boolean;
-  /** Undo a soft-delete: clears `deleted_at` so the task returns to its lists. */
+  /**
+   * Undo a soft-delete (the delete toast): clears `deleted_at` so the task returns to its lists.
+   * Within a minute of the delete it takes back the `deleted` entry rather than recording a restore.
+   */
   restore: (task: Task) => boolean;
   /** Create a copy of a task (title suffixed " (copy)"); the new task's id, or null if refused. */
   duplicate: (task: Task) => string | null;
@@ -107,23 +105,23 @@ export function useLocalTasks(actorId?: string): UseLocalTasks {
 
   const create = useCallback(
     (input: CreateTaskInput) => {
-      const id = createTask(store, input, timeZone);
+      const id = createTask(store, input, timeZone, actorId);
       createdThisSession.add(id);
       kick();
       return id;
     },
-    [store, kick, timeZone],
+    [store, kick, timeZone, actorId],
   );
 
   const duplicate = useCallback(
     (task: Task) => {
-      const id = duplicateTask(store, task, timeZone);
+      const id = duplicateTask(store, task, timeZone, actorId);
       if (id == null) return null;
       createdThisSession.add(id);
       kick();
       return id;
     },
-    [store, kick, timeZone],
+    [store, kick, timeZone, actorId],
   );
 
   const discard = useCallback(
@@ -163,20 +161,20 @@ export function useLocalTasks(actorId?: string): UseLocalTasks {
 
   const remove = useCallback(
     (task: Task) => {
-      if (!softDeleteTask(store, task)) return false;
+      if (!softDeleteTask(store, task, Date.now(), actorId)) return false;
       kick();
       return true;
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   const restore = useCallback(
     (task: Task) => {
-      if (!restoreTask(store, task)) return false;
+      if (!restoreTask(store, task, actorId)) return false;
       kick();
       return true;
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   const update = useCallback(
@@ -199,11 +197,11 @@ export function useLocalTasks(actorId?: string): UseLocalTasks {
 
   const move = useCallback(
     (id: string, patch: TaskMove) => {
-      const changed = moveTask(store, id, patch);
+      const changed = moveTask(store, id, patch, Date.now(), actorId);
       if (changed) kick();
       return changed;
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   const reparent = useCallback(
@@ -221,13 +219,14 @@ export function useLocalTasks(actorId?: string): UseLocalTasks {
       const from = typeof raw === "string" && raw !== "" ? raw : null;
       // Decided before the move: afterwards the store already places the task in its new project.
       const rescope = rescopeNeeded(store, keyring, from, target.project_id);
-      if (!moveTaskToProject(store, id, target)) return false;
+      if (!moveTaskToProject(store, id, target, Date.now(), actorId)) return false;
       // Content written under the old scope's key must be re-sent under the new one.
-      if (rescope) rescopeTask(store, keyring, id, from);
+      // Only our own activity entries: another member's would lose their author on the way.
+      if (rescope) rescopeTask(store, keyring, id, from, actorId);
       kick();
       return true;
     },
-    [store, kick, keyring],
+    [store, kick, keyring, actorId],
   );
 
   const setArchived = useCallback(
