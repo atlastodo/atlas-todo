@@ -42,6 +42,7 @@ jobs:
       pull-requests: read
     outputs:
       rust: ${{ steps.filter.outputs.rust }}
+      nix: ${{ steps.filter.outputs.nix }}
       lint_ts: ${{ steps.filter.outputs.lint_ts }}
       test_ts: ${{ steps.filter.outputs.test_ts }}
       mobile: ${{ steps.filter.outputs.mobile }}
@@ -58,7 +59,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           HEAD_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          set_all() { for k in rust lint_ts test_ts mobile deps; do echo "$k=$1" >>"$GITHUB_OUTPUT"; done; }
+          set_all() { for k in rust nix lint_ts test_ts mobile deps; do echo "$k=$1" >>"$GITHUB_OUTPUT"; done; }
           case "$EVENT" in
             schedule)
               set_all false
@@ -83,11 +84,14 @@ jobs:
           ci='^(\.github/workflows/ci\.yml|\.bun-version)$'
           shared="^(package\.json$|bun\.lock$|bunfig\.toml$)|$ci"
           deps="^(bun\.lock|package\.json|(apps|packages)/[^/]+/package\.json|Cargo\.lock|deny\.toml)$|$ci"
+          # What the flake's JS builds read: the workspace layout and lock, and the nix files.
+          nix="^(package\.json|bun\.lock|bunfig\.toml|flake\.(nix|lock)|nix/|(apps|packages)/[^/]+/package\.json$)|$ci"
           rust="^(crates/|Cargo\.(toml|lock)$|rust-toolchain\.toml$|test-vectors/|packages/todo-core/src/definition\.json$)|$ci"
           has() { if grep -qE "$1" <<<"$files"; then echo true; else echo false; fi; }
           {
             # Prettier checks Markdown, YAML and JSON too, so every change lints.
             echo "rust=$(has "$rust")"
+            echo "nix=$(has "$nix")"
             echo "lint_ts=$(has .)"
             echo "test_ts=$(has "$shared|^apps/electron/|^packages/|^test-vectors/")"
             echo "mobile=$(has "$shared|^apps/mobile/|^packages/")"
@@ -138,6 +142,21 @@ jobs:
         with:
           tool: cargo-nextest@0.9.143
       - run: cargo nextest run --workspace --locked
+
+  # The flake's web-dist and atlas-desktop, as a NixOS or Home Manager configuration builds them
+  # (nix/packages/js-source.nix must list every workspace, nix/bun.nix match bun.lock). A tag runs
+  # it too, so a release never ships a flake that does not build.
+  nix-build:
+    name: Nix build
+    needs: changes
+    if: ${{ needs.changes.outputs.nix == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+      - run: nix build --print-build-logs .#web-dist .#atlas-desktop
 
   lint-ts:
     name: Lint (TypeScript)
