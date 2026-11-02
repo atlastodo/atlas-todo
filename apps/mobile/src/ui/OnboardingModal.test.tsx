@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Platform } from "react-native";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { PREFERENCES_ID } from "@atlastodo/shared";
+import { PREFERENCES_ID } from "@atlastodo/todo-core";
 import { fakeAuth, fakeLocalMode, withApp } from "../testutil";
 import { LocalModeContext, type LocalModeValue } from "../auth/localMode";
 import { StoreContext } from "../data/StoreProvider";

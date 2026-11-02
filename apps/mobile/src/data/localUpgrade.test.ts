@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LocalStore, MemoryPersistence } from "@atlastodo/client-core";
-import { PREFERENCES_ID } from "@atlastodo/shared";
+import { PREFERENCES_ID } from "@atlastodo/todo-core";
 import {
   markLocalDataUsed,
   moveLocalDataInto,

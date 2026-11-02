@@ -1,3 +1,4 @@
+import { type Priority, type Task } from "@atlastodo/todo-core";
 import { useEffect, useState } from "react";
 import {
   Modal,
@@ -9,13 +10,13 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { useTranslation } from "react-i18next";
-import type { Priority, Task } from "@atlastodo/client-core";
+
 import {
   dayKey,
   PRIORITY_COLOR,
   quickScheduleOptions,
   type QuickScheduleOption,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import {
   ArrowRightLeft,
   CalendarDays,

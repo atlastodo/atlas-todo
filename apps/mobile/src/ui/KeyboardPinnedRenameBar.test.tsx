@@ -1,5 +1,6 @@
+import { type Task } from "@atlastodo/todo-core";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import type { Task } from "@atlastodo/client-core";
+
 import { KeyboardPinnedRenameBar } from "./KeyboardPinnedRenameBar";
 
 const mockTask: Task = {

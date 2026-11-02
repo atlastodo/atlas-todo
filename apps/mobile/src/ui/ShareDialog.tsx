@@ -27,7 +27,7 @@ import {
   type MemberRole,
   type MemberView,
 } from "@atlastodo/client-core";
-import { writeProjectActivity } from "@atlastodo/shared";
+import { writeProjectActivity } from "@atlastodo/todo-core";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";
 import {

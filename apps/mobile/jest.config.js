@@ -1,5 +1,5 @@
 /**
- * Jest for the RN app (`client-core` and `shared` use vitest): React Native ships a jest preset and
+ * Jest for the RN app (`client-core` and `todo-core` use vitest): React Native ships a jest preset and
  * RN libraries' mocks assume it. This harness is only for what must render. Tests are behavioural
  * (query by role, text or label) and prefer dependency injection to module mocks.
  */

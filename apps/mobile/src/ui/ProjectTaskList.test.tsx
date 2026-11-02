@@ -1,6 +1,7 @@
+import { type Section, type Task } from "@atlastodo/todo-core";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { LocalStore, type Section, type Task } from "@atlastodo/client-core";
-import { allTasks, createTask } from "@atlastodo/shared";
+import { LocalStore } from "@atlastodo/client-core";
+import { allTasks, createTask } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { useCursor, type CursorContextValue } from "../data/CursorProvider";
 import { ProjectScreen } from "../screens/ProjectScreen";

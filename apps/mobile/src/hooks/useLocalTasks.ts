@@ -1,11 +1,6 @@
+import { rescopeTask, type CreateTaskInput, type Task } from "@atlastodo/todo-core";
 import { useCallback, useContext, useMemo } from "react";
-import {
-  rescopeNeeded,
-  rescopeTask,
-  type CreateTaskInput,
-  type SyncStatus,
-  type Task,
-} from "@atlastodo/client-core";
+import { rescopeNeeded, type SyncStatus } from "@atlastodo/client-core";
 import {
   allTasks as deriveAll,
   archivedTasks as deriveArchived,
@@ -26,7 +21,7 @@ import {
   type RecurEditScope,
   type TaskMove,
   type TaskProjectMove,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 import { usePreferences } from "./usePreferences";
@@ -49,7 +44,7 @@ const createdThisSession = new Set<string>();
  * against the in-memory store while the provider's `SyncClient` syncs in the background.
  *
  * The rules (what completing a recurring task means, which tasks a list may show) live in
- * `@atlastodo/shared`'s `taskOps`; this hook only subscribes, memoises and kicks a sync after a write.
+ * `@atlastodo/todo-core`'s `taskOps`; this hook only subscribes, memoises and kicks a sync after a write.
  *
  * @param actorId Current user id; when given, every change (create, fields, moves, delete) records
  *   an `activity` entry attributed to them.

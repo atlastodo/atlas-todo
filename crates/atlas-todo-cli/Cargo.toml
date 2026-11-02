@@ -1,0 +1,24 @@
+[package]
+name = "atlas-todo-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+description = "The `atlas-todo` command line: Atlas Todo for scripts and n8n, end-to-end encrypted, one static binary."
+
+[[bin]]
+name = "atlas-todo"
+path = "src/main.rs"
+
+[dependencies]
+atlas-client = { workspace = true }
+atlas-todo-rules = { path = "../atlas-todo-rules" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+atlas-core = { workspace = true }
+atlas-todo-rules = { path = "../atlas-todo-rules" }
+uuid = { workspace = true }

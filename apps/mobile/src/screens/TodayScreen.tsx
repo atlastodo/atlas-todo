@@ -1,13 +1,14 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlastodo/client-core";
+
 import {
   endOfDay,
   planDayItems,
   planDayUpcoming,
   todayTasks,
   type PlanDayWrite,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useTaskListView } from "../hooks/useTaskListView";
 import { PlanDaySheet } from "../ui/PlanDaySheet";
 import { Sun } from "../ui/icons";

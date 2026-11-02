@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { PREFERENCES_ID, createTask, toTask } from "@atlastodo/shared";
+import { PREFERENCES_ID, createTask, toTask } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { UpcomingScreen } from "./UpcomingScreen";
 
-// Over a real in-memory `LocalStore`; upcoming/grouping logic is tested in `@atlastodo/shared`.
+// Over a real in-memory `LocalStore`; upcoming/grouping logic is tested in `@atlastodo/todo-core`.
 
 const DAY = 86_400_000;
 

@@ -1,6 +1,7 @@
+import { rescopeTask } from "@atlastodo/todo-core";
 import { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { rescopeNeeded, rescopeTask, type MemberRole } from "@atlastodo/client-core";
+import { rescopeNeeded, type MemberRole } from "@atlastodo/client-core";
 import {
   allTasks,
   buildActivityFeed,
@@ -16,7 +17,7 @@ import {
   type EvalContext,
   type FeedItem,
   type FeedScope,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 import { useActivities } from "./useActivities";

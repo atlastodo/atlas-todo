@@ -15,7 +15,7 @@ import {
   shiftDateKey,
   type Habit,
   type HabitGroupMember,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useHabits } from "../hooks/useHabits";
 import { useHabitCheckins } from "../hooks/useHabitCheckins";
 import { usePreferences } from "../hooks/usePreferences";

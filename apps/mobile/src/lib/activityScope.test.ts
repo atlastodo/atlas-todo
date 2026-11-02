@@ -1,5 +1,5 @@
 import { LocalStore } from "@atlastodo/client-core";
-import { allTasks, createTask, parse, visibleTasks } from "@atlastodo/shared";
+import { allTasks, createTask, parse, visibleTasks } from "@atlastodo/todo-core";
 import { activityScope, type ScopeTarget } from "./activityScope";
 
 /**

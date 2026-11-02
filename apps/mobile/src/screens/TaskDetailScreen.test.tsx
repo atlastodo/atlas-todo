@@ -1,7 +1,8 @@
+import { type Task } from "@atlastodo/todo-core";
 import { act, fireEvent, render as rtlRender, screen } from "@testing-library/react-native";
 import { Keyboard } from "react-native";
 import type { ReactNode } from "react";
-import { LocalStore, type Task } from "@atlastodo/client-core";
+import { LocalStore } from "@atlastodo/client-core";
 import { withApp } from "../testutil";
 import { FocusProvider } from "../data/FocusProvider";
 import { TaskDetailScreen, mergeDueDate, pickedDueDate } from "./TaskDetailScreen";

@@ -7,8 +7,8 @@
     "noUnusedParameters": true,
     "skipLibCheck": true,
     "noEmit": true,
-    // Expo's base condition. The core packages (@atlastodo/client-core, @atlastodo/shared) are the
-    // core release's npm packages, checked against their dist/ declarations.
+    // Expo's base condition. The core package (@atlastodo/client-core) is the core release's
+    // npm package, checked against its dist/ declarations; @atlastodo/todo-core is this repository's.
     "customConditions": ["react-native"],
     // jest's globals (`describe`/`it`/`expect`/`jest`) are ambient, so the test files typecheck in
     // the same `bun run typecheck` pass as everything else -- there is no separate test tsconfig.

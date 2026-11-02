@@ -15,14 +15,14 @@ import {
   restoreFromTrash,
   sweepExpiredTrash,
   type TrashItem,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";
 import { useFirstSyncDone } from "./useFirstSyncDone";
 
 /**
  * Recently Deleted / Trash. The rules (soft-delete vs tombstone, the 30-day window, the container
- * cascade) live in `@atlastodo/shared`'s `trash.ts`; this hook is only the React wiring.
+ * cascade) live in `@atlastodo/todo-core`'s `trash.ts`; this hook is only the React wiring.
  */
 
 export interface UseTrash {

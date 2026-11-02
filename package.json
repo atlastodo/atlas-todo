@@ -12,7 +12,8 @@
     "url": "https://github.com/atlastodo/atlas-todo/issues"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "engines": {
     "node": ">=26"

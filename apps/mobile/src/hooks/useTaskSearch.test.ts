@@ -1,12 +1,13 @@
+import { type Task } from "@atlastodo/todo-core";
 import { renderHook } from "@testing-library/react-native";
-import { LocalStore, type Task } from "@atlastodo/client-core";
+import { LocalStore } from "@atlastodo/client-core";
 import { withApp } from "../testutil";
 import { useTaskSearch } from "./useTaskSearch";
 
 /**
  * Over a real `LocalStore` (the DI `withApp` provides, no mocks): the search source must expose the
  * store's visible tasks and a context line the palette rows can show. The matching itself lives in
- * `@atlastodo/shared`'s `searchTasks`; only the wiring is asserted here.
+ * `@atlastodo/todo-core`'s `searchTasks`; only the wiring is asserted here.
  */
 
 function seed() {

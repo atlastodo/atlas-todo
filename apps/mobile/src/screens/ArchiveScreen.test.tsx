@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { createTask, setTaskArchived, toTask } from "@atlastodo/shared";
+import { createTask, setTaskArchived, toTask } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { ArchiveScreen } from "./ArchiveScreen";
 

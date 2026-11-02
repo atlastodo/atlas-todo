@@ -3,7 +3,7 @@ import { LocalStore } from "@atlastodo/client-core";
 import { withApp } from "../testutil";
 import { HabitGroupDetailScreen } from "./HabitGroupDetailScreen";
 
-// Over a real in-memory `LocalStore`; streak maths is tested in `@atlastodo/shared`.
+// Over a real in-memory `LocalStore`; streak maths is tested in `@atlastodo/todo-core`.
 
 // 2026-06-17 is a Wednesday.
 const NOW = new Date(2026, 5, 17, 12, 0, 0).getTime();

@@ -1,5 +1,5 @@
 import { useContext, useEffect } from "react";
-import { pruneOwnActivity } from "@atlastodo/shared";
+import { pruneOwnActivity } from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 import { usePreferences } from "./usePreferences";

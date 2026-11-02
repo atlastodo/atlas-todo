@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import { decodeLabels, decodePlace, type Activity, type Formatters } from "@atlastodo/shared";
+import { decodeLabels, decodePlace, type Activity, type Formatters } from "@atlastodo/todo-core";
 
 /**
  * One activity entry as a sentence fragment ("set the due date of Ship it to Fri 14 Nov"), the

@@ -1,11 +1,11 @@
 import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { formatRule, parseRule, ruleToString, type Freq, type Rule } from "@atlastodo/shared";
+import { formatRule, parseRule, ruleToString, type Freq, type Rule } from "@atlastodo/todo-core";
 import { Check, Repeat } from "./icons";
 
 /**
  * Edit a task's recurrence rule. Controlled: reads the rule string from `value` and emits the new
- * string (or null for off) via `onChange`. The rule engine is `@atlastodo/shared`'s (`parseRule`,
+ * string (or null for off) via `onChange`. The rule engine is `@atlastodo/todo-core`'s (`parseRule`,
  * `ruleToString`, `formatRule`); completing a recurring task rolls it in `taskOps.toggleTask`. The
  * summary is in the UI language; weekday codes stay English.
  */

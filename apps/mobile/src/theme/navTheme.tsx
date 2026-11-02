@@ -1,5 +1,5 @@
 import { Platform, View, type ColorSchemeName, type StyleProp, type ViewStyle } from "react-native";
-import { ACCENTS, type AccentName } from "@atlastodo/shared";
+import { ACCENTS, type AccentName } from "@atlastodo/todo-core";
 
 /**
  * React Navigation header/drawer/tab colours for a resolved colour scheme. React Navigation styles

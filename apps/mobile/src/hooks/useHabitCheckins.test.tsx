@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { derivedUuidV1, derivedUuidV2 } from "@atlastodo/shared";
+import { derivedUuidV1, derivedUuidV2 } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { useHabitCheckins } from "./useHabitCheckins";
 

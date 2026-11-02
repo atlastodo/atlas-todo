@@ -1,11 +1,11 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { View, type StyleProp, type ViewStyle } from "react-native";
 import { vars } from "nativewind";
-import { DEFAULT_ACCENT, accentVars, type AccentName } from "@atlastodo/shared";
+import { DEFAULT_ACCENT, accentVars, type AccentName } from "@atlastodo/todo-core";
 
 /**
  * Applies the accent palette to the tree, so `bg-accent-600` and friends resolve. It hands
- * `accentVars(accent)` from `@atlastodo/shared` to NativeWind's `vars()`, which scopes the variables to
+ * `accentVars(accent)` from `@atlastodo/todo-core` to NativeWind's `vars()`, which scopes the variables to
  * this View and its descendants.
  *
  * Dark mode is managed by `SyncedTheme`. The accent is the default until the store is up. The

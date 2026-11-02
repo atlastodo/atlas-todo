@@ -1,5 +1,6 @@
+import { type Project, type Section } from "@atlastodo/todo-core";
 import { fireEvent, render, screen } from "@testing-library/react-native";
-import type { Project, Section } from "@atlastodo/client-core";
+
 import { MoveToPicker } from "./MoveToPicker";
 
 describe("MoveToPicker", () => {

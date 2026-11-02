@@ -25,8 +25,8 @@
       "name": "@atlastodo/mobile",
       "version": "0.1.17-rc.2",
       "dependencies": {
-        "@atlastodo/client-core": "0.1.14",
-        "@atlastodo/shared": "0.1.14",
+        "@atlastodo/client-core": "0.1.15",
+        "@atlastodo/todo-core": "workspace:*",
         "@expo/metro-runtime": "~58.0.14",
         "@react-native-async-storage/async-storage": "2.2.0",
         "@react-native-community/datetimepicker": "9.2.1",
@@ -94,6 +94,21 @@
         "typescript": "~7.0.2",
       },
     },
+    "packages/todo-core": {
+      "name": "@atlastodo/todo-core",
+      "version": "0.1.17-rc.2",
+      "dependencies": {
+        "@atlastodo/client-core": "0.1.15",
+        "@atlastodo/sdk": "0.1.15",
+        "@noble/hashes": "^2.4.0",
+        "fflate": "^0.8.3",
+      },
+      "devDependencies": {
+        "@types/node": "^26.6.5",
+        "typescript": "^7.0.2",
+        "vitest": "^5.0.5",
+      },
+    },
   },
   "overrides": {
     "baseline-browser-mapping": "^2.11.29",
@@ -113,13 +128,17 @@
 
     "@asamuzakjp/css-color": ["@asamuzakjp/css-color@3.2.0", "", { "dependencies": { "@csstools/css-calc": "^2.1.3", "@csstools/css-color-parser": "^3.0.9", "@csstools/css-parser-algorithms": "^3.0.4", "@csstools/css-tokenizer": "^3.0.3", "lru-cache": "^10.4.3" } }, "sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw=="],
 
-    "@atlastodo/client-core": ["@atlastodo/client-core@0.1.14", "", { "dependencies": { "@noble/ciphers": "^2.4.0", "@noble/curves": "^2.4.0", "@noble/hashes": "^2.4.0", "@scure/bip39": "^2.4.0" } }, "sha512-8kUIUODgfGKUlqLSfkMICmIiEygToluYZ8NP4NBtlNzOTIkjJRNQZkxBC0BHEMbeH63sNwy6aDQQGY55rlalLw=="],
+    "@atlastodo/client-core": ["@atlastodo/client-core@0.1.15", "", { "dependencies": { "@noble/ciphers": "^2.4.0", "@noble/curves": "^2.4.0", "@noble/hashes": "^2.4.0", "@scure/bip39": "^2.4.0" } }, "sha512-fBYuxAHBerZtdZ4AOf5Ws0lZ4daRDUgU8AaJhPIBDbqod0LPcvbssFjMmNgVFM+9Yd8g4qHo/xN1v87jmjXtTw=="],
 
     "@atlastodo/electron": ["@atlastodo/electron@workspace:apps/electron"],
 
     "@atlastodo/mobile": ["@atlastodo/mobile@workspace:apps/mobile"],
 
-    "@atlastodo/shared": ["@atlastodo/shared@0.1.14", "", { "dependencies": { "@atlastodo/client-core": "0.1.14", "@noble/hashes": "^2.4.0", "fflate": "^0.8.3" } }, "sha512-bX+2QT42FANTtzHHgiONyLs2Juuz/0nwVRswgaeoOGCEfPK8+M1t0PDtQ/KH4OakJYVYxARCH712GEbhPBYtfQ=="],
+    "@atlastodo/sdk": ["@atlastodo/sdk@0.1.15", "", { "dependencies": { "@atlastodo/client-core": "0.1.15", "@atlastodo/shared": "0.1.15" } }, "sha512-lmsCWIy7Z1vYzysktHN6m9whhm9FJXpDvzIZTtlNePVWtF9IM3dlfzKWnnije7k8BPN3yJy0giYJ3E88kALbbg=="],
+
+    "@atlastodo/shared": ["@atlastodo/shared@0.1.15", "", { "dependencies": { "@atlastodo/client-core": "0.1.15" } }, "sha512-cxoXBqrh81ieW6gVUTDXgfIgEMhJPpJiYu8aEh6YjCj+CtMa03xTJ7vZLSGafzDHZF4PbEfQd11dwKPG9m0NgQ=="],
+
+    "@atlastodo/todo-core": ["@atlastodo/todo-core@workspace:packages/todo-core"],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],
 

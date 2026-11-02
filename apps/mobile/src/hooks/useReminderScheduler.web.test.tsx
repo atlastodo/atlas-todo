@@ -7,7 +7,7 @@ import { Platform } from "react-native";
 
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { PREFERENCES_ID, createTask, makeInstant } from "@atlastodo/shared";
+import { PREFERENCES_ID, createTask, makeInstant } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { useReminderScheduler } from "./useReminderScheduler";
 

@@ -71,3 +71,33 @@ updates:
       # which is only a release candidate so far. Drop this with the move to a stable nativewind 5.
       - dependency-name: "tailwindcss"
         update-types: ["version-update:semver-major"]
+
+  # The atlas-todo CLI (crates/). Core's crates (atlas-client, atlas-core) follow the core pin,
+  # which deps-refresh.yml moves with the npm one.
+  - package-ecosystem: cargo
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      cargo-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "atlas-client"
+      - dependency-name: "atlas-core"
+
+  - package-ecosystem: rust-toolchain
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: chore
+      include: scope

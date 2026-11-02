@@ -1,3 +1,4 @@
+import { type Priority } from "@atlastodo/todo-core";
 import { useEffect, useMemo, useState } from "react";
 import { Keyboard, Platform, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -10,8 +11,8 @@ import {
   makeFormatters,
   makeInstant,
   zonedParts,
-} from "@atlastodo/shared";
-import type { Priority } from "@atlastodo/client-core";
+} from "@atlastodo/todo-core";
+
 import type { DateTimePickerEvent } from "./DateTimePicker";
 import type { ComposeDraft, ComposeValue } from "../lib/composeDraft";
 import { ComposeSheet } from "./composeBar/ComposeSheet";

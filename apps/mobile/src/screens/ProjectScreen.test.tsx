@@ -2,7 +2,13 @@ import { useState, type ReactElement } from "react";
 import { Dimensions, View } from "react-native";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { createTask, reorderRank, sectionCreateFields, sortTasks, toTask } from "@atlastodo/shared";
+import {
+  createTask,
+  reorderRank,
+  sectionCreateFields,
+  sortTasks,
+  toTask,
+} from "@atlastodo/todo-core";
 import { fakeAuth, lastCopiedText, withApp } from "../testutil";
 import { ProjectScreen, type ProjectScreenProps } from "./ProjectScreen";
 

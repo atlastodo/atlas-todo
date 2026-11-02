@@ -1,6 +1,6 @@
 # Release on a v* tag (pushed after `version:bump` + the `chore(release): vX.Y.Z` commit):
 # full CI, then the signed Android APK + AAB (uploaded to Google Play when its service account is
-# set), the desktop tarball, the web app tarball (atlas-todo-web-X.Y.Z.tar.gz + .sha256, the asset a
+# set), the atlas-todo CLI binaries (atlas-todo-X.Y.Z-<target>), the desktop tarball, the web app tarball (atlas-todo-web-X.Y.Z.tar.gz + .sha256, the asset a
 # core server image or flake pinned to this release downloads) and the third-party notices, then a
 # GitHub Release "Atlas Todo vX.Y.Z" carrying the tag's RELEASE_NOTES.md section, every artifact,
 # their build provenance attestations and SHA256SUMS.txt (which the desktop updater verifies).
@@ -252,6 +252,79 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # The atlas-todo CLI as one static binary per platform, atlas-todo-X.Y.Z-<target> (musl on Linux,
+  # for Alpine-based images such as n8n's), built as core builds its atlas CLI.
+  cli:
+    name: CLI (${{ matrix.target }})
+    needs: [ci, prepare]
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: x86_64-unknown-linux-musl, runner: ubuntu-24.04, zig: true, run: true }
+          - { target: aarch64-unknown-linux-musl, runner: ubuntu-24.04, zig: true, run: false }
+          - { target: aarch64-apple-darwin, runner: macos-15, zig: false, run: true }
+          - { target: x86_64-apple-darwin, runner: macos-15, zig: false, run: false }
+          - { target: x86_64-pc-windows-msvc, runner: windows-2025, zig: false, run: true }
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TARGET: ${{ matrix.target }}
+      CARGO_PROFILE_RELEASE_LTO: thin
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "1"
+      CARGO_PROFILE_RELEASE_STRIP: symbols
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Rust (rust-toolchain.toml)
+        run: |
+          rustup toolchain install --no-self-update
+          rustup target add "$TARGET"
+      - if: ${{ matrix.zig }}
+        uses: taiki-e/install-action@5488ac5a951645ce95062214902ac4b6bc1a1037 # v2.87.32
+        with:
+          tool: cargo-zigbuild@0.23.4
+          fallback: none
+      - name: Install zig
+        if: ${{ matrix.zig }}
+        # cargo-zigbuild finds zig as `python3 -m ziglang`.
+        run: |
+          python3 -m venv "$RUNNER_TEMP/zig"
+          "$RUNNER_TEMP/zig/bin/pip" install --quiet ziglang==0.15.2
+          echo "$RUNNER_TEMP/zig/bin" >> "$GITHUB_PATH"
+      - name: Build
+        env:
+          ZIG: ${{ matrix.zig }}
+          # The MSVC C runtime linked in, so the binary needs no Visual C++ redistributable.
+          RUSTFLAGS: ${{ contains(matrix.target, 'windows') && '-C target-feature=+crt-static' || '' }}
+        run: |
+          if [ "$ZIG" = true ]; then
+            cargo zigbuild --release --locked -p atlas-todo-cli --target "$TARGET"
+          else
+            cargo build --release --locked -p atlas-todo-cli --target "$TARGET"
+          fi
+          ext=""
+          case "$TARGET" in *windows*) ext=".exe" ;; esac
+          cp "target/$TARGET/release/atlas-todo$ext" "atlas-todo-$VERSION-$TARGET$ext"
+          echo "FILE=atlas-todo-$VERSION-$TARGET$ext" >> "$GITHUB_ENV"
+      - name: Check the binary
+        env:
+          RUN: ${{ matrix.run }}
+        run: |
+          case "$TARGET" in
+            *linux-musl) file "$FILE" | tee /dev/stderr | grep -q 'statically linked' ;;
+          esac
+          if [ "$RUN" = true ]; then
+            "./$FILE" --version | grep -qx "$VERSION"
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cli-${{ matrix.target }}
+          path: ${{ env.FILE }}
+          if-no-files-found: error
+          retention-days: 7
+
   # The web app as atlas-todo-web-X.Y.Z.tar.gz (+ .sha256): the static files a core server image or
   # flake pinned to this release serves (the core repository's apps.lock.json), built for a server
   # that serves its API at /api on the page's origin.
@@ -312,7 +385,10 @@ jobs:
           bun-version-file: .bun-version
       # Only the package.json files are read: no install scripts.
       - run: bun install --frozen-lockfile --ignore-scripts
-      - run: node scripts/third-party-licenses.mjs --notices THIRD_PARTY_NOTICES.txt
+      # The atlas-todo CLI's crates come from `cargo metadata`.
+      - name: Install Rust (rust-toolchain.toml)
+        run: rustup toolchain install --no-self-update
+      - run: node scripts/third-party-licenses.mjs --notices THIRD_PARTY_NOTICES.txt --rust
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: third-party-notices
@@ -322,7 +398,7 @@ jobs:
 
   publish:
     name: GitHub Release
-    needs: [prepare, android, desktop, web, notices]
+    needs: [prepare, android, cli, desktop, web, notices]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -332,7 +408,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: "{release-notes,android,desktop,web,third-party-notices}"
+          pattern: "{release-notes,android,cli-*,desktop,web,third-party-notices}"
           path: dist
           merge-multiple: true
       # Verify a download with: gh attestation verify <file> --repo atlastodo/atlas-todo
@@ -342,6 +418,9 @@ jobs:
             dist/*.apk
             dist/*.aab
             dist/*.tar.gz
+            dist/atlas-todo-*-unknown-linux-musl
+            dist/atlas-todo-*-apple-darwin
+            dist/atlas-todo-*-pc-windows-msvc.exe
       - name: Create or update the release
         env:
           GH_TOKEN: ${{ github.token }}

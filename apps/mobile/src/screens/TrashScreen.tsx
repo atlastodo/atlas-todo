@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { EntityKind } from "@atlastodo/client-core";
-import type { TrashItem } from "@atlastodo/shared";
+import type { TrashItem } from "@atlastodo/todo-core";
 import { useTrash } from "../hooks/useTrash";
 import { useFormat } from "../hooks/useFormat";
 import { useToast } from "../data/ToastProvider";
@@ -13,7 +13,7 @@ import { RotateCcw, Trash2, X } from "../ui/icons";
 /**
  * Recently Deleted / Trash: items soft-deleted within the last 30 days, across entity kinds. Each
  * can be restored (a container brings its children back) or permanently deleted; anything past 30
- * days is swept on app launch. Rules are in `@atlastodo/shared`'s `trash.ts`.
+ * days is swept on app launch. Rules are in `@atlastodo/todo-core`'s `trash.ts`.
  */
 
 const KIND_LABEL: Record<string, string> = {

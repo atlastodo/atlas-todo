@@ -1,11 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { createTask } from "@atlastodo/shared";
+import { createTask } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { CompletedScreen } from "./CompletedScreen";
 
 /**
- * Over a real in-memory `LocalStore`. The completion-recency buckets are `@atlastodo/shared`'s
+ * Over a real in-memory `LocalStore`. The completion-recency buckets are `@atlastodo/todo-core`'s
  * `groupTasks(..., "completed")` (tested there); these assert this screen renders those buckets and
  * that the search box narrows the list.
  */

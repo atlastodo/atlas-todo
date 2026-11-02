@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { resolveServerUrl as pick } from "@atlastodo/shared";
+import { resolveServerUrl as pick } from "@atlastodo/todo-core";
 
 const KEY = "atlas.serverUrl";
 

@@ -14,7 +14,7 @@ import {
   type Habit,
   type HabitGoalKind,
   type HabitKind,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 
 export interface NewHabit {
@@ -76,7 +76,7 @@ export interface UseHabits {
 }
 
 /**
- * Habits: `habit` entities in the shared store. The streak/schedule rules live in `@atlastodo/shared`.
+ * Habits: `habit` entities in the shared store. The streak/schedule rules live in `@atlastodo/todo-core`.
  * Ids come from `store.newEntityId()`, never `crypto.randomUUID()` (Hermes has no global crypto,
  * and a non-UUID id makes the server 422 the whole `/sync/push` batch).
  */

@@ -5,7 +5,7 @@ import { useProjects } from "./useProjects";
 
 /**
  * Over a real `LocalStore`. The rules themselves (the tree, the cycle guard, the ancestor cascade)
- * are `@atlastodo/shared`'s and tested there; what matters here is the wiring -- that the hook writes
+ * are `@atlastodo/todo-core`'s and tested there; what matters here is the wiring -- that the hook writes
  * the field names the web also reads, and that folders never leak into the `projects` list every
  * other screen consumes.
  */

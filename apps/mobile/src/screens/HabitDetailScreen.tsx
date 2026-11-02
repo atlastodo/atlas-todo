@@ -16,7 +16,7 @@ import {
   strengthSeries,
   totalCheckins,
   type Habit,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import DateTimePicker, { type DateTimePickerEvent } from "../ui/DateTimePicker";
 import { useHabits } from "../hooks/useHabits";
 import { useHabitCheckins } from "../hooks/useHabitCheckins";

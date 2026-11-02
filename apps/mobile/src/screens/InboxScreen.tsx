@@ -1,7 +1,8 @@
+import { type Task } from "@atlastodo/todo-core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Task } from "@atlastodo/client-core";
-import { inboxTasks } from "@atlastodo/shared";
+
+import { inboxTasks } from "@atlastodo/todo-core";
 import { useTaskListView } from "../hooks/useTaskListView";
 import { Inbox } from "../ui/icons";
 import { QuickAddTaskList } from "./ViewTaskList";

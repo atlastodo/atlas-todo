@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { toFocusSession, trackedMsForTask, type FocusSession } from "@atlastodo/shared";
+import { toFocusSession, trackedMsForTask, type FocusSession } from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 
 export interface LoggedSession {

@@ -1,8 +1,13 @@
+import { type Priority } from "@atlastodo/todo-core";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
-import { PRIORITY_COLOR, quickScheduleOptions, type QuickScheduleOption } from "@atlastodo/shared";
-import type { Priority } from "@atlastodo/client-core";
+import {
+  PRIORITY_COLOR,
+  quickScheduleOptions,
+  type QuickScheduleOption,
+} from "@atlastodo/todo-core";
+
 import {
   Copy,
   CalendarDays,

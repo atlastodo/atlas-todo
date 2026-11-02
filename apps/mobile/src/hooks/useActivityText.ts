@@ -1,6 +1,6 @@
 import { useCallback, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { allTasks, toProject, toSection, type Activity } from "@atlastodo/shared";
+import { allTasks, toProject, toSection, type Activity } from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 import { useProjectMembers } from "./useProjectMembers";

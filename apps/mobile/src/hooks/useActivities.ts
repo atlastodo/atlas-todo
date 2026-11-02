@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { isNoOp, listActivities, type Activity } from "@atlastodo/shared";
+import { isNoOp, listActivities, type Activity } from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 
 /**

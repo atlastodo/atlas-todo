@@ -1,13 +1,14 @@
 /**
  * @jest-environment jsdom
  */
+import { type Task } from "@atlastodo/todo-core";
 import { Platform } from "react-native";
 // The web build: the permission hint is browser-only. Set before any render reads it.
 (Platform as { OS: string }).OS = "web";
 
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
-import { LocalStore, type Task } from "@atlastodo/client-core";
-import { createTask, visibleTasks } from "@atlastodo/shared";
+import { LocalStore } from "@atlastodo/client-core";
+import { createTask, visibleTasks } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
 import { PermissionExplainerHost } from "./PermissionExplainerHost";
 import { ReminderSection } from "./ReminderSection";

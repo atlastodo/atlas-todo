@@ -1,5 +1,6 @@
+import { type Project, type ProjectView } from "@atlastodo/todo-core";
 import { useCallback, useContext, useMemo } from "react";
-import type { Project, ProjectView } from "@atlastodo/client-core";
+
 import {
   DEFAULT_FOLDER_ICON,
   DEFAULT_PROJECT_ICON,
@@ -16,7 +17,7 @@ import {
   toSection,
   toTask,
   writeProjectActivity,
-} from "@atlastodo/shared";
+} from "@atlastodo/todo-core";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 
@@ -27,7 +28,7 @@ import { AuthContext } from "../auth/AuthContext";
  * `projects` is real projects only; folders come back separately, because only a project gets a
  * board/list. Trashed projects are filtered out, and so is anything behind an archived or trashed
  * folder at any depth; the tasks follow via the read-time cascade in `taskOps`. The tree rules
- * live in `@atlastodo/shared`'s `projectTree`.
+ * live in `@atlastodo/todo-core`'s `projectTree`.
  *
  * Renames, archives and trash moves record activity entries as the signed-in user; a toast's undo
  * of an archive or delete takes its entry back.
