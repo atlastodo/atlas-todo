@@ -12,5 +12,7 @@ lib.fileset.toSource {
     (root + "/bun.lock")
     (root + "/apps/mobile")
     (root + "/apps/electron")
+    # Todo's domain package, which apps/mobile depends on as a workspace.
+    (root + "/packages/todo-core")
   ];
 }
