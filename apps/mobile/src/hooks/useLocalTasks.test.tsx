@@ -220,3 +220,30 @@ describe("bulk actions on a task this device cannot decrypt", () => {
     expect(screen.queryByText(/Duplicated/)).toBeNull();
   });
 });
+
+describe("useLocalTasks activity", () => {
+  it("records create and delete as the actor; the delete toast's undo takes its entry back", async () => {
+    const store = new LocalStore("test");
+    const { result } = await renderHook(() => useLocalTasks("me"), { wrapper: withApp(store) });
+    let id = "";
+    await act(async () => {
+      id = result.current.create({ title: "Draft" });
+    });
+    const kinds = () => store.list("activity").map((e) => e.fields.kind);
+    expect(kinds()).toEqual(["created"]);
+    const task = () => allTasks(store).find((t) => t.id === id)!;
+    await act(async () => {
+      result.current.remove(task());
+    });
+    expect(kinds()).toEqual(["created", "deleted"]);
+    await act(async () => {
+      result.current.restore(task());
+    });
+    expect(kinds()).toEqual(["created"]);
+    // Discarding the draft takes its entries with it.
+    await act(async () => {
+      result.current.discard(id);
+    });
+    expect(kinds()).toEqual([]);
+  });
+});

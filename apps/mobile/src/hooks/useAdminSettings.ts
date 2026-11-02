@@ -33,5 +33,20 @@ export function useAdminSettings() {
     [api, load, setSettings],
   );
 
-  return { settings, loading, failed, refresh: load, setSignupEnabled };
+  /** The activity retention every app enforces (0: keep), as an override of the env default. */
+  const setActivityRetentionDays = useCallback(
+    async (days: number): Promise<boolean> => {
+      setSettings((prev) => (prev ? { ...prev, activity_retention_days: days } : prev));
+      try {
+        setSettings(await api.updateAdminSettings({ activity_retention_days: days }));
+        return true;
+      } catch {
+        void load();
+        return false;
+      }
+    },
+    [api, load, setSettings],
+  );
+
+  return { settings, loading, failed, refresh: load, setSignupEnabled, setActivityRetentionDays };
 }

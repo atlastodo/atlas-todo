@@ -1,7 +1,8 @@
 import { Platform } from "react-native";
 import { useTranslation } from "react-i18next";
 import { SMART_VIEWS, type SmartView, type TaskSwipeAction } from "@atlastodo/shared";
-import { usePreferences } from "../../hooks/usePreferences";
+import { ACTIVITY_RETENTION_DAYS, usePreferences } from "../../hooks/usePreferences";
+import { effectiveActivityRetention, useInstancePolicy } from "../../hooks/useInstancePolicy";
 import { ListPicker, type PickerOption } from "../../ui/ListPicker";
 import { Section } from "../../ui/Section";
 import { Toggle } from "../../ui/Toggle";
@@ -19,7 +20,7 @@ const TOAST_DURATION_OPTIONS: PickerOption<string>[] = [
   { value: "10", label: "10s" },
 ];
 
-/** The landing view, swipe gestures, toast length, smart dates and haptics. */
+/** The landing view, swipe gestures, toast length, smart dates, haptics and activity retention. */
 export function TasksSection() {
   const { t } = useTranslation();
   const {
@@ -35,7 +36,26 @@ export function TasksSection() {
     setSmartDatesEnabled,
     hapticsEnabled,
     setHapticsEnabled,
+    activityRetentionDays,
+    setActivityRetentionDays,
   } = usePreferences();
+
+  // A server limit caps the choice: only stricter values are offered, and the picker shows what applies.
+  const serverDays = useInstancePolicy()?.activity_retention_days ?? 0;
+  const retention = effectiveActivityRetention(activityRetentionDays, serverDays);
+  const retentionChoices: number[] =
+    serverDays > 0
+      ? [
+          ...new Set([
+            ...ACTIVITY_RETENTION_DAYS.filter((d) => d > 0 && d < serverDays),
+            serverDays,
+          ]),
+        ]
+      : [...ACTIVITY_RETENTION_DAYS];
+  const retentionOptions: PickerOption<string>[] = retentionChoices.map((days) => ({
+    value: String(days),
+    label: days === 0 ? t("activity.retentionNever") : t("activity.retentionDays", { days }),
+  }));
 
   const viewOptions: PickerOption<SmartView>[] = DEFAULT_VIEW_CHOICES.map((v) => ({
     value: v,
@@ -94,6 +114,17 @@ export function TasksSection() {
           onValueChange={setHapticsEnabled}
         />
       )}
+      <ListPicker
+        label={t("activity.retention")}
+        description={
+          serverDays > 0
+            ? `${t("activity.retentionHint")} ${t("activity.serverRetention", { days: serverDays })}`
+            : t("activity.retentionHint")
+        }
+        value={String(retention)}
+        options={retentionOptions}
+        onChange={(v) => setActivityRetentionDays(Number(v))}
+      />
     </Section>
   );
 }

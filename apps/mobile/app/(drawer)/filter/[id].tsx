@@ -1,10 +1,12 @@
+import { useLayoutEffect } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_FILTER_ICON, resolveProjectColor } from "@atlastodo/shared";
 import { FilterScreen } from "../../../src/screens/FilterScreen";
 import { useSavedFilters } from "../../../src/hooks/useSavedFilters";
 import { usePreferences } from "../../../src/hooks/usePreferences";
-import { useHeaderTitle } from "../../../src/ui/useHeaderTitle";
+import { useHeaderRight, useHeaderTitle } from "../../../src/ui/useHeaderTitle";
+import { ActivityButton, activityHref } from "../../../src/ui/ActivityButton";
 import { projectIconFor } from "../../../src/ui/projectIcons";
 import { viewPath } from "../../../src/nav/navModel";
 import { ScreenFocusBoundary } from "../../../src/ui/ScreenFocusBoundary";
@@ -29,6 +31,17 @@ export default function FilterRoute() {
     title: isNew ? t("nav.newFilter") : (filter?.name ?? t("nav.filters")),
     color: filter ? resolveProjectColor(filter) : undefined,
   });
+
+  const setHeaderRight = useHeaderRight();
+  const saved = filter !== undefined;
+  useLayoutEffect(() => {
+    // A filter still being composed has no tasks to show activity for.
+    setHeaderRight(
+      saved && typeof id === "string" ? (
+        <ActivityButton onPress={() => router.push(activityHref({ filter: id }))} />
+      ) : null,
+    );
+  }, [setHeaderRight, saved, id]);
 
   if (typeof id !== "string") return null;
 

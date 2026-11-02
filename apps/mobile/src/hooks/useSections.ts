@@ -11,7 +11,9 @@ import {
   softDelete,
   toSection,
   toTask,
+  writeProjectActivity,
 } from "@atlastodo/shared";
+import { dropActivity, withNewActivity } from "../lib/activityLog";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 
@@ -41,7 +43,9 @@ export interface UseSections {
 
 export function useSections(projectId: string): UseSections {
   const { store, version, kick } = useStore();
-  const keyring = useContext(AuthContext)?.keyring ?? null;
+  const auth = useContext(AuthContext);
+  const keyring = auth?.keyring ?? null;
+  const actorId = auth?.session?.user.id;
 
   const sections = useMemo(
     () =>
@@ -73,10 +77,22 @@ export function useSections(projectId: string): UseSections {
 
   const renameSection = useCallback(
     (id: string, name: string) => {
+      const fields = store.get("section", id);
+      if (fields?.name === name) return;
       store.set("section", id, "name", name);
+      if (typeof fields?.project_id === "string") {
+        writeProjectActivity(
+          store,
+          actorId,
+          { projectId: fields.project_id, sectionId: id },
+          "section_renamed",
+          typeof fields.name === "string" ? fields.name : null,
+          name,
+        );
+      }
       kick();
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   const duplicateSection = useCallback(
@@ -101,20 +117,23 @@ export function useSections(projectId: string): UseSections {
   );
 
   const removeSection = useCallback(
-    (id: string) => softDelete(store, kick, "section", id),
-    [store, kick],
+    (id: string) => softDelete(store, kick, "section", id, actorId),
+    [store, kick, actorId],
   );
 
   const archiveSection = useCallback(
     (id: string) => {
-      setSectionArchived(store, id, true);
+      const { entries } = withNewActivity(store, () =>
+        setSectionArchived(store, id, true, Date.now(), actorId),
+      );
       kick();
       return () => {
         setSectionArchived(store, id, false);
+        dropActivity(store, entries);
         kick();
       };
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   const moveSectionToProject = useCallback(

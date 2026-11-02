@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
 import type { Project, ProjectView } from "@atlastodo/client-core";
 import {
   DEFAULT_FOLDER_ICON,
@@ -15,8 +15,11 @@ import {
   toProject,
   toSection,
   toTask,
+  writeProjectActivity,
 } from "@atlastodo/shared";
 import { useStore } from "../data/StoreProvider";
+import { AuthContext } from "../auth/AuthContext";
+import { dropActivity, withNewActivity } from "../lib/activityLog";
 
 /**
  * Projects from the shared store: list, create (default icon, rotated colour), rename, icon/colour,
@@ -26,6 +29,9 @@ import { useStore } from "../data/StoreProvider";
  * board/list. Trashed projects are filtered out, and so is anything behind an archived or trashed
  * folder at any depth; the tasks follow via the read-time cascade in `taskOps`. The tree rules
  * live in `@atlastodo/shared`'s `projectTree`.
+ *
+ * Renames, archives and trash moves record activity entries as the signed-in user; a toast's undo
+ * of an archive or delete takes its entry back.
  */
 
 export interface UseProjects {
@@ -60,11 +66,13 @@ export interface UseProjects {
   reorderProject: (id: string, direction: "up" | "down") => void;
   /** Soft-delete a project to Trash (its sections/tasks hide via the cascade); returns an undo closure. */
   removeProject: (id: string) => () => void;
-  setProjectArchived: (id: string, archived: boolean) => void;
+  /** Archive or unarchive; returns the toast's undo, which takes the entry back. */
+  setProjectArchived: (id: string, archived: boolean) => () => void;
 }
 
 export function useProjects(): UseProjects {
   const { store, version, kick } = useStore();
+  const actorId = useContext(AuthContext)?.session?.user.id;
 
   const allProjects = useMemo(
     () =>
@@ -136,10 +144,20 @@ export function useProjects(): UseProjects {
 
   const renameProject = useCallback(
     (id: string, name: string) => {
+      const before = store.get("project", id)?.name;
+      if (before === name) return;
       store.set("project", id, "name", name);
+      writeProjectActivity(
+        store,
+        actorId,
+        { projectId: id },
+        "project_renamed",
+        typeof before === "string" ? before : null,
+        name,
+      );
       kick();
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   const duplicateProject = useCallback(
@@ -217,16 +235,32 @@ export function useProjects(): UseProjects {
   );
 
   const removeProject = useCallback(
-    (id: string) => softDelete(store, kick, "project", id),
-    [store, kick],
+    (id: string) => softDelete(store, kick, "project", id, actorId),
+    [store, kick, actorId],
   );
 
   const setProjectArchived = useCallback(
     (id: string, archived: boolean) => {
-      store.set("project", id, "archived_at", archived ? Date.now() : null);
+      const { entries } = withNewActivity(store, () => {
+        store.set("project", id, "archived_at", archived ? Date.now() : null);
+        const name = store.get("project", id)?.name;
+        writeProjectActivity(
+          store,
+          actorId,
+          { projectId: id },
+          archived ? "project_archived" : "project_unarchived",
+          null,
+          typeof name === "string" ? name : null,
+        );
+      });
       kick();
+      return () => {
+        store.set("project", id, "archived_at", archived ? null : Date.now());
+        dropActivity(store, entries);
+        kick();
+      };
     },
-    [store, kick],
+    [store, kick, actorId],
   );
 
   return {

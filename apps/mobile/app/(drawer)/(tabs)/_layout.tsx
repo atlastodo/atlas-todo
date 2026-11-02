@@ -1,11 +1,12 @@
-import { Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 import { useColorScheme } from "nativewind";
-import { Tabs } from "expo-router";
+import { router, Tabs } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { NAV, PRIMARY_TABS } from "../../../src/nav/navModel";
 import { useCommandPalette } from "../../../src/data/CommandPaletteContext";
 import { headerThemeOptions, isDark } from "../../../src/theme/navTheme";
 import { Search } from "../../../src/ui/icons";
+import { ActivityButton, activityHref } from "../../../src/ui/ActivityButton";
 
 export const unstable_settings = {
   initialRouteName: "today",
@@ -17,7 +18,7 @@ export const unstable_settings = {
  * header has no hamburger.
  *
  * The header also carries the command palette trigger, since a phone has no Cmd-K. It opens the
- * root layout's palette, the same one Cmd/Ctrl-K opens.
+ * root layout's palette, the same one Cmd/Ctrl-K opens, and the button to the list's activity feed.
  */
 export default function TabsLayout() {
   const { t } = useTranslation();
@@ -31,7 +32,7 @@ export default function TabsLayout() {
     <Tabs
       // As the drawer: Back returns to the previous list, not the first tab (see `(drawer)/_layout.tsx`).
       backBehavior="fullHistory"
-      screenOptions={{
+      screenOptions={({ route }) => ({
         // The drawer/sidebar is the sole navigation.
         tabBarStyle: { display: "none" },
         sceneStyle: { backgroundColor: isDark(scheme) ? "#09090b" : "#ffffff" },
@@ -39,17 +40,24 @@ export default function TabsLayout() {
         headerTitleAlign: "left",
         headerLeft: () => null,
         headerRight: () => (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("palette.title")}
-            onPress={openPalette}
-            hitSlop={8}
-            className="mx-3 rounded-md p-1"
-          >
-            <Search size={20} className="text-neutral-500" />
-          </Pressable>
+          <View className="flex-row items-center pr-2">
+            <ActivityButton
+              onPress={() =>
+                router.push(activityHref({ view: route.name as "today" | "upcoming" | "inbox" }))
+              }
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("palette.title")}
+              onPress={openPalette}
+              hitSlop={8}
+              className="mx-1 rounded-md p-1"
+            >
+              <Search size={20} className="text-neutral-500" />
+            </Pressable>
+          </View>
         ),
-      }}
+      })}
     >
       {tabs.map((item) => (
         <Tabs.Screen

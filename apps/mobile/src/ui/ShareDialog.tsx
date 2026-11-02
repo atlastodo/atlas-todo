@@ -27,6 +27,7 @@ import {
   type MemberRole,
   type MemberView,
 } from "@atlastodo/client-core";
+import { writeProjectActivity } from "@atlastodo/shared";
 import { useAuth } from "../auth/AuthContext";
 import { useStore } from "../data/StoreProvider";
 import {
@@ -271,6 +272,14 @@ export function ShareDialog({
         kind: fields.kind,
       });
       const member = await api.inviteMember(projectId, addr, role, preview);
+      writeProjectActivity(
+        store,
+        myId,
+        { projectId },
+        "member_invited",
+        null,
+        member.email || addr,
+      );
       setEmail("");
       try {
         await deliverKey({ user_id: member.user_id, email: member.email || addr }, published, key);
@@ -318,6 +327,15 @@ export function ShareDialog({
     setError(null);
     try {
       await api.removeMember(projectId, userId);
+      const gone = members.find((m) => m.user_id === userId);
+      writeProjectActivity(
+        store,
+        myId,
+        { projectId },
+        "member_removed",
+        null,
+        gone?.display_name || gone?.email || null,
+      );
       unpinMemberKey(store, projectId, userId);
       // Removing a member whose keys changed is how the user accepts the new ones; a new invite pins afresh.
       if (identities.get(userId)?.status === "changed") forgetIdentity(store, userId);

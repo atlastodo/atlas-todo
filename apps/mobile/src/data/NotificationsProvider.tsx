@@ -24,6 +24,7 @@ import {
   type Keyring,
   type LocalStore,
 } from "@atlastodo/client-core";
+import { writeProjectActivity } from "@atlastodo/shared";
 import { useAuth } from "../auth/AuthContext";
 import { loadProjectKeys } from "../hooks/useProjectKeyMaintenance";
 import { useStore } from "./StoreProvider";
@@ -290,6 +291,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       // Load the key the owner sealed to us first, so the project reads the moment it syncs in.
       await hydrate();
       await api.acceptInvite(projectId);
+      // Written once a member, so it goes out under the project's key to everyone in it.
+      writeProjectActivity(store, userId, { projectId }, "member_joined", null, null);
       // Once a member, the server names the canonical key and hydrating stores our wrapped copy.
       // The store reloads keys when our membership turns active, so a failure here is not fatal.
       try {
@@ -300,7 +303,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       await refresh();
       kick();
     },
-    [api, store, hydrate, refresh, kick],
+    [api, store, hydrate, refresh, kick, userId],
   );
 
   const decline = useCallback(

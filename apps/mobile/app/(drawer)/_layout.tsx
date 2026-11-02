@@ -14,6 +14,7 @@ import {
   resolveProjectColor,
 } from "@atlastodo/shared";
 import { DRAWER_EXTRA, FEATURE_VIEWS, NAV, PRIMARY_TABS, viewPath } from "../../src/nav/navModel";
+import { activityHref } from "../../src/ui/ActivityButton";
 import type { SmartView } from "../../src/nav/navModel";
 import {
   folderMenuItems,
@@ -167,11 +168,12 @@ export default function DrawerLayout() {
       },
       onNewProjectHere: (folderId) => setCreatingIn(folderId),
       onMoveToFolder: (id) => setMovingId(id),
+      onActivity: (id) => router.push(activityHref({ project: id })),
       onArchive: ({ id, name }) => {
-        setProjectArchived(id, true);
+        const undoArchive = setProjectArchived(id, true);
         toast.show(t("toast.projectArchived", { name }), {
           label: t("common.undo"),
-          run: () => setProjectArchived(id, false),
+          run: undoArchive,
         });
       },
       onDelete: ({ id, name, kind }) => {
@@ -351,7 +353,7 @@ export default function DrawerLayout() {
   const sections: SidebarSection[] = useMemo(() => {
     // Completed, Archive and Recently deleted live in one "history" section.
     const HISTORY_VIEWS: SmartView[] = ["completed"];
-    const HISTORY_EXTRAS = ["archive", "trash"];
+    const HISTORY_EXTRAS = ["activity", "archive", "trash"];
 
     const smart = NAV.filter(
       (n) =>

@@ -1,4 +1,5 @@
 import {
+  Activity,
   Archive,
   Bell,
   CalendarClock,
@@ -70,6 +71,7 @@ export const DRAWER_EXTRA: DrawerExtra[] = [
   { name: "calendar", labelKey: "nav.calendar", label: "Calendar", icon: CalendarDays },
   { name: "filters", labelKey: "nav.filters", label: "Filters", icon: ListFilter },
   { name: "notifications", labelKey: "nav.notifications", label: "Notifications", icon: Bell },
+  { name: "activity", labelKey: "activity.title", label: "Activity", icon: Activity },
   { name: "archive", labelKey: "nav.archive", label: "Archive", icon: Archive },
   { name: "trash", labelKey: "nav.trash", label: "Recently deleted", icon: Trash2 },
   { name: "about", labelKey: "nav.about", label: "About", icon: Info },

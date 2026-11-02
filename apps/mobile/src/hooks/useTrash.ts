@@ -51,7 +51,7 @@ function attachmentName(store: LocalStore, keyring: Keyring | null, id: string):
 
 export function useTrash(): UseTrash {
   const { store, version, kick } = useStore();
-  const { keyring } = useAuth();
+  const { keyring, session } = useAuth();
 
   const items = useMemo(
     () =>
@@ -65,8 +65,8 @@ export function useTrash(): UseTrash {
   );
 
   const restore = useCallback(
-    (kind: EntityKind, id: string) => restoreFromTrash(store, kick, kind, id),
-    [store, kick],
+    (kind: EntityKind, id: string) => restoreFromTrash(store, kick, kind, id, session?.user.id),
+    [store, kick, session?.user.id],
   );
   const purgeItem = useCallback(
     (kind: EntityKind, id: string) => purge(store, kick, kind, id),

@@ -17,6 +17,7 @@ import { cssInterop } from "nativewind";
 import type { LucideIcon } from "lucide-react-native";
 
 import AlarmClock from "lucide-react-native/icons/alarm-clock";
+import Activity from "lucide-react-native/icons/activity";
 import Archive from "lucide-react-native/icons/archive";
 import ArrowDownAZ from "lucide-react-native/icons/arrow-down-a-z";
 import ArrowRightLeft from "lucide-react-native/icons/arrow-right-left";
@@ -104,6 +105,7 @@ import Sun from "lucide-react-native/icons/sun";
 import Tag from "lucide-react-native/icons/tag";
 import Timer from "lucide-react-native/icons/timer";
 import Trash2 from "lucide-react-native/icons/trash";
+import Undo2 from "lucide-react-native/icons/undo-2";
 import Upload from "lucide-react-native/icons/upload";
 import UserPlus from "lucide-react-native/icons/user-plus";
 import UserRound from "lucide-react-native/icons/user-round";
@@ -121,6 +123,7 @@ function styled(icon: LucideIcon): void {
 
 /** The curated set, alphabetical. */
 const ICONS = {
+  Activity,
   AlarmClock,
   Archive,
   ArrowDownAZ,
@@ -209,6 +212,7 @@ const ICONS = {
   Tag,
   Timer,
   Trash2,
+  Undo2,
   Upload,
   UserPlus,
   UserRound,
@@ -221,6 +225,7 @@ export type IconName = keyof typeof ICONS;
 export type { LucideIcon };
 
 export {
+  Activity,
   AlarmClock,
   Archive,
   ArrowDownAZ,
@@ -309,6 +314,7 @@ export {
   Tag,
   Timer,
   Trash2,
+  Undo2,
   Upload,
   UserPlus,
   UserRound,

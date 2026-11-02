@@ -318,10 +318,10 @@ export function ProjectsScreen({
                 onPress={() => {
                   if (!editing) return;
                   const id = editing.id;
-                  setProjectArchived(id, true);
+                  const undoArchive = setProjectArchived(id, true);
                   toast.show(t("toast.projectArchived"), {
                     label: t("common.undo"),
-                    run: () => setProjectArchived(id, false),
+                    run: undoArchive,
                   });
                   close();
                 }}
