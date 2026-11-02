@@ -87,7 +87,7 @@ dependencies = [
 
 [[package]]
 name = "atlas-todo-cli"
-version = "0.1.17-rc.2"
+version = "0.1.17"
 dependencies = [
  "atlas-client",
  "atlas-core",
@@ -99,7 +99,7 @@ dependencies = [
 
 [[package]]
 name = "atlas-todo-rules"
-version = "0.1.17-rc.2"
+version = "0.1.17"
 dependencies = [
  "atlas-client",
  "atlas-core",
