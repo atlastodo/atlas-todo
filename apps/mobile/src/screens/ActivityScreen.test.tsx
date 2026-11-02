@@ -1,6 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { allTasks, createTask, updateTask, writeProjectActivity } from "@atlastodo/shared";
+import {
+  allTasks,
+  createTask,
+  moveTaskToProject,
+  updateTask,
+  writeProjectActivity,
+} from "@atlastodo/shared";
 import { fakeAuth, withApp } from "../testutil";
 import { ActivityScreen } from "./ActivityScreen";
 
@@ -74,5 +80,29 @@ describe("ActivityScreen", () => {
     const { store } = setup();
     await render(<ActivityScreen target={{ view: "today" }} />, { wrapper: withApp(store, auth) });
     expect(screen.getByText("No activity yet.")).toBeTruthy();
+  });
+});
+
+describe("ActivityScreen undo rights", () => {
+  it("does not offer to undo a move back into a project where I only comment", async () => {
+    const store = new LocalStore("test");
+    const member = (project: string, user: string, role: string) => {
+      const id = `${project}-${user}`;
+      store.set("project_member", id, "project_id", project);
+      store.set("project_member", id, "user_id", user);
+      store.set("project_member", id, "role", role);
+      store.set("project_member", id, "state", "active");
+    };
+    store.set("project", "p1", "name", "Old");
+    store.set("project", "p2", "name", "New");
+    member("p1", ME, "commenter");
+    member("p1", "bo", "owner");
+    member("p2", ME, "editor");
+    member("p2", "bo", "owner");
+    const id = createTask(store, { title: "Moved", project_id: "p1" }, "UTC");
+    moveTaskToProject(store, id, { project_id: "p2", section_id: null }, Date.now(), "bo");
+    await render(<ActivityScreen />, { wrapper: withApp(store, auth) });
+    expect(screen.getByText(/moved “Moved” to New/)).toBeTruthy();
+    expect(screen.queryAllByRole("button", { name: /^Undo:/ })).toHaveLength(0);
   });
 });

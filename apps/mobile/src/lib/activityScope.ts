@@ -17,7 +17,8 @@ export type ActivityView = "today" | "upcoming" | "inbox" | "assigned" | "all";
 
 export type ScopeTarget =
   | { kind: "view"; view: ActivityView }
-  | { kind: "project"; projectId: string }
+  /** `projectIds`: the project and the projects nested under it. */
+  | { kind: "project"; projectIds: ReadonlySet<string> }
   | { kind: "filter"; ast: FilterNode; ctx: EvalContext };
 
 export interface ScopeInput {
@@ -56,19 +57,24 @@ export function activityScope(target: ScopeTarget, input: ScopeInput): FeedScope
         }
         return false;
       case "project":
-        return task.project_id === target.projectId;
+        return task.project_id !== null && target.projectIds.has(task.project_id);
       case "filter":
         return evaluate(target.ast, open, target.ctx);
     }
   };
   const taskIds = new Set<string>();
   for (const task of input.all) {
-    const shown = input.visibleIds.has(task.id) && !task.is_completed;
+    // A project feed also keeps tasks hidden only by an archived section or nested project:
+    // they are still the project's.
+    const shown =
+      !task.is_completed &&
+      (input.visibleIds.has(task.id) ||
+        (target.kind === "project" && task.deleted_at == null && task.archived_at == null));
     const recentlyDone =
       task.is_completed && task.completed_at != null && task.completed_at >= since;
     const recentlyDeleted = task.deleted_at != null && task.deleted_at >= since;
     if ((shown || recentlyDone || recentlyDeleted) && matches(task)) taskIds.add(task.id);
   }
-  const projectIds = new Set<string>(target.kind === "project" ? [target.projectId] : []);
+  const projectIds = new Set<string>(target.kind === "project" ? target.projectIds : []);
   return { taskIds, projectIds };
 }

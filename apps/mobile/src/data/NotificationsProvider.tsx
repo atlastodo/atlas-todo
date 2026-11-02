@@ -25,6 +25,7 @@ import {
   type LocalStore,
 } from "@atlastodo/client-core";
 import { writeProjectActivity } from "@atlastodo/shared";
+import { isProjectShared } from "@atlastodo/client-core";
 import { useAuth } from "../auth/AuthContext";
 import { loadProjectKeys } from "../hooks/useProjectKeyMaintenance";
 import { useStore } from "./StoreProvider";
@@ -75,6 +76,40 @@ export interface NotificationsApi {
 const NotificationsContext = createContext<NotificationsApi | null>(null);
 
 /** The project ids of the user's own pending `project_member` rows, sorted. */
+/** How long a join waits for the project's key and member rows before it gives up unrecorded. */
+const JOIN_WAIT_MS = 10 * 60 * 1000;
+
+/**
+ * Record "joined" once the entry can be sealed for the project: its key held here and its member
+ * rows synced (`keyForScope` falls back to the personal key otherwise). Waits on store changes.
+ */
+function announceJoin(
+  store: LocalStore,
+  keyring: Keyring | null | undefined,
+  userId: string | undefined,
+  projectId: string,
+): void {
+  if (!userId) return;
+  const ready = () =>
+    keyring?.getProjectKey(projectId) !== undefined && isProjectShared(store, projectId);
+  const write = () =>
+    writeProjectActivity(store, userId, { projectId }, "member_joined", null, null);
+  if (ready()) {
+    write();
+    return;
+  }
+  const stop = store.onChange(() => {
+    if (!ready()) return;
+    finish();
+    write();
+  });
+  const timer = setTimeout(() => finish(), JOIN_WAIT_MS);
+  function finish() {
+    stop();
+    clearTimeout(timer);
+  }
+}
+
 function ownPendingProjectIds(store: LocalStore, userId: string | undefined): string[] {
   if (!userId) return [];
   const ids = new Set<string>();
@@ -291,8 +326,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       // Load the key the owner sealed to us first, so the project reads the moment it syncs in.
       await hydrate();
       await api.acceptInvite(projectId);
-      // Written once a member, so it goes out under the project's key to everyone in it.
-      writeProjectActivity(store, userId, { projectId }, "member_joined", null, null);
+      // Written only once this device holds the project's key and sees it shared: before that it
+      // would be sealed with the personal key, unreadable to everyone else in the project.
+      announceJoin(store, keyring, userId, projectId);
       // Once a member, the server names the canonical key and hydrating stores our wrapped copy.
       // The store reloads keys when our membership turns active, so a failure here is not fatal.
       try {
@@ -303,7 +339,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       await refresh();
       kick();
     },
-    [api, store, hydrate, refresh, kick, userId],
+    [api, store, hydrate, refresh, kick, userId, keyring],
   );
 
   const decline = useCallback(

@@ -30,7 +30,6 @@ import {
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 import { usePreferences } from "./usePreferences";
-import { dropActivity, withNewActivity } from "../lib/activityLog";
 
 export type { RecurEditScope, TaskMove, TaskProjectMove };
 
@@ -44,12 +43,6 @@ export type { RecurEditScope, TaskMove, TaskProjectMove };
  * decrypt, looks like an abandoned draft, so the rule is enforced here rather than by callers.
  */
 const createdThisSession = new Set<string>();
-
-/**
- * The `deleted` entries `remove` wrote, by task. `restore` is the delete toast's undo: it takes
- * the entry back rather than recording a restore. Module-level for the same reason as above.
- */
-const deleteEntries = new Map<string, string[]>();
 
 /**
  * Local-first task data over the app's {@link StoreProvider} store. Reads and writes are instant
@@ -79,8 +72,8 @@ export interface UseLocalTasks {
   /** Soft-delete a task to Trash (recoverable for 30 days), hidden from every list. */
   remove: (task: Task) => boolean;
   /**
-   * Undo a soft-delete (the delete toast): clears `deleted_at` so the task returns to its lists,
-   * taking back the `deleted` entry instead of recording a restore.
+   * Undo a soft-delete (the delete toast): clears `deleted_at` so the task returns to its lists.
+   * Within a minute of the delete it takes back the `deleted` entry rather than recording a restore.
    */
   restore: (task: Task) => boolean;
   /** Create a copy of a task (title suffixed " (copy)"); the new task's id, or null if refused. */
@@ -127,13 +120,13 @@ export function useLocalTasks(actorId?: string): UseLocalTasks {
 
   const duplicate = useCallback(
     (task: Task) => {
-      const id = duplicateTask(store, task, timeZone);
+      const id = duplicateTask(store, task, timeZone, actorId);
       if (id == null) return null;
       createdThisSession.add(id);
       kick();
       return id;
     },
-    [store, kick, timeZone],
+    [store, kick, timeZone, actorId],
   );
 
   const discard = useCallback(
@@ -173,11 +166,7 @@ export function useLocalTasks(actorId?: string): UseLocalTasks {
 
   const remove = useCallback(
     (task: Task) => {
-      const { result, entries } = withNewActivity(store, () =>
-        softDeleteTask(store, task, Date.now(), actorId),
-      );
-      if (!result) return false;
-      deleteEntries.set(task.id, entries);
+      if (!softDeleteTask(store, task, Date.now(), actorId)) return false;
       kick();
       return true;
     },
@@ -186,13 +175,7 @@ export function useLocalTasks(actorId?: string): UseLocalTasks {
 
   const restore = useCallback(
     (task: Task) => {
-      const entries = deleteEntries.get(task.id);
-      // Without a delete to take back (it happened elsewhere), this is a restore of its own.
-      if (!restoreTask(store, task, entries ? undefined : actorId)) return false;
-      if (entries) {
-        dropActivity(store, entries);
-        deleteEntries.delete(task.id);
-      }
+      if (!restoreTask(store, task, actorId)) return false;
       kick();
       return true;
     },
@@ -243,7 +226,8 @@ export function useLocalTasks(actorId?: string): UseLocalTasks {
       const rescope = rescopeNeeded(store, keyring, from, target.project_id);
       if (!moveTaskToProject(store, id, target, Date.now(), actorId)) return false;
       // Content written under the old scope's key must be re-sent under the new one.
-      if (rescope) rescopeTask(store, keyring, id, from);
+      // Only our own activity entries: another member's would lose their author on the way.
+      if (rescope) rescopeTask(store, keyring, id, from, actorId);
       kick();
       return true;
     },

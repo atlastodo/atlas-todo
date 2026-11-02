@@ -40,12 +40,13 @@ export type HabitsScope = "today" | "all";
 /** The "delete my activity after" choices, in days; 0 keeps activity forever. */
 export const ACTIVITY_RETENTION_DAYS = [0, 30, 90, 365] as const;
 
-/** The retention a preferences record holds, or 0 (forever) for anything not on offer. */
+/**
+ * The retention a preferences record holds, or 0 (forever) for anything else. Any whole number of
+ * days up to ten years counts: a server limit off the list above (45) is offered as a choice too.
+ */
 export function activityRetentionIn(prefs: Record<string, unknown> | null | undefined): number {
   const v = prefs?.activity_retention_days;
-  return typeof v === "number" && (ACTIVITY_RETENTION_DAYS as readonly number[]).includes(v)
-    ? v
-    : 0;
+  return typeof v === "number" && Number.isInteger(v) && v > 0 && v <= 3650 ? v : 0;
 }
 
 export function remindersEnabledIn(prefs: Record<string, unknown> | null | undefined): boolean {
@@ -139,7 +140,7 @@ export interface UsePreferences {
   setHabitsScope: (value: HabitsScope) => void;
   /**
    * Delete the user's own activity entries older than this many days (one of
-   * {@link ACTIVITY_RETENTION_DAYS}); 0, the default, keeps them forever.
+   * {@link ACTIVITY_RETENTION_DAYS}, or the server's limit); 0, the default, keeps them forever.
    */
   activityRetentionDays: number;
   setActivityRetentionDays: (value: number) => void;

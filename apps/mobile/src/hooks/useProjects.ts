@@ -19,7 +19,6 @@ import {
 } from "@atlastodo/shared";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
-import { dropActivity, withNewActivity } from "../lib/activityLog";
 
 /**
  * Projects from the shared store: list, create (default icon, rotated colour), rename, icon/colour,
@@ -241,24 +240,24 @@ export function useProjects(): UseProjects {
 
   const setProjectArchived = useCallback(
     (id: string, archived: boolean) => {
-      const { entries } = withNewActivity(store, () => {
-        store.set("project", id, "archived_at", archived ? Date.now() : null);
-        const name = store.get("project", id)?.name;
+      const write = (archive: boolean) => {
+        const fields = store.get("project", id);
+        const before = fields?.archived_at;
+        store.set("project", id, "archived_at", archive ? Date.now() : null);
         writeProjectActivity(
           store,
           actorId,
           { projectId: id },
-          archived ? "project_archived" : "project_unarchived",
-          null,
-          typeof name === "string" ? name : null,
+          archive ? "project_archived" : "project_unarchived",
+          // An unarchive keeps when it had been archived, so undoing it from the feed restores it.
+          !archive && typeof before === "number" ? String(before) : null,
+          typeof fields?.name === "string" ? fields.name : null,
         );
-      });
-      kick();
-      return () => {
-        store.set("project", id, "archived_at", archived ? null : Date.now());
-        dropActivity(store, entries);
         kick();
       };
+      write(archived);
+      // The reverse within a minute takes the entry back (`writeProjectActivity`'s cancel).
+      return () => write(!archived);
     },
     [store, kick, actorId],
   );

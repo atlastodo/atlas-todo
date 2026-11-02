@@ -90,7 +90,8 @@ export function AdminSettingsScreen() {
           </Section>
         )}
 
-        {settings && !loading && !failed ? (
+        {/* An older server sends no retention and takes none: no picker then. */}
+        {settings && !loading && !failed && typeof settings.activity_retention_days === "number" ? (
           <Section icon={Activity} title={t("activity.title")}>
             <ListPicker
               label={t("activity.adminRetention")}

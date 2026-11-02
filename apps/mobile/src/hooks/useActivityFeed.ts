@@ -7,6 +7,8 @@ import {
   canUndoActivity,
   decodePlace,
   parse,
+  projectDescendantIds,
+  toProject,
   undoActivity,
   visibleTasks,
   type Activity,
@@ -93,7 +95,11 @@ export function useActivityFeed(target: FeedTarget, options: FeedOptions): UseAc
     const visibleIds = new Set(visibleTasks(store, tasks).map((task) => task.id));
     const input = { all: tasks, visibleIds, now, timeZone, myId };
     if (viewId) return activityScope({ kind: "view", view: viewId }, input);
-    if (projectId) return activityScope({ kind: "project", projectId }, input);
+    if (projectId) {
+      const all = store.list("project").map((e) => toProject(e.id, e.fields));
+      const projectIds = new Set([projectId, ...projectDescendantIds(all, projectId)]);
+      return activityScope({ kind: "project", projectIds }, input);
+    }
     const parsed = filter ? parse(filter.query) : null;
     if (!parsed?.ok) return { taskIds: new Set(), projectIds: new Set() };
     const ctx: EvalContext = {
@@ -146,24 +152,37 @@ export function useActivityFeed(target: FeedTarget, options: FeedOptions): UseAc
       .sort((a, b) => (a.id === myId ? -1 : b.id === myId ? 1 : a.name.localeCompare(b.name)));
   }, [scoped.items, nameOf, myId]);
 
-  // The user's role where the entry lives: an unshared or personal project is their own.
-  const roleFor = useCallback(
-    (a: Activity): MemberRole => {
-      const projectId = a.task_id ? (taskById.get(a.task_id)?.project_id ?? null) : a.project_id;
+  // The user's role in a project: an unshared or personal one (no member rows) is their own.
+  const roleIn = useCallback(
+    (projectId: string | null): MemberRole => {
       if (!projectId) return "owner";
       const rows = members.filter((m) => m.project_id === projectId);
       if (rows.length === 0) return "owner";
       const mine = rows.find((m) => m.user_id === myId && m.state === "active");
       return mine?.role ?? "commenter";
     },
-    [taskById, members, myId],
+    [members, myId],
+  );
+  // Where the entry lives now.
+  const roleFor = useCallback(
+    (a: Activity): MemberRole =>
+      roleIn(a.task_id ? (taskById.get(a.task_id)?.project_id ?? null) : a.project_id),
+    [taskById, roleIn],
   );
 
   const canUndo = useCallback(
-    (a: Activity) => myId !== undefined && canUndoActivity(store, a, activities, roleFor(a)),
+    (a: Activity) => {
+      if (myId === undefined || !canUndoActivity(store, a, activities, roleFor(a))) return false;
+      // Undoing a move writes the task back into its old project: that takes edit rights there too.
+      if (a.kind === "move") {
+        const back = roleIn(decodePlace(a.from)?.project_id ?? null);
+        return back === "owner" || back === "editor";
+      }
+      return true;
+    },
     // `version`: the undo check reads the store's current values.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
-    [store, version, activities, roleFor, myId],
+    [store, version, activities, roleFor, roleIn, myId],
   );
 
   const undo = useCallback(
@@ -178,7 +197,7 @@ export function useActivityFeed(target: FeedTarget, options: FeedOptions): UseAc
         if (rescopeNeeded(store, keyring, from, to)) rescopeFrom = from;
       }
       if (!undoActivity(store, myId, a, activities, Date.now(), timeZone)) return false;
-      if (rescopeFrom !== undefined) rescopeTask(store, keyring, a.task_id, rescopeFrom);
+      if (rescopeFrom !== undefined) rescopeTask(store, keyring, a.task_id, rescopeFrom, myId);
       kick();
       return true;
     },

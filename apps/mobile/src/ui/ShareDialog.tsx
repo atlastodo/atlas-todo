@@ -262,7 +262,7 @@ export function ShareDialog({
       const firstShare = !isProjectShared(store, projectId);
       const key = await canonicalKey(firstShare);
       // Existing content was written under the personal key; re-write it under the project key first.
-      if (firstShare) rescopeProject(store, keyring, projectId);
+      if (firstShare) rescopeProject(store, keyring, projectId, myId);
       // What the invitee sees before accepting: the server cannot read the project's fields.
       const fields = store.get("project", projectId) ?? {};
       const preview = sealInvitePreview(key.pek, key.keyId, projectId, {
@@ -278,7 +278,8 @@ export function ShareDialog({
         { projectId },
         "member_invited",
         null,
-        member.email || addr,
+        // The user id, never the address: the entry outlives a declined invite.
+        member.user_id,
       );
       setEmail("");
       try {
@@ -327,15 +328,7 @@ export function ShareDialog({
     setError(null);
     try {
       await api.removeMember(projectId, userId);
-      const gone = members.find((m) => m.user_id === userId);
-      writeProjectActivity(
-        store,
-        myId,
-        { projectId },
-        "member_removed",
-        null,
-        gone?.display_name || gone?.email || null,
-      );
+      writeProjectActivity(store, myId, { projectId }, "member_removed", null, userId);
       unpinMemberKey(store, projectId, userId);
       // Removing a member whose keys changed is how the user accepts the new ones; a new invite pins afresh.
       if (identities.get(userId)?.status === "changed") forgetIdentity(store, userId);

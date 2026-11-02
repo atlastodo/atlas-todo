@@ -13,7 +13,6 @@ import {
   toTask,
   writeProjectActivity,
 } from "@atlastodo/shared";
-import { dropActivity, withNewActivity } from "../lib/activityLog";
 import { useStore } from "../data/StoreProvider";
 import { AuthContext } from "../auth/AuthContext";
 
@@ -123,13 +122,11 @@ export function useSections(projectId: string): UseSections {
 
   const archiveSection = useCallback(
     (id: string) => {
-      const { entries } = withNewActivity(store, () =>
-        setSectionArchived(store, id, true, Date.now(), actorId),
-      );
+      setSectionArchived(store, id, true, Date.now(), actorId);
       kick();
+      // The unarchive reverses the archive within a minute, so it takes its entry back.
       return () => {
-        setSectionArchived(store, id, false);
-        dropActivity(store, entries);
+        setSectionArchived(store, id, false, Date.now(), actorId);
         kick();
       };
     },
@@ -142,14 +139,14 @@ export function useSections(projectId: string): UseSections {
       // project is re-sent under its new scope's key.
       const move = (from: string, to: string) => {
         const rescope = rescopeNeeded(store, keyring, from, to);
-        moveSectionToProjectOp(store, id, to);
-        if (rescope) rescopeSection(store, keyring, id, from);
+        moveSectionToProjectOp(store, id, to, Date.now(), undefined, actorId);
+        if (rescope) rescopeSection(store, keyring, id, from, actorId);
         kick();
       };
       move(projectId, targetProjectId);
       return () => move(targetProjectId, projectId);
     },
-    [store, kick, projectId, keyring],
+    [store, kick, projectId, keyring, actorId],
   );
 
   const reorderSection = useCallback(

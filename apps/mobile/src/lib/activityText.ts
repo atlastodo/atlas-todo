@@ -92,11 +92,12 @@ export function describeActivity(
       return t("activity.sectionDeleted", { name: named(a.to) });
     case "section_restored":
       return t("activity.sectionRestored", { name: named(a.to) });
+    // Member entries name the member's user id (older ones may hold an address).
     case "member_invited":
-      return t("activity.memberInvited", { name: a.to ?? "" });
+      return t("activity.memberInvited", { name: a.to ? look.personName(a.to) : "" });
     case "member_joined":
       return t("activity.memberJoined");
     case "member_removed":
-      return t("activity.memberRemoved", { name: a.to ?? "" });
+      return t("activity.memberRemoved", { name: a.to ? look.personName(a.to) : "" });
   }
 }

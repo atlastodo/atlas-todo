@@ -51,7 +51,7 @@ describe("activityScope", () => {
     const { add, scope } = setup();
     const inside = add("Inside", { project_id: "p1" });
     const outside = add("Outside", { project_id: "p2" });
-    const { taskIds, projectIds } = scope({ kind: "project", projectId: "p1" });
+    const { taskIds, projectIds } = scope({ kind: "project", projectIds: new Set(["p1"]) });
     expect([...taskIds]).toEqual([inside]);
     expect(taskIds.has(outside)).toBe(false);
     expect([...projectIds]).toEqual(["p1"]);
