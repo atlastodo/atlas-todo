@@ -89,7 +89,23 @@ impl TextInput {
         cx.notify();
     }
 
+    /// `offset` within the text, on a character boundary.
+    fn clamp(&self, offset: usize) -> usize {
+        let mut o = offset.min(self.content.len());
+        while !self.content.is_char_boundary(o) {
+            o -= 1;
+        }
+        o
+    }
+
+    /// A range within the text (a stale one from the platform cannot point past it).
+    fn clamp_range(&self, r: &Range<usize>) -> Range<usize> {
+        let end = self.clamp(r.end);
+        self.clamp(r.start.min(end))..end
+    }
+
     fn move_to(&mut self, offset: usize, cx: &mut Context<Self>) {
+        let offset = self.clamp(offset);
         self.selected = offset..offset;
         cx.notify();
     }
@@ -256,7 +272,7 @@ impl EntityInputHandler for TextInput {
         _: &mut Window,
         _: &mut Context<Self>,
     ) -> Option<String> {
-        let r = self.range_from_utf16(&range);
+        let r = self.clamp_range(&self.range_from_utf16(&range));
         actual.replace(self.range_to_utf16(&r));
         Some(self.content[r].to_string())
     }
@@ -274,7 +290,7 @@ impl EntityInputHandler for TextInput {
     }
 
     fn set_selected_text_range(&mut self, r: Range<usize>, _: &mut Window, cx: &mut Context<Self>) {
-        self.selected = self.range_from_utf16(&r);
+        self.selected = self.clamp_range(&self.range_from_utf16(&r));
         cx.notify();
     }
 
@@ -302,6 +318,7 @@ impl EntityInputHandler for TextInput {
             .map(|r| self.range_from_utf16(r))
             .or(self.marked.clone())
             .unwrap_or(self.selected.clone());
+        let r = self.clamp_range(&r);
         self.content = format!(
             "{}{}{}",
             &self.content[..r.start],
@@ -327,6 +344,9 @@ impl EntityInputHandler for TextInput {
             .map(|r| self.range_from_utf16(r))
             .or(self.marked.clone())
             .unwrap_or(self.selected.clone());
+        let r = self.clamp_range(&r);
+        self.marked = None;
+        self.selected = r.clone();
         self.replace_text_in_range(None, "", window, cx);
         self.content = format!(
             "{}{}{}",
