@@ -1,7 +1,7 @@
 //! `atlas-todo-gpui`: an experimental native desktop app for Atlas Todo on GPUI, Zed's
-//! GPU-accelerated UI framework. It signs in with an API token (Settings → API tokens in the app),
-//! syncs end-to-end encrypted through `atlas-client`, and applies the todo rules from
-//! `atlas-todo-rules`, like the `atlas-todo` CLI.
+//! GPU-accelerated UI framework. It signs in with an email and password (or an API token), syncs
+//! end-to-end encrypted through `atlas-client`, and applies the todo rules from `atlas-todo-rules`,
+//! like the `atlas-todo` CLI.
 //!
 //! ```text
 //! atlas-todo-gpui [--server URL --token TOKEN] [--dark|--light] [--view VIEW] [--task TITLE]
@@ -9,8 +9,9 @@
 //! ```
 //!
 //! VIEW is `today`, `upcoming`, `inbox`, `calendar`, `habits`, `stats`, … or `project:NAME` /
-//! `board:NAME`. The server and token also come from `ATLAS_SERVER` / `ATLAS_TOKEN`, or from the
-//! sign-in screen, which keeps them in `$XDG_CONFIG_HOME/atlas-todo-gpui/account.json` (mode 0600).
+//! `board:NAME`. The server and token also come from `ATLAS_SERVER` / `ATLAS_TOKEN`. Without a
+//! token the window signs in with a password; the session (its refresh token and keys) is kept in
+//! the system's secret store, and the server and email in `$XDG_CONFIG_HOME/atlas-todo-gpui`.
 
 mod app;
 mod board;
@@ -22,6 +23,7 @@ mod input;
 mod list;
 mod model;
 mod motion;
+mod secrets;
 mod stats;
 mod sync;
 mod theme;
@@ -32,8 +34,8 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 
 use gpui::{
-    div, prelude::*, px, size, App, AssetSource, Bounds, ClickEvent, Context, Entity, FontWeight,
-    SharedString, TitlebarOptions, Window, WindowBounds, WindowOptions,
+    div, prelude::*, px, size, App, AssetSource, Bounds, ClickEvent, Context, Entity, Focusable,
+    FontWeight, SharedString, TitlebarOptions, Window, WindowBounds, WindowOptions,
 };
 
 use crate::app::{AtlasApp, Route};
@@ -46,6 +48,9 @@ use crate::ui::ts;
 /// Noto Sans, the web app's font as Chromium resolves it on Linux, as static weights
 /// (`assets/fonts`, made by `scripts/fonts.py`).
 pub const FONT: &str = "Atlas Sans";
+
+/// The Wayland app id (and X11 class): what desktops match the `.desktop` entry and icon by.
+pub const APP_ID: &str = "dev.atlastodo.gpui";
 
 /// Register the bundled font with GPUI's text system.
 fn load_fonts(cx: &mut App) {
@@ -118,40 +123,40 @@ fn parse_args() -> Args {
     a
 }
 
-fn config_path() -> Option<PathBuf> {
+/// `$XDG_CONFIG_HOME/atlas-todo-gpui`.
+pub fn config_dir() -> Option<PathBuf> {
     let base = std::env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
         .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))?;
-    Some(base.join("atlas-todo-gpui/account.json"))
+    Some(base.join("atlas-todo-gpui"))
 }
 
-fn saved_account() -> Option<Account> {
-    let text = std::fs::read_to_string(config_path()?).ok()?;
+/// A token account from the token sign-in of an earlier build (`account.json`).
+fn saved_token_account() -> Option<Account> {
+    let text = std::fs::read_to_string(config_dir()?.join("account.json")).ok()?;
     let v: serde_json::Value = serde_json::from_str(&text).ok()?;
-    Some(Account {
+    Some(Account::Token {
         server: v.get("server")?.as_str()?.to_owned(),
         token: v.get("token")?.as_str()?.to_owned(),
     })
 }
 
-fn save_account(a: &Account) -> std::io::Result<()> {
-    let path = config_path().ok_or_else(|| std::io::Error::other("no config directory"))?;
-    std::fs::create_dir_all(path.parent().expect("the path has a parent"))?;
-    let body = serde_json::json!({ "server": a.server, "token": a.token }).to_string();
-    #[cfg(unix)]
-    {
-        use std::io::Write;
-        use std::os::unix::fs::OpenOptionsExt;
-        let mut f = std::fs::OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .mode(0o600)
-            .open(&path)?;
-        f.write_all(body.as_bytes())
+/// The server and email of the last sign-in, to fill the form with (nothing secret).
+fn last_sign_in() -> (String, String) {
+    let v: serde_json::Value = config_dir()
+        .and_then(|d| std::fs::read_to_string(d.join("sign-in.json")).ok())
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or_default();
+    let get = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_owned();
+    (get("server"), get("email"))
+}
+
+fn remember_sign_in(server: &str, email: &str) {
+    if let Some(dir) = config_dir() {
+        let _ = std::fs::create_dir_all(&dir);
+        let body = serde_json::json!({ "server": server, "email": email }).to_string();
+        let _ = std::fs::write(dir.join("sign-in.json"), body);
     }
-    #[cfg(not(unix))]
-    std::fs::write(&path, body)
 }
 
 /// `--view` as a route, against the loaded projects.
@@ -222,7 +227,7 @@ fn navigate(app: &mut AtlasApp, args: &Args) {
     }
 }
 
-/// The window's root: the sign-in screen, then the app.
+/// The window's root: the sign-in screen, then the app, and back on sign-out.
 struct Root {
     view: gpui::AnyView,
 }
@@ -233,53 +238,120 @@ impl Render for Root {
     }
 }
 
-/// Where the window starts until the account is known.
+impl Root {
+    fn show_app(&mut self, account: Account, args: &Args, cx: &mut Context<Self>) {
+        let app = start(account, args, cx);
+        cx.subscribe(&app, |root: &mut Root, _, ev: &app::SignedOut, cx| {
+            let message = (!ev.0.is_empty()).then(|| ev.0.clone());
+            root.show_sign_in(message, cx);
+        })
+        .detach();
+        self.view = app.into();
+        cx.notify();
+    }
+
+    fn show_sign_in(&mut self, error: Option<String>, cx: &mut Context<Self>) {
+        let root = cx.weak_entity();
+        self.view = cx.new(|cx| SignIn::new(root, error, cx)).into();
+        cx.notify();
+    }
+}
+
+/// Email and password, as the app signs in. The password goes no further than the sign-in
+/// (which sends only what it derives); the session it opens is kept in the secret store.
 struct SignIn {
     root: gpui::WeakEntity<Root>,
     server: Entity<TextInput>,
-    token: Entity<TextInput>,
+    email: Entity<TextInput>,
+    password: Entity<TextInput>,
     error: Option<String>,
+    focused: bool,
+    /// The field to focus at the next render.
+    focus_next: Option<usize>,
 }
 
 impl SignIn {
-    fn new(root: gpui::WeakEntity<Root>, cx: &mut Context<Self>) -> Self {
+    fn new(root: gpui::WeakEntity<Root>, error: Option<String>, cx: &mut Context<Self>) -> Self {
+        let (last_server, last_email) = last_sign_in();
+        let with = |placeholder: &str, value: String, cx: &mut Context<Self>| {
+            cx.new(|cx| {
+                let mut i = TextInput::new(placeholder, cx);
+                i.set_text(&value, cx);
+                i
+            })
+        };
+        let server = with("https://app.atlastodo.dev", last_server, cx);
+        let email = with("you@example.com", last_email, cx);
+        let password = cx.new(|cx| {
+            let mut i = TextInput::new("Password", cx);
+            i.masked = true;
+            i
+        });
+        // Enter moves on to the next field, and signs in from the password.
+        cx.subscribe(&server, |this: &mut Self, _, _: &input::Submit, cx| {
+            this.focus_next = Some(1);
+            cx.notify();
+        })
+        .detach();
+        cx.subscribe(&email, |this: &mut Self, _, _: &input::Submit, cx| {
+            this.focus_next = Some(2);
+            cx.notify();
+        })
+        .detach();
+        cx.subscribe(&password, |this: &mut Self, _, _: &input::Submit, cx| {
+            this.sign_in(cx);
+        })
+        .detach();
         Self {
             root,
-            server: cx.new(|cx| TextInput::new("https://app.atlastodo.dev", cx)),
-            token: cx.new(|cx| TextInput::new("atlas_pat_…", cx)),
-            error: None,
+            server,
+            email,
+            password,
+            error,
+            focused: false,
+            focus_next: None,
         }
     }
 
-    fn connect(&mut self, _: &mut Window, cx: &mut Context<Self>) {
-        let read = |e: &Entity<TextInput>, cx: &Context<Self>| e.read(cx).text().trim().to_owned();
-        let account = Account {
-            server: read(&self.server, cx),
-            token: read(&self.token, cx),
+    fn sign_in(&mut self, cx: &mut Context<Self>) {
+        let read = |e: &Entity<TextInput>, cx: &Context<Self>| e.read(cx).text().to_owned();
+        let server = read(&self.server, cx).trim().to_owned();
+        let email = read(&self.email, cx).trim().to_owned();
+        let password = read(&self.password, cx);
+        if server.is_empty() || email.is_empty() || password.is_empty() {
+            self.error = Some("Enter your server, email and password.".into());
+            cx.notify();
+            return;
+        }
+        remember_sign_in(&server, &email);
+        let account = Account::Login {
+            server,
+            email,
+            password,
         };
-        if account.server.is_empty() || account.token.is_empty() {
-            self.error = Some("Enter your server and an API token.".into());
-            cx.notify();
-            return;
-        }
-        if let Err(e) = save_account(&account) {
-            self.error = Some(format!("Could not save the account: {e}"));
-            cx.notify();
-            return;
-        }
         let root = self.root.clone();
         cx.defer(move |cx| {
-            let view = start(account, &Args::default(), cx);
-            let _ = root.update(cx, |r, cx| {
-                r.view = view;
-                cx.notify();
-            });
+            let _ = root.update(cx, |r, cx| r.show_app(account, &Args::default(), cx));
         });
     }
 }
 
 impl Render for SignIn {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // The first empty field takes the focus; Enter moves it on.
+        let fields = [&self.server, &self.email, &self.password];
+        if !self.focused {
+            self.focused = true;
+            let first = fields
+                .iter()
+                .position(|f| f.read(cx).text().is_empty())
+                .unwrap_or(2);
+            self.focus_next = Some(first);
+        }
+        if let Some(i) = self.focus_next.take() {
+            let handle = fields[i].read(cx).focus_handle(cx);
+            window.focus(&handle, cx);
+        }
         let t = if matches!(
             window.appearance(),
             gpui::WindowAppearance::Dark | gpui::WindowAppearance::VibrantDark
@@ -340,11 +412,15 @@ impl Render for SignIn {
                                     .child("Atlas Todo"),
                             ),
                     )
-                    .child(div().text_size(ts(14.)).text_color(t.muted).child(
-                        "Sign in with an API token: in the app, Settings → API tokens → Create token.",
-                    ))
+                    .child(
+                        div()
+                            .text_size(ts(14.))
+                            .text_color(t.muted)
+                            .child("Sign in with your Atlas account."),
+                    )
                     .child(field("Server", self.server.clone()))
-                    .child(field("API token", self.token.clone()))
+                    .child(field("Email", self.email.clone()))
+                    .child(field("Password", self.password.clone()))
                     .when_some(self.error.clone(), |d, e| {
                         d.child(
                             div()
@@ -355,7 +431,7 @@ impl Render for SignIn {
                     })
                     .child(
                         div()
-                            .id("connect")
+                            .id("sign-in")
                             .h(px(40.))
                             .flex()
                             .items_center()
@@ -365,10 +441,8 @@ impl Render for SignIn {
                             .text_color(t.on_accent)
                             .font_weight(FontWeight::SEMIBOLD)
                             .cursor_pointer()
-                            .on_click(cx.listener(|this, _: &ClickEvent, window, cx| {
-                                this.connect(window, cx)
-                            }))
-                            .child("Connect"),
+                            .on_click(cx.listener(|this, _: &ClickEvent, _, cx| this.sign_in(cx)))
+                            .child("Sign in"),
                     ),
                 "signin",
                 300,
@@ -377,34 +451,40 @@ impl Render for SignIn {
     }
 }
 
-/// The app over a live account: the sync worker, and the window's root view.
-fn start(account: Account, args: &Args, cx: &mut App) -> gpui::AnyView {
+/// The app over a live account: the sync worker, and the view.
+fn start(account: Account, args: &Args, cx: &mut App) -> Entity<AtlasApp> {
     let (utx, urx) = async_channel::unbounded();
     let tx = sync::spawn(account, utx);
     let snap = Snapshot::empty(
         atlas_client::zoned::resolve_time_zone(None),
         SyncState::Connecting,
     );
-    let view = cx.new(|cx| {
+    cx.new(|cx| {
         let mut app = AtlasApp::new(snap, Some(tx), Some(urx), now_ms(), cx);
         configure(&mut app, args);
         if std::env::var_os("ATLAS_GPUI_TOUR").is_some() {
             tour::start(cx);
         }
         app
-    });
-    view.into()
+    })
+}
+
+/// How this run signs in: `--token`/`ATLAS_TOKEN`, else the session in the secret store, else an
+/// earlier build's token, else the sign-in screen (`None`).
+fn initial_account(args: &Args) -> Option<Account> {
+    if let (Some(server), Some(token)) = (args.server.clone(), args.token.clone()) {
+        return Some(Account::Token { server, token });
+    }
+    secrets::load()
+        .map(Account::Saved)
+        .or_else(saved_token_account)
 }
 
 fn main() {
     let args = parse_args();
-    let account = match (args.server.clone(), args.token.clone()) {
-        (Some(server), Some(token)) => Some(Account { server, token }),
-        _ => saved_account(),
-    };
 
     if let Some(out) = args.screenshot.clone() {
-        let Some(account) = account else {
+        let Some(account) = initial_account(&args) else {
             eprintln!("--screenshot needs --server and --token");
             std::process::exit(2);
         };
@@ -428,19 +508,20 @@ fn main() {
                     title: Some("Atlas Todo".into()),
                     ..Default::default()
                 }),
-                app_id: Some("dev.atlastodo.gpui".into()),
+                app_id: Some(APP_ID.into()),
                 ..Default::default()
             };
+            let account = initial_account(&args);
             cx.open_window(opts, |_, cx| {
                 cx.new(|cx: &mut Context<Root>| {
-                    let view = match account {
-                        Some(account) => start(account, &args, cx),
-                        None => {
-                            let root = cx.weak_entity();
-                            cx.new(|cx| SignIn::new(root, cx)).into()
-                        }
+                    let mut root = Root {
+                        view: cx.new(|_| gpui::Empty).into(),
                     };
-                    Root { view }
+                    match account {
+                        Some(account) => root.show_app(account, &args, cx),
+                        None => root.show_sign_in(None, cx),
+                    }
+                    root
                 })
             })
             .expect("the window opens");

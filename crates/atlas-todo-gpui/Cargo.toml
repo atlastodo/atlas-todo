@@ -21,6 +21,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 jiff = { workspace = true }
 async-channel = "2"
+keyring = { version = "3.6", default-features = false, features = ["async-secret-service", "async-io", "crypto-rust"] }
+uuid = { workspace = true }
 rust-embed = "8"
 unicode-segmentation = "1"
 # Zed's GPUI as published on crates.io by the gpui-component project: a snapshot of zed@f816e1f

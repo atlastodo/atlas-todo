@@ -31,6 +31,7 @@ const ICONS = [
   "list-checks",
   "list-filter",
   "list-todo",
+  "log-out",
   "message-square",
   "panel-left-close",
   "paperclip",

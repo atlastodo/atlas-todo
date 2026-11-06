@@ -11,6 +11,8 @@ use gpui::{
 };
 use unicode_segmentation::UnicodeSegmentation;
 
+const BULLET: char = '•';
+
 actions!(
     text_input,
     [Backspace, Delete, Left, Right, SelectAll, Home, End, Paste, Copy, Cut, Enter, Escape]
@@ -48,6 +50,8 @@ pub struct TextInput {
     last_layout: Option<ShapedLine>,
     last_bounds: Option<Bounds<Pixels>>,
     pub placeholder_color: Option<Hsla>,
+    /// A password: drawn as bullets, never copied.
+    pub masked: bool,
 }
 
 impl EventEmitter<Submit> for TextInput {}
@@ -64,7 +68,14 @@ impl TextInput {
             last_layout: None,
             last_bounds: None,
             placeholder_color: None,
+            masked: false,
         }
+    }
+
+    pub fn set_text(&mut self, text: &str, cx: &mut Context<Self>) {
+        self.content = SharedString::from(text.to_owned());
+        self.selected = text.len()..text.len();
+        cx.notify();
     }
 
     pub fn text(&self) -> &str {
@@ -150,7 +161,7 @@ impl TextInput {
     }
 
     fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
-        if !self.selected.is_empty() {
+        if !self.selected.is_empty() && !self.masked {
             cx.write_to_clipboard(ClipboardItem::new_string(
                 self.content[self.selected.clone()].to_string(),
             ));
@@ -158,6 +169,9 @@ impl TextInput {
     }
 
     fn cut(&mut self, _: &Cut, window: &mut Window, cx: &mut Context<Self>) {
+        if self.masked {
+            return;
+        }
         self.copy(&Copy, window, cx);
         self.replace_text_in_range(None, "", window, cx);
     }
@@ -170,12 +184,35 @@ impl TextInput {
         cx.emit(Cancel);
     }
 
-    fn on_mouse_down(&mut self, ev: &MouseDownEvent, _: &mut Window, cx: &mut Context<Self>) {
+    fn on_mouse_down(&mut self, ev: &MouseDownEvent, window: &mut Window, cx: &mut Context<Self>) {
+        window.focus(&self.focus_handle, cx);
         let at = match (&self.last_bounds, &self.last_layout) {
-            (Some(b), Some(l)) => l.closest_index_for_x(ev.position.x - b.left()),
+            (Some(b), Some(l)) => {
+                self.from_display(l.closest_index_for_x(ev.position.x - b.left()))
+            }
             _ => self.content.len(),
         };
         self.move_to(at, cx);
+    }
+
+    /// The offset in the drawn text of an offset in the content (they differ when masked).
+    fn to_display(&self, offset: usize) -> usize {
+        if self.masked {
+            self.content[..offset].chars().count() * BULLET.len_utf8()
+        } else {
+            offset
+        }
+    }
+
+    fn from_display(&self, offset: usize) -> usize {
+        if !self.masked {
+            return offset;
+        }
+        let n = offset / BULLET.len_utf8();
+        self.content
+            .char_indices()
+            .nth(n)
+            .map_or(self.content.len(), |(i, _)| i)
     }
 
     fn utf16_to_utf8(&self, offset: usize) -> usize {
@@ -388,6 +425,11 @@ impl Element for TextElement {
                 input.placeholder.clone(),
                 input.placeholder_color.unwrap_or(style.color.opacity(0.45)),
             )
+        } else if input.masked {
+            (
+                SharedString::from(BULLET.to_string().repeat(input.content.chars().count())),
+                style.color,
+            )
         } else {
             (input.content.clone(), style.color)
         };
@@ -408,7 +450,7 @@ impl Element for TextElement {
             let x = if input.content.is_empty() {
                 px(0.)
             } else {
-                line.x_for_index(sel.start)
+                line.x_for_index(input.to_display(sel.start))
             };
             (
                 None,
@@ -424,8 +466,14 @@ impl Element for TextElement {
             (
                 Some(fill(
                     Bounds::from_corners(
-                        point(bounds.left() + line.x_for_index(sel.start), bounds.top()),
-                        point(bounds.left() + line.x_for_index(sel.end), bounds.bottom()),
+                        point(
+                            bounds.left() + line.x_for_index(input.to_display(sel.start)),
+                            bounds.top(),
+                        ),
+                        point(
+                            bounds.left() + line.x_for_index(input.to_display(sel.end)),
+                            bounds.bottom(),
+                        ),
                     ),
                     gpui::rgba(0x6366f140),
                 )),

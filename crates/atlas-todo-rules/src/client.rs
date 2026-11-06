@@ -192,6 +192,16 @@ impl TodoClient {
         })
     }
 
+    /// A client over a session signed in another way (a password sign-in, `Session::login` or
+    /// `Session::resume`), with dates in `time_zone` (the system's when `None`).
+    pub fn from_session(session: Session, time_zone: Option<&str>) -> Self {
+        Self {
+            session,
+            time_zone: resolve_time_zone(time_zone),
+            now: Box::new(|| now_ms() as i64),
+        }
+    }
+
     /// For tests: the clock the rules read.
     pub fn set_now(&mut self, now: Box<dyn Fn() -> i64 + Send>) {
         self.now = now;

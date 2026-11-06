@@ -42,6 +42,12 @@ pub enum Route {
     Project(String),
 }
 
+/// The session ended: the window goes back to the sign-in screen, saying this (empty after a
+/// sign-out).
+pub struct SignedOut(pub String);
+
+impl gpui::EventEmitter<SignedOut> for AtlasApp {}
+
 /// Navigation waiting for the first sync.
 pub type Pending = Box<dyn FnOnce(&mut AtlasApp)>;
 
@@ -113,6 +119,7 @@ impl AtlasApp {
                                 this.error = None;
                             }
                             Update::Error(e) => this.error = Some(e),
+                            Update::SignedOut(why) => cx.emit(SignedOut(why)),
                         }
                         cx.notify();
                     });
@@ -382,13 +389,38 @@ impl AtlasApp {
                 cx,
             ));
         }
-        col.child(divider()).child(self.nav_item(
-            ("completed", "Completed", "circle-check-big"),
-            None,
-            Route::Completed,
-            t,
-            cx,
-        ))
+        col.child(divider())
+            .child(self.nav_item(
+                ("completed", "Completed", "circle-check-big"),
+                None,
+                Route::Completed,
+                t,
+                cx,
+            ))
+            .child(
+                div()
+                    .id("nav-sign-out")
+                    .mx(px(8.))
+                    .h(px(40.))
+                    .px(px(12.))
+                    .flex()
+                    .items_center()
+                    .gap(px(14.))
+                    .rounded(px(8.))
+                    .cursor_pointer()
+                    .hover(|d| d.bg(t.hover))
+                    .on_click(cx.listener(|this, _: &ClickEvent, _, cx| {
+                        this.send(Command::SignOut);
+                        cx.notify();
+                    }))
+                    .child(icon("log-out", 20., t.muted))
+                    .child(
+                        div()
+                            .text_size(ts(16.))
+                            .text_color(t.text_soft)
+                            .child("Sign out"),
+                    ),
+            )
     }
 
     /// The title row over a screen.
