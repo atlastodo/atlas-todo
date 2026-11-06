@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["crates/atlas-todo-rules", "crates/atlas-todo-cli"]
+members = ["crates/atlas-todo-rules", "crates/atlas-todo-cli", "crates/atlas-todo-gpui"]
+# The GPUI desktop app is an experiment with heavy native dependencies (Vulkan, Wayland, X11): plain
+# `cargo` commands, `test:all`, `lint` and CI leave it out (`--exclude atlas-todo-gpui`).
+default-members = ["crates/atlas-todo-rules", "crates/atlas-todo-cli"]
 
 [workspace.package]
 version = "0.1.18"
