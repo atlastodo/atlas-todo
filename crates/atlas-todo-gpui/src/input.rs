@@ -188,7 +188,7 @@ impl TextInput {
         window.focus(&self.focus_handle, cx);
         let at = match (&self.last_bounds, &self.last_layout) {
             (Some(b), Some(l)) => {
-                self.from_display(l.closest_index_for_x(ev.position.x - b.left()))
+                self.content_offset(l.closest_index_for_x(ev.position.x - b.left()))
             }
             _ => self.content.len(),
         };
@@ -196,7 +196,7 @@ impl TextInput {
     }
 
     /// The offset in the drawn text of an offset in the content (they differ when masked).
-    fn to_display(&self, offset: usize) -> usize {
+    fn display_offset(&self, offset: usize) -> usize {
         if self.masked {
             self.content[..offset].chars().count() * BULLET.len_utf8()
         } else {
@@ -204,7 +204,7 @@ impl TextInput {
         }
     }
 
-    fn from_display(&self, offset: usize) -> usize {
+    fn content_offset(&self, offset: usize) -> usize {
         if !self.masked {
             return offset;
         }
@@ -450,7 +450,7 @@ impl Element for TextElement {
             let x = if input.content.is_empty() {
                 px(0.)
             } else {
-                line.x_for_index(input.to_display(sel.start))
+                line.x_for_index(input.display_offset(sel.start))
             };
             (
                 None,
@@ -467,11 +467,11 @@ impl Element for TextElement {
                 Some(fill(
                     Bounds::from_corners(
                         point(
-                            bounds.left() + line.x_for_index(input.to_display(sel.start)),
+                            bounds.left() + line.x_for_index(input.display_offset(sel.start)),
                             bounds.top(),
                         ),
                         point(
-                            bounds.left() + line.x_for_index(input.to_display(sel.end)),
+                            bounds.left() + line.x_for_index(input.display_offset(sel.end)),
                             bounds.bottom(),
                         ),
                     ),

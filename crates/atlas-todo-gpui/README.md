@@ -7,15 +7,24 @@ an experiment: not built by `test:all`, `lint` or CI, not packaged and not relea
 ## Run it
 
 ```sh
-devenv shell gpui:dev                       # sign-in screen: server + an API token
-devenv shell gpui:dev -- --server https://app.atlastodo.dev --token atlas_pat_…
-ATLAS_SERVER=… ATLAS_TOKEN=… devenv shell gpui:dev -- --view board:"Website relaunch" --dark
+devenv shell gpui:dev                       # sign-in screen: server, email, password
+devenv shell gpui:dev -- --view board:"Website relaunch" --dark
+devenv shell gpui:dev -- --server https://app.atlastodo.dev --token atlas_pat_…   # with an API token
 ```
 
-It signs in with an **API token** (Settings → API tokens → Create token), like the `atlas-todo` CLI:
-the token carries the key, so the account is decrypted locally. The sign-in screen keeps the server
-and token in `$XDG_CONFIG_HOME/atlas-todo-gpui/account.json` (mode 0600); the synced account is
-cached in `$XDG_STATE_HOME/atlas-todo-gpui`.
+It signs in with your **email and password** through core's `Session::login`: only the auth hash
+the password derives leaves the machine. The session (its refresh token and the opened keys) is
+kept in the system's secret store (Secret Service: GNOME Keyring, KWallet), so the next start
+resumes without the password; the server and email of the last sign-in are in
+`$XDG_CONFIG_HOME/atlas-todo-gpui/sign-in.json`. It shows in the account's sessions as "Atlas Todo
+desktop (GPUI) on <host>". Sign out is at the bottom of the sidebar. `--token` / `ATLAS_TOKEN` sign
+in with an API token instead (the screenshots use that). The synced account is cached in
+`$XDG_STATE_HOME/atlas-todo-gpui`.
+
+At start it installs `~/.local/share/applications/dev.atlastodo.gpui.desktop` and its icon (the
+window's app id is `dev.atlastodo.gpui`), so panels and launchers show the Atlas icon. Where the
+session has a tray host (StatusNotifierItem: KDE, waybar, …) it adds a tray icon that opens the
+window and quits; closing the window then leaves the app in the tray.
 
 `--view` is `today`, `upcoming`, `inbox`, `assigned`, `all`, `completed`, `projects`, `calendar`,
 `habits`, `stats`, … or `project:NAME` / `board:NAME`; `--task TITLE` opens a task's dialog.
@@ -58,6 +67,6 @@ that server and token.
 
 Editing beyond completing, quick add, priority and habit check-ins; drag and drop; keyboard
 shortcuts and the command palette; search and filters; sharing; notifications and the tray;
-sign-in with a password or passkey and local-only accounts (it needs an API token); weekly and
+passkey sign-in and local-only accounts (atlastodo/atlas#124); weekly and
 interval habit goals (streaks are daily); i18n (English strings); packaging, the updater and
 macOS/Windows (only Linux, Wayland, was tried).

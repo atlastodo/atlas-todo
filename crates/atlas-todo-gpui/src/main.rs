@@ -16,6 +16,7 @@
 mod app;
 mod board;
 mod calendar;
+mod desktop;
 mod detail;
 mod format;
 mod habits;
@@ -495,38 +496,76 @@ fn main() {
         return;
     }
 
+    desktop::install_entry();
     gpui_platform::application()
         .with_assets(Assets)
         .run(move |cx: &mut App| {
             load_fonts(cx);
             input::bind_keys(cx);
-            cx.on_window_closed(|cx, _| cx.quit()).detach();
-            let bounds = Bounds::centered(None, size(px(1280.), px(800.)), cx);
-            let opts = WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Atlas Todo".into()),
-                    ..Default::default()
-                }),
-                app_id: Some(APP_ID.into()),
-                ..Default::default()
-            };
             let account = initial_account(&args);
-            cx.open_window(opts, |_, cx| {
-                cx.new(|cx: &mut Context<Root>| {
-                    let mut root = Root {
-                        view: cx.new(|_| gpui::Empty).into(),
-                    };
-                    match account {
-                        Some(account) => root.show_app(account, &args, cx),
-                        None => root.show_sign_in(None, cx),
-                    }
-                    root
-                })
-            })
-            .expect("the window opens");
+            let root = cx.new(|cx: &mut Context<Root>| {
+                let mut root = Root {
+                    view: cx.new(|_| Blank).into(),
+                };
+                match account {
+                    Some(account) => root.show_app(account, &args, cx),
+                    None => root.show_sign_in(None, cx),
+                }
+                root
+            });
+            open_window(root.clone(), cx);
+            // With a tray, closing the window leaves the app (and its sync) in the tray, which
+            // opens it again or quits; without one, closing quits.
+            match desktop::spawn_tray() {
+                Some(events) => {
+                    cx.spawn(async move |cx| {
+                        while let Ok(event) = events.recv().await {
+                            let root = root.clone();
+                            cx.update(|cx| match event {
+                                desktop::TrayEvent::Open => {
+                                    if let Some(window) = cx.windows().into_iter().next() {
+                                        let _ = window
+                                            .update(cx, |_, window, _| window.activate_window());
+                                    } else {
+                                        open_window(root, cx);
+                                    }
+                                }
+                                desktop::TrayEvent::Quit => cx.quit(),
+                            });
+                        }
+                    })
+                    .detach();
+                }
+                None => cx.on_window_closed(|cx, _| cx.quit()).detach(),
+            }
             cx.activate(true);
         });
+}
+
+/// Nothing, while the window's first view is made.
+struct Blank;
+
+impl Render for Blank {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        div()
+    }
+}
+
+/// The window, around the root view (kept between windows when the app lives in the tray).
+fn open_window(root: Entity<Root>, cx: &mut App) {
+    let bounds = Bounds::centered(None, size(px(1280.), px(800.)), cx);
+    let opts = WindowOptions {
+        window_bounds: Some(WindowBounds::Windowed(bounds)),
+        titlebar: Some(TitlebarOptions {
+            title: Some("Atlas Todo".into()),
+            ..Default::default()
+        }),
+        app_id: Some(APP_ID.into()),
+        ..Default::default()
+    };
+    if let Err(e) = cx.open_window(opts, |_, _| root) {
+        eprintln!("could not open the window: {e}");
+    }
 }
 
 #[cfg(feature = "screenshots")]
