@@ -109,7 +109,8 @@ impl AtlasApp {
                                 this.today = s.date_of(crate::now_ms());
                                 let mut s = *s;
                                 s.linger = this.linger.clone();
-                                let synced = s.sync == SyncState::Live;
+                                // Live, or the cached account of an offline start.
+                                let synced = s.sync == SyncState::Live || !s.user_id.is_empty();
                                 this.snap = Rc::new(s);
                                 if synced {
                                     if let Some(apply) = this.pending.take() {
@@ -167,10 +168,31 @@ impl AtlasApp {
                     Some("light") => false,
                     _ => system(),
                 });
-        if dark {
-            Theme::dark()
-        } else {
-            Theme::light()
+        let base = if dark { Theme::dark() } else { Theme::light() };
+        base.with_accent(self.pref("accent").and_then(|v| v.as_str()).unwrap_or(""))
+    }
+
+    /// A feature toggle (`focus_enabled`, `habits_enabled`, …): on unless set to `false`.
+    pub fn feature_on(&self, field: &str) -> bool {
+        self.pref(field).and_then(|v| v.as_bool()) != Some(false)
+    }
+
+    /// Whether a smart view has its sidebar row (`menu_smart_views`: on unless set to `false`).
+    pub fn smart_view_in_menu(&self, view: &str) -> bool {
+        self.pref("menu_smart_views")
+            .and_then(|m| m.get(view))
+            .and_then(|v| v.as_bool())
+            != Some(false)
+    }
+
+    /// Whether a screen is on: the features turned off in the settings have none.
+    pub fn route_enabled(&self, route: &Route) -> bool {
+        match route {
+            Route::Focus => self.feature_on("focus_enabled"),
+            Route::Habits => self.feature_on("habits_enabled"),
+            Route::Countdowns => self.feature_on("countdowns_enabled"),
+            Route::Stats => self.feature_on("stats_enabled"),
+            _ => true,
         }
     }
 
@@ -396,7 +418,9 @@ impl AtlasApp {
             ("all", "All tasks", "list-todo", Route::All),
         ];
         for (id, label, glyph, route) in top {
-            col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
+            if self.smart_view_in_menu(id) {
+                col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
+            }
         }
         col = col.child(divider());
         let views = [
@@ -415,7 +439,9 @@ impl AtlasApp {
             ("countdowns", "Countdowns", "clock", Route::Countdowns),
         ];
         for (id, label, glyph, route) in views {
-            col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
+            if self.route_enabled(&route) {
+                col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
+            }
         }
         col = col.child(divider());
         for p in self.snap.projects.iter().filter(|p| p.parent_id.is_none()) {
@@ -429,13 +455,15 @@ impl AtlasApp {
             ));
         }
         col.child(divider())
-            .child(self.nav_item(
-                ("completed", "Completed", "circle-check-big"),
-                None,
-                Route::Completed,
-                t,
-                cx,
-            ))
+            .when(self.smart_view_in_menu("completed"), |c| {
+                c.child(self.nav_item(
+                    ("completed", "Completed", "circle-check-big"),
+                    None,
+                    Route::Completed,
+                    t,
+                    cx,
+                ))
+            })
             .child(
                 div()
                     .id("nav-sign-out")
@@ -557,6 +585,12 @@ impl AtlasApp {
 impl Render for AtlasApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = self.theme(window);
+        let pref_str = |f: &str| self.pref(f).and_then(|v| v.as_str());
+        crate::format::set_prefs(pref_str("time_format"), pref_str("date_format"));
+        // A feature turned off (here or on another device) takes its screen with it.
+        if !self.route_enabled(&self.route) {
+            self.route = Route::Today;
+        }
         let screen = self.screen(&t, window, cx);
         // Each screen (and a project's list and board) fades in, rising a little.
         let key = match &self.route {

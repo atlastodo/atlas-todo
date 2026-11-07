@@ -198,11 +198,11 @@ fn route_for(view: &str, snap: &Snapshot) -> Option<(Route, Option<bool>)> {
     Some((r, None))
 }
 
-/// Apply `--view`, `--task` and `--dark` to a fresh app; the first two wait for the first sync when
-/// nothing is loaded yet.
+/// Apply `--view` (else the `default_view` preference), `--task` and `--dark` to a fresh app; the
+/// first two wait for the first snapshot when nothing is loaded yet.
 fn configure(app: &mut AtlasApp, args: &Args) {
     app.force_dark = args.dark;
-    if app.snap.sync != SyncState::Live && (args.view.is_some() || args.task.is_some()) {
+    if app.snap.sync != SyncState::Live {
         let args = args.clone();
         app.pending = Some(Box::new(move |app| navigate(app, &args)));
     } else {
@@ -211,7 +211,13 @@ fn configure(app: &mut AtlasApp, args: &Args) {
 }
 
 fn navigate(app: &mut AtlasApp, args: &Args) {
-    if let Some(view) = &args.view {
+    // Without `--view`, the synced `default_view` (a smart list), unless the user moved on already.
+    let default = (app.route == Route::Today)
+        .then(|| app.pref("default_view").and_then(|v| v.as_str()))
+        .flatten()
+        .filter(|v| ["today", "upcoming", "inbox", "all", "assigned", "completed"].contains(v))
+        .map(str::to_owned);
+    if let Some(view) = args.view.as_ref().or(default.as_ref()) {
         match route_for(view, &app.snap) {
             Some((route, board)) => {
                 if let (Route::Project(id), Some(b)) = (&route, board) {

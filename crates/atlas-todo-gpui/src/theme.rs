@@ -1,4 +1,4 @@
-//! The web app's colours: Tailwind's neutral scale and the default indigo accent
+//! The web app's colours: Tailwind's neutral scale and the accent presets
 //! (`packages/todo-core/src/theme.ts`), for light and dark.
 
 use gpui::{rgb, rgba, Rgba};
@@ -88,6 +88,57 @@ impl Theme {
             track: rgb(0x262626),
             cell_off: rgb(0x404040),
         }
+    }
+}
+
+/// The accent presets (`ACCENTS` in `packages/todo-core/src/theme.ts`): the shades the app draws
+/// with, 50, 300, 400, 600, 700 and 950.
+pub const ACCENTS: [(&str, [u32; 6]); 6] = [
+    (
+        "indigo",
+        [0xeef2ff, 0xa5b4fc, 0x818cf8, 0x4f46e5, 0x4338ca, 0x1e1b4b],
+    ),
+    (
+        "blue",
+        [0xeff6ff, 0x93c5fd, 0x60a5fa, 0x2563eb, 0x1d4ed8, 0x172554],
+    ),
+    (
+        "violet",
+        [0xf5f3ff, 0xc4b5fd, 0xa78bfa, 0x7c3aed, 0x6d28d9, 0x2e1065],
+    ),
+    (
+        "emerald",
+        [0xecfdf5, 0x6ee7b7, 0x34d399, 0x047857, 0x065f46, 0x022c22],
+    ),
+    (
+        "amber",
+        [0xfffbeb, 0xfcd34d, 0xfbbf24, 0xb45309, 0x92400e, 0x451a03],
+    ),
+    (
+        "rose",
+        [0xfff1f2, 0xfda4af, 0xfb7185, 0xe11d48, 0xbe123c, 0x4c0519],
+    ),
+];
+
+impl Theme {
+    /// With the accent preset `name` (the synced `accent` preference); indigo for an unknown one.
+    pub fn with_accent(mut self, name: &str) -> Self {
+        let (_, [s50, s300, s400, s600, s700, s950]) = *ACCENTS
+            .iter()
+            .find(|(n, _)| *n == name)
+            .unwrap_or(&ACCENTS[0]);
+        self.accent = rgb(s600);
+        if self.dark {
+            // `dark:bg-accent-950/70`.
+            self.accent_soft = rgba((s950 << 8) | 0xb3);
+            self.accent_text = rgb(s400);
+            self.selected_text = rgb(s300);
+        } else {
+            self.accent_soft = rgb(s50);
+            self.accent_text = rgb(s600);
+            self.selected_text = rgb(s700);
+        }
+        self
     }
 }
 

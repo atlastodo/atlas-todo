@@ -1,4 +1,5 @@
-//! Calendar: a month grid (weeks from Sunday, ISO week numbers) or a week of columns, and the agenda.
+//! Calendar: a month grid (weeks from the `week_starts_on` preference, Sunday by default, with ISO
+//! week numbers unless `show_week_numbers` is off) or a week of columns, and the agenda.
 
 use gpui::{div, prelude::*, px, AnyElement, ClickEvent, Context, FontWeight, SharedString};
 use jiff::civil::{Date, Weekday};
@@ -13,8 +14,9 @@ use crate::theme::Theme;
 use crate::ui::ts;
 use crate::ui::{icon, segmented};
 
-fn start_of_week(d: Date) -> Date {
-    let back = d.weekday().to_sunday_zero_offset() as i64;
+/// The week's first day: `week_starts_on` is 0 for Sunday .. 6 for Saturday.
+fn start_of_week(d: Date, starts_on: i8) -> Date {
+    let back = (d.weekday().to_sunday_zero_offset() - starts_on).rem_euclid(7) as i64;
     d.checked_sub(back.days()).unwrap_or(d)
 }
 
@@ -56,6 +58,15 @@ pub fn calendar(app: &mut AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> An
     let today = app.today;
     let month = app.month;
     let week_mode = app.calendar_week;
+    let starts_on = app
+        .pref("week_starts_on")
+        .and_then(|v| v.as_i64())
+        .filter(|d| (0..7).contains(d))
+        .unwrap_or(0) as i8;
+    let numbers = app
+        .pref("show_week_numbers")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
     let on_day = |d: Date| -> Vec<&Task> {
         let mut v: Vec<&Task> =
             snap.open_roots(|t| t.due_at.as_ref().is_some_and(|x| snap.date_of(ms(x)) == d));
@@ -132,31 +143,31 @@ pub fn calendar(app: &mut AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> An
         )
         .child(switch);
 
-    let days = [
-        Weekday::Sunday,
-        Weekday::Monday,
-        Weekday::Tuesday,
-        Weekday::Wednesday,
-        Weekday::Thursday,
-        Weekday::Friday,
-        Weekday::Saturday,
-    ];
-    let head = div().flex().pl(px(26.)).children(days.iter().map(|d| {
-        div()
-            .flex_1()
-            .flex()
-            .justify_center()
-            .py(px(6.))
-            .text_size(ts(13.))
-            .text_color(t.faint)
-            .child(format::weekday_short(*d))
-    }));
+    let days: Vec<Weekday> = (0..7)
+        .map(|i| Weekday::from_sunday_zero_offset((starts_on + i) % 7).unwrap_or(Weekday::Sunday))
+        .collect();
+    let head = div()
+        .flex()
+        .when(numbers, |d| d.pl(px(26.)))
+        .children(days.iter().map(|d| {
+            div()
+                .flex_1()
+                .flex()
+                .justify_center()
+                .py(px(6.))
+                .text_size(ts(13.))
+                .text_color(t.faint)
+                .child(format::weekday_short(*d))
+        }));
 
-    let first = start_of_week(if week_mode {
-        month
-    } else {
-        month.first_of_month()
-    });
+    let first = start_of_week(
+        if week_mode {
+            month
+        } else {
+            month.first_of_month()
+        },
+        starts_on,
+    );
     let weeks = if week_mode {
         1
     } else {
@@ -166,8 +177,10 @@ pub fn calendar(app: &mut AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> An
     let mut grid = div().flex().flex_col().border_1().border_color(t.border);
     for w in 0..weeks {
         let week_start = first.checked_add(((w * 7) as i64).days()).unwrap_or(first);
+        // The ISO week of the row's Monday.
+        let to_monday = (7 - week_start.weekday().to_monday_zero_offset() as i64) % 7;
         let iso = week_start
-            .checked_add(1.day())
+            .checked_add(to_monday.days())
             .unwrap_or(week_start)
             .iso_week_date()
             .week();
@@ -176,17 +189,19 @@ pub fn calendar(app: &mut AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> An
             .min_h(px(if week_mode { 420. } else { 70. }))
             .border_t_1()
             .border_color(t.border)
-            .child(
-                div()
-                    .w(px(26.))
-                    .flex_none()
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .text_size(ts(11.))
-                    .text_color(t.faint)
-                    .child(SharedString::from(iso.to_string())),
-            );
+            .when(numbers, |r| {
+                r.child(
+                    div()
+                        .w(px(26.))
+                        .flex_none()
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .text_size(ts(11.))
+                        .text_color(t.faint)
+                        .child(SharedString::from(iso.to_string())),
+                )
+            });
         for i in 0..7 {
             let d = week_start
                 .checked_add((i as i64).days())
