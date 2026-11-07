@@ -3,10 +3,13 @@
 //! has no model for yet (sections, habits, focus sessions, reminders, comments) are read here from
 //! the fields the mobile app writes.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::HashSet;
 
 use atlas_client::store::Store;
 use atlas_todo_rules::client::{Label, Project};
+use atlas_todo_rules::rules::habits::{
+    parse_date_key, to_habit, to_habit_checkin, CheckinState, CheckinStates, Habit, HabitKind,
+};
 use atlas_todo_rules::rules::task::{all_tasks, ms, Task};
 use jiff::civil::Date;
 use jiff::tz::TimeZone;
@@ -20,21 +23,14 @@ pub struct Section {
     pub sort_order: f64,
 }
 
-#[derive(Debug, Clone)]
-pub struct Habit {
-    pub id: String,
-    pub name: String,
-    pub color: String,
-    pub target: i64,
-    pub sort_order: f64,
-    pub created_at: i64,
-}
-
+/// One recorded day of a habit (a `habit_checkin` row).
 #[derive(Debug, Clone)]
 pub struct Checkin {
     pub habit_id: String,
     pub date: Date,
-    pub done: bool,
+    pub state: CheckinState,
+    /// When it was recorded: a day recorded later is a backfill.
+    pub created_at: i64,
 }
 
 #[derive(Debug, Clone)]
@@ -64,7 +60,14 @@ pub struct Snapshot {
     pub labels: Vec<Label>,
     /// Tasks with a reminder still to fire (the rows' bell).
     pub reminders: HashSet<String>,
+    /// Live habits (not groups), neither trashed nor archived nor in an archived or trashed group,
+    /// by `sort_order`.
     pub habits: Vec<Habit>,
+    /// Live habit groups (routines), by `sort_order`.
+    pub habit_groups: Vec<Habit>,
+    /// Every `habit` row, trashed and archived ones too: a new habit's default colour is picked
+    /// by this count, as `useHabits` does.
+    pub habit_rows: usize,
     pub checkins: Vec<Checkin>,
     /// Focus session lengths in ms, with when each ended.
     pub focus: Vec<(i64, i64)>,
@@ -108,6 +111,8 @@ impl Snapshot {
             labels: Vec::new(),
             reminders: HashSet::new(),
             habits: Vec::new(),
+            habit_groups: Vec::new(),
+            habit_rows: 0,
             checkins: Vec::new(),
             focus: Vec::new(),
             comments: Vec::new(),
@@ -158,34 +163,36 @@ impl Snapshot {
             .map(|e| str_field(&e.fields, "task_id"))
             .collect();
 
-        let mut habits: Vec<Habit> = store
-            .list("habit")
-            .into_iter()
-            .filter(|e| !trashed(&e.fields) && str_field(&e.fields, "kind") != "group")
-            .map(|e| Habit {
-                name: str_field(&e.fields, "name"),
-                color: str_field(&e.fields, "color"),
-                target: i64_field(&e.fields, "target").unwrap_or(1).max(1),
-                sort_order: f64_field(&e.fields, "sort_order"),
-                created_at: i64_field(&e.fields, "created_at").unwrap_or(0),
-                id: e.id,
-            })
+        let habit_entities = store.list("habit");
+        let habit_rows = habit_entities.len();
+        let hidden = hidden_habits(&habit_entities);
+        let mut all_habits: Vec<Habit> = habit_entities
+            .iter()
+            .filter(|e| !trashed(&e.fields) && !hidden.contains(&e.id))
+            .map(|e| to_habit(&e.id, &e.fields, &tz))
             .collect();
-        habits.sort_by(|a, b| {
+        all_habits.sort_by(|a, b| {
             a.sort_order
                 .total_cmp(&b.sort_order)
                 .then(a.created_at.cmp(&b.created_at))
         });
+        let (habit_groups, habits): (Vec<Habit>, Vec<Habit>) = all_habits
+            .into_iter()
+            .partition(|h| h.kind == HabitKind::Group);
 
         let checkins = store
             .list("habit_checkin")
             .into_iter()
-            .filter(|e| !trashed(&e.fields))
             .filter_map(|e| {
+                let c = to_habit_checkin(&e.id, &e.fields);
+                if c.habit_id.is_empty() {
+                    return None;
+                }
                 Some(Checkin {
-                    habit_id: str_field(&e.fields, "habit_id"),
-                    date: str_field(&e.fields, "date").parse().ok()?,
-                    done: str_field(&e.fields, "state") != "skip",
+                    date: parse_date_key(&c.date)?,
+                    habit_id: c.habit_id,
+                    state: c.state,
+                    created_at: c.created_at,
                 })
             })
             .collect();
@@ -227,6 +234,8 @@ impl Snapshot {
             labels,
             reminders,
             habits,
+            habit_groups,
+            habit_rows,
             checkins,
             focus,
             comments,
@@ -304,34 +313,64 @@ impl Snapshot {
             .unwrap_or_default()
     }
 
-    /// Check-ins per habit, by day.
-    pub fn checkins_of(&self, habit: &str) -> BTreeMap<Date, bool> {
-        self.checkins
-            .iter()
-            .filter(|c| c.habit_id == habit)
-            .map(|c| (c.date, c.done))
-            .collect()
+    /// A habit's recorded days. Duplicate rows for a day (from before derived ids) resolve as
+    /// `useHabitCheckins` does: a completion wins.
+    pub fn states_of(&self, habit: &str) -> CheckinStates {
+        let mut out = CheckinStates::new();
+        for c in self.checkins.iter().filter(|c| c.habit_id == habit) {
+            let seen = out.get(&c.date).copied();
+            out.insert(
+                c.date,
+                if seen == Some(CheckinState::Done) {
+                    CheckinState::Done
+                } else {
+                    c.state
+                },
+            );
+        }
+        out
+    }
+
+    /// Whether the day's check-in was recorded on a later day.
+    pub fn backfilled(&self, habit: &str, day: Date) -> bool {
+        self.checkins.iter().any(|c| {
+            c.habit_id == habit
+                && c.date == day
+                && c.state == CheckinState::Done
+                && c.created_at > 0
+                && self.date_of(c.created_at) != day
+        })
+    }
+
+    /// The `week_starts_on` preference (0 is Sunday).
+    pub fn week_starts_on(&self) -> i64 {
+        self.prefs
+            .get("week_starts_on")
+            .and_then(Value::as_i64)
+            .unwrap_or(0)
     }
 }
 
-/// The current daily streak: done days back from today (or yesterday while today is still open),
-/// skips bridged. Daily goals only; weekly and interval goals would need `habits.ts`'s periods.
-pub fn daily_streak(days: &BTreeMap<Date, bool>, today: Date) -> i64 {
-    let mut day = today;
-    if days.get(&day).is_none() {
-        day = day.yesterday().unwrap_or(day);
-    }
-    let mut n = 0;
-    loop {
-        match days.get(&day) {
-            Some(true) => n += 1,
-            Some(false) => {}
-            None => break,
+/// Habits hidden by an archived or trashed ancestor (`hiddenHabitIds`): a group's members leave
+/// the list with it, and come back when it is restored.
+fn hidden_habits(rows: &[atlas_client::store::ResolvedEntity]) -> HashSet<String> {
+    let by_id: std::collections::HashMap<&str, &Map<String, Value>> =
+        rows.iter().map(|e| (e.id.as_str(), &e.fields)).collect();
+    let mut hidden = HashSet::new();
+    for e in rows {
+        let mut seen = HashSet::new();
+        let mut cursor = e.fields.get("parent_id").and_then(Value::as_str);
+        while let Some(id) = cursor {
+            if !seen.insert(id) {
+                break;
+            }
+            let Some(fields) = by_id.get(id) else { break };
+            if trashed(fields) {
+                hidden.insert(e.id.clone());
+                break;
+            }
+            cursor = fields.get("parent_id").and_then(Value::as_str);
         }
-        match day.yesterday() {
-            Ok(d) => day = d,
-            Err(_) => break,
-        }
     }
-    n
+    hidden
 }

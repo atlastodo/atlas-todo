@@ -71,7 +71,7 @@ pub struct AtlasApp {
     pub month: Date,
     pub stats_days: i64,
     pub calendar_week: bool,
-    pub habits_due_only: bool,
+    pub habits_ui: habits::HabitsUi,
     pub adding: Option<AddTarget>,
     pub input: Entity<TextInput>,
     pub error: Option<String>,
@@ -140,7 +140,7 @@ impl AtlasApp {
             month: today.first_of_month(),
             stats_days: 30,
             calendar_week: false,
-            habits_due_only: true,
+            habits_ui: habits::HabitsUi::default(),
             adding: None,
             input,
             error: None,
@@ -569,6 +569,11 @@ impl Render for AtlasApp {
             240,
             |el, v| el.opacity(v).mt(px((1. - v) * 10.)),
         );
+        let habit_overlay = if self.route == Route::Habits {
+            habits::overlay(self, &t, cx)
+        } else {
+            None
+        };
         let modal = self
             .open_task
             .clone()
@@ -606,6 +611,7 @@ impl Render for AtlasApp {
                         .child(SharedString::from(e)),
                 )
             })
+            .when_some(habit_overlay, |d, m| d.child(m))
             .when_some(modal, |d, m| d.child(m))
     }
 }

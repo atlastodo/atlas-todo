@@ -12,6 +12,8 @@ use atlas_todo_rules::client::TodoClient;
 use jiff::civil::Date;
 use serde_json::Value;
 
+use atlas_todo_rules::rules::habits::{to_habit_checkin, CheckinState, HabitCheckin};
+use atlas_todo_rules::rules::ids::derived_uuid_v2;
 use atlas_todo_rules::rules::task::{create_task, CreateTaskInput};
 
 use crate::model::{Snapshot, SyncState};
@@ -31,7 +33,7 @@ pub enum Command {
         section_id: Option<String>,
     },
     SetPriority(String, u8),
-    /// Mark a habit done on a day, or clear the day when it is.
+    /// Advance a habit's day: clear -> done -> skip -> clear (`useHabitCheckins.cycle`).
     ToggleHabit(String, Date),
     /// End the session (on the server for a password sign-in) and forget it.
     SignOut,
@@ -349,33 +351,67 @@ fn apply(client: &mut TodoClient, cmd: Command) -> Result<(), String> {
             client.push().map_err(err)?;
         }
         Command::ToggleHabit(habit, date) => {
-            let key = date.to_string();
-            let store = &mut client.session_mut().store;
-            let existing: Vec<String> = store
-                .list("habit_checkin")
-                .into_iter()
-                .filter(|e| {
-                    e.fields.get("habit_id").and_then(Value::as_str) == Some(habit.as_str())
-                        && e.fields.get("date").and_then(Value::as_str) == Some(key.as_str())
-                        && e.fields.get("deleted_at").is_none_or(Value::is_null)
-                })
-                .map(|e| e.id)
-                .collect();
-            // As useHabitCheckins: a done day clears; an empty one gets a fresh row.
-            if existing.is_empty() {
-                let id = store.new_entity_id();
-                store.set("habit_checkin", &id, "habit_id", Value::from(habit));
-                store.set("habit_checkin", &id, "date", Value::from(key));
-                store.set("habit_checkin", &id, "state", Value::from("done"));
-                store.set("habit_checkin", &id, "value", Value::from(1));
-                store.set("habit_checkin", &id, "created_at", Value::from(now_ms()));
-            } else {
-                for id in existing {
-                    store.remove("habit_checkin", &id);
-                }
-            }
+            cycle_habit_day(&mut client.session_mut().store, &habit, date);
             client.push().map_err(err)?;
         }
     }
     Ok(())
+}
+
+/// The next state of a day in the cycle `useHabitCheckins` taps through: clear -> done -> skip ->
+/// clear, so a mis-tap can always return to "no data".
+pub fn next_habit_state(current: Option<CheckinState>) -> Option<CheckinState> {
+    match current {
+        None => Some(CheckinState::Done),
+        Some(CheckinState::Done) => Some(CheckinState::Skip),
+        Some(CheckinState::Skip) => None,
+    }
+}
+
+/// Advance a habit's day, writing the rows as `useHabitCheckins.setState` does: one row per day,
+/// a new one under the id derived from `(habit_id, date)` so devices converge, and any duplicate
+/// rows of the day collapsed into the first.
+fn cycle_habit_day(store: &mut atlas_client::store::Store, habit: &str, date: Date) {
+    let key = date.to_string();
+    let rows: Vec<HabitCheckin> = store
+        .list("habit_checkin")
+        .into_iter()
+        .map(|e| to_habit_checkin(&e.id, &e.fields))
+        .filter(|c| c.habit_id == habit && c.date == key)
+        .collect();
+    // Duplicates that disagree read as done.
+    let current = rows.iter().map(|c| c.state).reduce(|a, b| {
+        if a == CheckinState::Done || b == CheckinState::Done {
+            CheckinState::Done
+        } else {
+            b
+        }
+    });
+    let next = next_habit_state(current);
+    match (next, rows.split_first()) {
+        (None, _) => {
+            for c in &rows {
+                store.remove("habit_checkin", &c.id);
+            }
+        }
+        (Some(state), Some((keep, duplicates))) => {
+            store.set(
+                "habit_checkin",
+                &keep.id,
+                "state",
+                Value::from(state.as_str()),
+            );
+            for c in duplicates {
+                store.remove("habit_checkin", &c.id);
+            }
+        }
+        (Some(state), None) => {
+            let id = derived_uuid_v2("habit_checkin", &format!("{habit}\0{key}"));
+            store.set("habit_checkin", &id, "habit_id", Value::from(habit));
+            store.set("habit_checkin", &id, "date", Value::from(key));
+            store.set("habit_checkin", &id, "state", Value::from(state.as_str()));
+            store.set("habit_checkin", &id, "value", Value::from(1));
+            store.set("habit_checkin", &id, "created_at", Value::from(now_ms()));
+        }
+    }
 }
