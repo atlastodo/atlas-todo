@@ -7,18 +7,48 @@ use atlas_todo_rules::rules::task::{ms, Task};
 use crate::app::{AddTarget, AtlasApp};
 use crate::format;
 use crate::list::{add_row, project_header};
+use crate::model::Snapshot;
 use crate::theme::{hex, priority_color, Theme};
 use crate::ui::ts;
-use crate::ui::{check_circle, chip, dot, header_icons, icon};
+use crate::ui::{check_circle, chip, dot, icon};
 
-const COLUMN: f32 = 308.;
+pub const COLUMN: f32 = 308.;
 
 fn card(app: &AtlasApp, task: &Task, t: &Theme, cx: &mut Context<AtlasApp>) -> AnyElement {
-    let snap = &app.snap;
+    let open_id = task.id.clone();
+    let face = card_face(&app.snap, task, t, Some(cx));
+    let el = div()
+        .id(SharedString::from(format!("card-{}", task.id)))
+        .rounded(px(10.))
+        .border_1()
+        .border_color(t.border)
+        .bg(t.surface)
+        .shadow_xs()
+        .cursor_pointer()
+        .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+            this.open_task = Some(open_id.clone());
+            cx.notify();
+        }))
+        .on_mouse_down(gpui::MouseButton::Right, {
+            let id = task.id.clone();
+            cx.listener(move |this, ev: &gpui::MouseDownEvent, _, cx| {
+                crate::context_menu::open(this, &id, ev, cx)
+            })
+        })
+        .child(face);
+    crate::organize::draggable(el, app, &task.id, true, t).into_any_element()
+}
+
+/// A card's content; `cx` wires its checks (none on the drag ghost).
+pub fn card_face(
+    snap: &Snapshot,
+    task: &Task,
+    t: &Theme,
+    mut cx: Option<&mut Context<AtlasApp>>,
+) -> gpui::Div {
     let subs: Vec<&Task> = snap.subtasks(&task.id);
     let done = subs.iter().filter(|s| s.is_completed).count();
     let id = task.id.clone();
-    let open_id = task.id.clone();
     let mut meta = div().flex().flex_wrap().items_center().gap(px(6.));
     if let Some(c) = priority_color(task.priority) {
         meta = meta.child(icon("flag", 15., c));
@@ -60,10 +90,12 @@ fn card(app: &AtlasApp, task: &Task, t: &Theme, cx: &mut Context<AtlasApp>) -> A
                 div()
                     .id(SharedString::from(format!("bcheck-{}", task.id)))
                     .mt(px(3.))
-                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-                        cx.stop_propagation();
-                        this.toggle(&id, cx);
-                    }))
+                    .when_some(cx.as_deref_mut(), |d, cx| {
+                        d.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                            cx.stop_propagation();
+                            this.toggle(&id, cx);
+                        }))
+                    })
                     .child(check_circle(18., task.is_completed, t.circle, t)),
             )
             .child(
@@ -121,10 +153,12 @@ fn card(app: &AtlasApp, task: &Task, t: &Theme, cx: &mut Context<AtlasApp>) -> A
                             .pl(px(2.))
                             .text_size(ts(14.))
                             .text_color(t.text_soft)
-                            .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-                                cx.stop_propagation();
-                                this.toggle(&sid, cx);
-                            }))
+                            .when_some(cx.as_deref_mut(), |d, cx| {
+                                d.on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                                    cx.stop_propagation();
+                                    this.toggle(&sid, cx);
+                                }))
+                            })
                             .child(check_circle(15., s.is_completed, t.circle, t))
                             .child(SharedString::from(s.title.clone()))
                             .into_any_element()
@@ -132,26 +166,7 @@ fn card(app: &AtlasApp, task: &Task, t: &Theme, cx: &mut Context<AtlasApp>) -> A
                 }),
         );
     }
-    div()
-        .id(SharedString::from(format!("card-{}", task.id)))
-        .rounded(px(10.))
-        .border_1()
-        .border_color(t.border)
-        .bg(t.surface)
-        .shadow_xs()
-        .cursor_pointer()
-        .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
-            this.open_task = Some(open_id.clone());
-            cx.notify();
-        }))
-        .on_mouse_down(gpui::MouseButton::Right, {
-            let id = task.id.clone();
-            cx.listener(move |this, ev: &gpui::MouseDownEvent, _, cx| {
-                crate::context_menu::open(this, &id, ev, cx)
-            })
-        })
-        .child(body)
-        .into_any_element()
+    body
 }
 
 pub fn project_board(
@@ -173,7 +188,7 @@ pub fn project_board(
     }
     let mut row = div()
         .flex()
-        .items_start()
+        .min_h_full()
         .gap(px(28.))
         .px(px(22.))
         .pt(px(18.))
@@ -181,7 +196,33 @@ pub fn project_board(
     for (section, name) in columns {
         let tasks = snap
             .open_roots(|x| x.project_id.as_deref() == Some(project_id) && x.section_id == section);
-        let cards: Vec<AnyElement> = tasks.iter().map(|x| card(app, x, t, cx)).collect();
+        let ids: Vec<String> = tasks.iter().map(|x| x.id.clone()).collect();
+        let marker = app.drop_marker(&section, &ids);
+        let mut cards: Vec<AnyElement> = tasks
+            .iter()
+            .map(|x| {
+                let c = card(app, x, t, cx);
+                crate::organize::with_marker(c, &x.id, &marker, 8., t)
+            })
+            .collect();
+        if matches!(marker, Some(crate::organize::Marker::Empty)) {
+            cards.push(crate::organize::empty_drop(t));
+        }
+        let title = div()
+            .text_size(ts(15.5))
+            .font_weight(FontWeight::BOLD)
+            .text_color(t.text_soft)
+            .child(SharedString::from(format!(
+                "{} ({})",
+                name.to_uppercase(),
+                tasks.len()
+            )))
+            .into_any_element();
+        let title = crate::organize::section_title(app, section.as_deref(), title, t);
+        let tools = match &section {
+            Some(s) => crate::organize::section_tools(app, s, t, cx),
+            None => div().into_any_element(),
+        };
         let add = add_row(
             app,
             AddTarget {
@@ -194,12 +235,9 @@ pub fn project_board(
             t,
             cx,
         );
+        let column = div().w(px(COLUMN)).flex_none().flex().flex_col();
         row = row.child(
-            div()
-                .w(px(COLUMN))
-                .flex_none()
-                .flex()
-                .flex_col()
+            crate::organize::drop_zone(column, section.clone(), ids, cx)
                 .child(
                     div()
                         .flex()
@@ -207,18 +245,8 @@ pub fn project_board(
                         .justify_between()
                         .px(px(4.))
                         .h(px(44.))
-                        .child(
-                            div()
-                                .text_size(ts(15.5))
-                                .font_weight(FontWeight::BOLD)
-                                .text_color(t.text_soft)
-                                .child(SharedString::from(format!(
-                                    "{} ({})",
-                                    name.to_uppercase(),
-                                    tasks.len()
-                                ))),
-                        )
-                        .child(header_icons(&["pencil", "ellipsis-vertical"], t)),
+                        .child(title)
+                        .child(tools),
                 )
                 .child(
                     div()
@@ -238,6 +266,13 @@ pub fn project_board(
                 ),
         );
     }
+    row = row.child(
+        div()
+            .w(px(COLUMN))
+            .flex_none()
+            .pt(px(4.))
+            .child(crate::organize::add_section(app, project_id, t, cx)),
+    );
     div()
         .flex()
         .flex_col()

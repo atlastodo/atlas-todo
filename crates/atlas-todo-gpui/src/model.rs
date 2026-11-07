@@ -75,6 +75,8 @@ pub struct Snapshot {
     /// The synced preferences (`preference` entity [`PREFERENCES_ID`]): theme, accent,
     /// week_starts_on, time_format, favorites, list_prefs, feature toggles, …
     pub prefs: Map<String, Value>,
+    /// Folders: projects that hold projects instead of tasks (the sidebar's tree).
+    pub folders: Vec<Project>,
 }
 
 /// The one `preference` entity's id (`PREFERENCES_ID` in `packages/todo-core/src/ids.ts`).
@@ -114,6 +116,7 @@ impl Snapshot {
             sync,
             linger: HashSet::new(),
             prefs: Map::new(),
+            folders: Vec::new(),
         }
     }
 
@@ -138,9 +141,28 @@ impl Snapshot {
             .collect();
         sections.sort_by(|a, b| a.sort_order.total_cmp(&b.sort_order));
 
+        // The read cascade: a section or project archived or in the trash hides its tasks.
+        let gone = |kind: &str| -> HashSet<String> {
+            store
+                .list(kind)
+                .into_iter()
+                .filter(|e| trashed(&e.fields))
+                .map(|e| e.id)
+                .collect()
+        };
+        let (gone_sections, gone_projects) = (gone("section"), gone("project"));
         let mut tasks: Vec<Task> = all_tasks(store)
             .into_iter()
             .filter(|t| t.deleted_at.is_none() && t.archived_at.is_none())
+            .filter(|t| {
+                !t.section_id
+                    .as_ref()
+                    .is_some_and(|s| gone_sections.contains(s))
+                    && !t
+                        .project_id
+                        .as_ref()
+                        .is_some_and(|p| gone_projects.contains(p))
+            })
             .collect();
         tasks.sort_by(|a, b| {
             let (x, y) = (
@@ -215,7 +237,13 @@ impl Snapshot {
             .collect();
         comments.sort_by_key(|c| c.created_at);
 
+        let folders = projects
+            .iter()
+            .filter(|p| p.kind == "folder")
+            .cloned()
+            .collect();
         Self {
+            folders,
             user_id: user_id.to_owned(),
             tz,
             projects: projects
