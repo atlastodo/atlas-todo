@@ -98,6 +98,10 @@ pub struct AtlasApp {
     wired: bool,
     /// `--palette` / `--search` / `--quick-add` / `--shortcuts`, opened once the view is set.
     pub start_overlay: Option<crate::palette::StartOverlay>,
+    /// The open task's editable fields and popovers.
+    pub editor: Option<crate::detail::Editor>,
+    /// A task's right-click menu.
+    pub menu: Option<crate::context_menu::Menu>,
 }
 
 impl AtlasApp {
@@ -172,6 +176,8 @@ impl AtlasApp {
             theme_dark: false,
             wired: false,
             start_overlay: None,
+            editor: None,
+            menu: None,
         }
     }
 
@@ -606,7 +612,8 @@ impl Render for AtlasApp {
         let modal = self
             .open_task
             .clone()
-            .and_then(|id| detail::task_detail(self, &id, &t, cx));
+            .and_then(|id| detail::task_detail(self, &id, &t, window, cx));
+        let menu = crate::context_menu::render(self, &t, cx);
         let palette = crate::palette::overlay(self, &t, cx);
         let help = crate::shortcuts::help(self, &t, cx);
         crate::shortcuts::handlers(div(), cx)
@@ -645,6 +652,7 @@ impl Render for AtlasApp {
                 )
             })
             .when_some(modal, |d, m| d.child(m))
+            .when_some(menu, |d, m| d.child(m))
             .when_some(palette, |d, m| d.child(m))
             .when_some(help, |d, m| d.child(m))
     }

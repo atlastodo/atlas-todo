@@ -20,8 +20,10 @@
 mod app;
 mod board;
 mod calendar;
+mod context_menu;
 mod desktop;
 mod detail;
+mod edit;
 mod format;
 mod habits;
 mod input;
@@ -34,6 +36,7 @@ mod secrets;
 mod shortcuts;
 mod stats;
 mod sync;
+mod textarea;
 mod theme;
 mod tour;
 mod ui;
