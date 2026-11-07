@@ -128,6 +128,39 @@ fn str_field(f: &Map<String, Value>, k: &str) -> String {
     f.get(k).and_then(Value::as_str).unwrap_or("").to_owned()
 }
 
+/// [`TodoClient::projects`] of any store (a cached one, read without a session).
+pub fn store_projects(store: &atlas_client::store::Store) -> Vec<Project> {
+    let mut out: Vec<Project> = store
+        .list(EntityKind::Project)
+        .iter()
+        .map(|e| to_project(&e.id, &e.fields))
+        .filter(|p| p.archived_at.is_none() && p.deleted_at.is_none())
+        .collect();
+    out.sort_by(|a, b| {
+        let (x, y) = (
+            a.sort_order.as_f64().unwrap_or(0.0),
+            b.sort_order.as_f64().unwrap_or(0.0),
+        );
+        x.partial_cmp(&y).unwrap_or(std::cmp::Ordering::Equal)
+    });
+    out
+}
+
+/// [`TodoClient::labels`] of any store.
+pub fn store_labels(store: &atlas_client::store::Store) -> Vec<Label> {
+    store
+        .list(EntityKind::Label)
+        .iter()
+        .filter(|e| e.fields.get("deleted_at").is_none_or(Value::is_null))
+        .map(|e| Label {
+            id: e.id.clone(),
+            owner_id: str_field(&e.fields, "owner_id"),
+            name: str_field(&e.fields, "name"),
+            color: str_field(&e.fields, "color"),
+        })
+        .collect()
+}
+
 fn to_project(id: &str, f: &Map<String, Value>) -> Project {
     let number = |k: &str| match f.get(k) {
         Some(Value::Number(n)) => Some(n.clone()),
@@ -240,37 +273,11 @@ impl TodoClient {
 
     /// Projects and folders neither archived nor in the trash, by sort order.
     pub fn projects(&self) -> Vec<Project> {
-        let mut out: Vec<Project> = self
-            .session
-            .store
-            .list(EntityKind::Project)
-            .iter()
-            .map(|e| to_project(&e.id, &e.fields))
-            .filter(|p| p.archived_at.is_none() && p.deleted_at.is_none())
-            .collect();
-        out.sort_by(|a, b| {
-            let (x, y) = (
-                a.sort_order.as_f64().unwrap_or(0.0),
-                b.sort_order.as_f64().unwrap_or(0.0),
-            );
-            x.partial_cmp(&y).unwrap_or(std::cmp::Ordering::Equal)
-        });
-        out
+        store_projects(&self.session.store)
     }
 
     pub fn labels(&self) -> Vec<Label> {
-        self.session
-            .store
-            .list(EntityKind::Label)
-            .iter()
-            .filter(|e| e.fields.get("deleted_at").is_none_or(Value::is_null))
-            .map(|e| Label {
-                id: e.id.clone(),
-                owner_id: str_field(&e.fields, "owner_id"),
-                name: str_field(&e.fields, "name"),
-                color: str_field(&e.fields, "color"),
-            })
-            .collect()
+        store_labels(&self.session.store)
     }
 
     fn project_id(&self, reference: &str) -> Result<String> {

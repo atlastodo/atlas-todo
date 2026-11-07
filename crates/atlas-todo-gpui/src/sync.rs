@@ -201,7 +201,55 @@ fn snapshot(client: &TodoClient, sync: SyncState) -> Snapshot {
     )
 }
 
+/// The account as the last run cached it (the state directory), read without the server: what an
+/// offline start shows until the server answers. `None` for a password sign-in (whose keys only
+/// the server opens) or when there is no cache this account's key opens.
+fn cached_snapshot(account: &Account) -> Option<Snapshot> {
+    use atlas_client::crypto::{parse_api_token, TODO_APP};
+    use atlas_client::state::{load_keyed, StateKey};
+    let dir = state_dir()?;
+    let (key, server, app) = match account {
+        Account::Token { server, token } => (
+            StateKey::for_token(&parse_api_token(token).ok()?),
+            server.clone(),
+            TODO_APP.to_owned(),
+        ),
+        Account::Saved(c) => (
+            StateKey::for_device(&c.device_id, &hex32(&c.key)?),
+            c.server_url.clone(),
+            c.app.clone(),
+        ),
+        Account::Login { .. } => return None,
+    };
+    let cached = load_keyed(&dir, &key, &server, &app)?;
+    atlas_todo_rules::register_todo_app();
+    let mut store = atlas_client::store::Store::new(uuid::Uuid::nil());
+    store.apply_remote_batch(&cached.ops);
+    Some(Snapshot::build(
+        &store,
+        atlas_todo_rules::client::store_projects(&store),
+        atlas_todo_rules::client::store_labels(&store),
+        &cached.user_id,
+        resolve_time_zone(None),
+        SyncState::Offline,
+    ))
+}
+
+/// 32 bytes from hex (a kept session's app key).
+fn hex32(s: &str) -> Option<[u8; 32]> {
+    if s.len() != 64 {
+        return None;
+    }
+    let mut out = [0u8; 32];
+    for (i, b) in out.iter_mut().enumerate() {
+        *b = u8::from_str_radix(s.get(i * 2..i * 2 + 2)?, 16).ok()?;
+    }
+    Some(out)
+}
+
 fn run(account: Account, rx: Receiver<Command>, updates: async_channel::Sender<Update>) {
+    // Offline, the cached account is shown (once) while the sign-in is retried.
+    let mut cache_shown = false;
     let mut client = loop {
         match connect(&account) {
             Ok(c) => break c,
@@ -221,9 +269,14 @@ fn run(account: Account, rx: Receiver<Command>, updates: async_channel::Sender<U
                     let _ = updates.send_blocking(Update::SignedOut(sign_in_error(&e, &account)));
                     return;
                 }
+                if !cache_shown {
+                    cache_shown = true;
+                    let snap = cached_snapshot(&account).unwrap_or_else(|| {
+                        Snapshot::empty(resolve_time_zone(None), SyncState::Offline)
+                    });
+                    let _ = updates.send_blocking(Update::Snapshot(Box::new(snap)));
+                }
                 let _ = updates.send_blocking(Update::Error(sign_in_error(&e, &account)));
-                let empty = Snapshot::empty(resolve_time_zone(None), SyncState::Offline);
-                let _ = updates.send_blocking(Update::Snapshot(Box::new(empty)));
                 std::thread::sleep(POLL * 3);
             }
         }
