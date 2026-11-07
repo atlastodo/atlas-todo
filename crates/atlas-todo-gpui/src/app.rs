@@ -83,6 +83,8 @@ pub struct AtlasApp {
     pub pending: Option<Pending>,
     /// Draft view modes picked by the user per project, over the project's default.
     view_picked: HashMap<String, bool>,
+    /// Drag and drop, section edits, the section menu and the project sheet.
+    pub org: crate::organize::Org,
 }
 
 impl AtlasApp {
@@ -149,6 +151,7 @@ impl AtlasApp {
             linger: HashSet::new(),
             pending: None,
             view_picked: HashMap::new(),
+            org: crate::organize::Org::new(cx),
         }
     }
 
@@ -557,6 +560,7 @@ impl AtlasApp {
 impl Render for AtlasApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = self.theme(window);
+        self.settle_drag(cx);
         let screen = self.screen(&t, window, cx);
         // Each screen (and a project's list and board) fades in, rising a little.
         let key = match &self.route {
@@ -607,5 +611,6 @@ impl Render for AtlasApp {
                 )
             })
             .when_some(modal, |d, m| d.child(m))
+            .children(crate::organize::overlays(self, &t, cx))
     }
 }

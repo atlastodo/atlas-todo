@@ -138,9 +138,23 @@ impl Snapshot {
             .collect();
         sections.sort_by(|a, b| a.sort_order.total_cmp(&b.sort_order));
 
+        // The read cascade: a section or project archived or in the trash hides its tasks.
+        let gone = |kind: &str| -> HashSet<String> {
+            store
+                .list(kind)
+                .into_iter()
+                .filter(|e| trashed(&e.fields))
+                .map(|e| e.id)
+                .collect()
+        };
+        let (gone_sections, gone_projects) = (gone("section"), gone("project"));
         let mut tasks: Vec<Task> = all_tasks(store)
             .into_iter()
             .filter(|t| t.deleted_at.is_none() && t.archived_at.is_none())
+            .filter(|t| {
+                !t.section_id.as_ref().is_some_and(|s| gone_sections.contains(s))
+                    && !t.project_id.as_ref().is_some_and(|p| gone_projects.contains(p))
+            })
             .collect();
         tasks.sort_by(|a, b| {
             let (x, y) = (

@@ -24,6 +24,8 @@ mod input;
 mod list;
 mod model;
 mod motion;
+mod organize;
+mod rank;
 mod secrets;
 mod stats;
 mod sync;

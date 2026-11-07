@@ -161,6 +161,7 @@ pub fn chevron(
 }
 
 /// The tools in a screen's title row: larger than a section's.
+#[allow(dead_code)] // the screens' tools as they get actions
 pub fn header_tools(names: &[&str], t: &Theme) -> gpui::Div {
     div().flex().items_center().gap(px(22.)).children(
         names
@@ -171,6 +172,7 @@ pub fn header_tools(names: &[&str], t: &Theme) -> gpui::Div {
 }
 
 /// A row of icon buttons in a header (no actions behind them yet: the GPUI app is read-mostly).
+#[allow(dead_code)]
 pub fn header_icons(names: &[&str], t: &Theme) -> gpui::Div {
     div().flex().items_center().gap(px(18.)).children(
         names

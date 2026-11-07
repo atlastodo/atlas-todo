@@ -12,7 +12,7 @@ use crate::format;
 use crate::motion;
 use crate::theme::{priority_color, project_color, Theme};
 use crate::ui::ts;
-use crate::ui::{check_circle, chevron, chip, dot, header_icons, header_tools, icon, segmented};
+use crate::ui::{check_circle, chevron, chip, dot, icon, segmented};
 
 /// The widest a list runs, centred in the content area (`LIST_MAX_WIDTH`).
 pub const LIST_MAX_WIDTH: f32 = 860.;
@@ -223,6 +223,12 @@ pub fn task_row(
                     ))
                 }),
         );
+    // A project's top-level rows can be dragged to reorder, or into another section.
+    let row = if matches!(app.route, Route::Project(_)) && task.parent_id.is_none() {
+        crate::organize::draggable(row, app, &task.id, false, t)
+    } else {
+        row
+    };
     if task.is_completed && snap.linger.contains(&task.id) {
         // Just checked off: the row dims away, then leaves the list.
         return motion::enter(
@@ -356,12 +362,16 @@ fn section_header(
                     16.,
                     t.muted,
                 ))
-                .child(
+                .child(crate::organize::section_title(
+                    app,
+                    tools.then_some(key),
                     div()
                         .text_size(ts(SMALL))
                         .text_color(t.muted)
-                        .child(SharedString::from(title.to_uppercase())),
-                )
+                        .child(SharedString::from(title.to_uppercase()))
+                        .into_any_element(),
+                    t,
+                ))
                 .child(
                     div()
                         .text_size(ts(SMALL))
@@ -370,7 +380,7 @@ fn section_header(
                 ),
         )
         .when(tools, |d| {
-            d.child(header_icons(&["pencil", "ellipsis-vertical"], t))
+            d.child(crate::organize::section_tools(app, key, t, cx))
         })
         .into_any_element()
 }
@@ -402,10 +412,7 @@ pub fn project_header(
         },
     );
     let mut tools = div().flex().items_center().gap(px(22.));
-    tools = tools.child(header_tools(
-        &["star", "sliders-horizontal", "user-plus", "activity"],
-        t,
-    ));
+    tools = tools.child(crate::organize::project_tools(app, project_id, t, cx));
     if !board {
         tools = tools
             .child(
@@ -448,21 +455,26 @@ pub fn project_list(
         snap.open_roots(|t| t.project_id.as_deref() == Some(project_id) && t.section_id.is_none());
     let sections = snap.sections_of(project_id);
     if !loose.is_empty() || sections.is_empty() {
+        let mut block = div().flex().flex_col();
+        let ids: Vec<String> = loose.iter().map(|x| x.id.clone()).collect();
+        let marker = app.drop_marker(&None, &ids);
         for task in &loose {
-            col = col.children(task_tree(app, task, &opts, t, cx));
+            block = block.child(marked_tree(app, task, &opts, &marker, t, cx));
         }
-        col = col.child(add_row(
-            app,
-            AddTarget {
-                key: format!("{project_id}-none"),
-                project_id: Some(project_id.to_owned()),
-                section_id: None,
-            },
-            "Add task",
-            false,
-            t,
-            cx,
-        ));
+        col = col.child(
+            crate::organize::drop_zone(block, None, ids, cx).child(add_row(
+                app,
+                AddTarget {
+                    key: format!("{project_id}-none"),
+                    project_id: Some(project_id.to_owned()),
+                    section_id: None,
+                },
+                "Add task",
+                false,
+                t,
+                cx,
+            )),
+        );
     }
     for s in sections {
         let tasks: Vec<&Task> = snap.open_roots(|t| t.section_id.as_deref() == Some(&s.id));
@@ -476,12 +488,20 @@ pub fn project_list(
                         .count()
                 })
                 .sum::<usize>();
-        col = col.child(section_header(app, &s.id, &s.name, total, true, t, cx));
+        let ids: Vec<String> = tasks.iter().map(|x| x.id.clone()).collect();
+        let marker = app.drop_marker(&Some(s.id.clone()), &ids);
+        let mut block = div()
+            .flex()
+            .flex_col()
+            .child(section_header(app, &s.id, &s.name, total, true, t, cx));
+        if matches!(marker, Some(crate::organize::Marker::Empty)) {
+            block = block.child(div().mx(px(8.)).h(px(3.)).rounded_full().bg(t.accent));
+        }
         if !app.collapsed.contains(&s.id) {
             for task in &tasks {
-                col = col.children(task_tree(app, task, &opts, t, cx));
+                block = block.child(marked_tree(app, task, &opts, &marker, t, cx));
             }
-            col = col.child(add_row(
+            block = block.child(add_row(
                 app,
                 AddTarget {
                     key: s.id.clone(),
@@ -494,20 +514,16 @@ pub fn project_list(
                 cx,
             ));
         }
-        col = col.child(div().h(px(28.)));
+        col = col
+            .child(crate::organize::drop_zone(
+                block,
+                Some(s.id.clone()),
+                ids,
+                cx,
+            ))
+            .child(div().h(px(28.)));
     }
-    col = col.child(
-        div()
-            .flex()
-            .items_center()
-            .gap(px(8.))
-            .pl(px(14.))
-            .py(px(10.))
-            .text_size(ts(16.))
-            .text_color(t.faint)
-            .child(icon("plus", 16., t.faint))
-            .child("Add section"),
-    );
+    col = col.child(crate::organize::add_section(app, project_id, t, cx));
     div()
         .flex()
         .flex_col()
@@ -515,6 +531,23 @@ pub fn project_list(
         .child(header)
         .child(scroll_body("project-list").child(col))
         .into_any_element()
+}
+
+/// A row and its subtasks, with the drop line when a dragged row would land next to it.
+fn marked_tree(
+    app: &AtlasApp,
+    task: &Task,
+    opts: &RowOpts,
+    marker: &Option<crate::organize::Marker>,
+    t: &Theme,
+    cx: &mut Context<AtlasApp>,
+) -> AnyElement {
+    let tree = div()
+        .flex()
+        .flex_col()
+        .children(task_tree(app, task, opts, t, cx))
+        .into_any_element();
+    crate::organize::with_marker(tree, &task.id, marker, 0., t)
 }
 
 fn toolbar(t: &Theme) -> gpui::Div {
@@ -875,12 +908,17 @@ pub fn projects(app: &mut AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> An
                 None,
                 "Projects",
                 div()
+                    .id("new-project")
                     .flex()
                     .items_center()
                     .gap(px(6.))
                     .px(px(10.))
                     .py(px(6.))
                     .rounded(px(6.))
+                    .cursor_pointer()
+                    .on_click(cx.listener(|this, _: &ClickEvent, window, cx| {
+                        this.open_project_sheet(None, window, cx)
+                    }))
                     .bg(t.accent)
                     .text_color(t.on_accent)
                     .text_size(ts(15.))

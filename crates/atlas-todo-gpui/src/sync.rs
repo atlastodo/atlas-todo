@@ -58,6 +58,8 @@ pub enum Command {
         kind: String,
         id: String,
     },
+    /// Several tasks' fields at once (a card move re-ranks its neighbours): one snapshot after.
+    UpdateTasks(Vec<(String, Vec<(String, Value)>)>),
 }
 
 /// How the window signs in.
@@ -325,6 +327,11 @@ fn apply(client: &mut TodoClient, cmd: Command) -> Result<(), String> {
                 now,
             );
             client.push().map_err(err)?;
+        }
+        Command::UpdateTasks(patches) => {
+            for (id, patch) in patches {
+                client.update_task(&id, patch).map_err(err)?;
+            }
         }
         Command::DeleteTask(id) => {
             client.delete_task(&id).map_err(err)?;
