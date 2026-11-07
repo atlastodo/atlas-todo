@@ -33,6 +33,8 @@ gpui_platform = { package = "gpui-pre-platform", version = "=0.3.11", features =
 gpui_wgpu = { package = "gpui-pre-wgpu", version = "=0.3.11", optional = true }
 image = { version = "0.25", default-features = false, features = ["png"] }
 ksni = { version = "0.3", default-features = false, features = ["blocking", "async-io"] }
+# Desktop notifications (reminders, the focus timer's phase ends) over D-Bus, on the pure-Rust zbus.
+notify-rust = { version = "4.18", default-features = false, features = ["z"] }
 
 [features]
 # `--screenshot`: render a screen offscreen through GPUI's headless wgpu renderer into a PNG

@@ -534,6 +534,7 @@ dependencies = [
  "jiff",
  "keyring",
  "ksni",
+ "notify-rust",
  "rust-embed",
  "serde",
  "serde_json",
