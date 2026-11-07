@@ -153,12 +153,20 @@ impl AtlasApp {
     }
 
     pub fn theme(&self, window: &Window) -> Theme {
-        let dark = self.force_dark.unwrap_or_else(|| {
+        // `--dark`/`--light`, else the synced `theme` preference, else the system's.
+        let system = || {
             matches!(
                 window.appearance(),
                 gpui::WindowAppearance::Dark | gpui::WindowAppearance::VibrantDark
             )
-        });
+        };
+        let dark =
+            self.force_dark
+                .unwrap_or_else(|| match self.pref("theme").and_then(|v| v.as_str()) {
+                    Some("dark") => true,
+                    Some("light") => false,
+                    _ => system(),
+                });
         if dark {
             Theme::dark()
         } else {
@@ -211,6 +219,37 @@ impl AtlasApp {
             snap.linger.remove(id);
         }
         self.send(Command::Toggle(id.to_owned()));
+        cx.notify();
+    }
+
+    /// Change a task's fields; the next snapshot shows the result.
+    #[allow(dead_code)] // the editing screens' write path
+    pub fn update_task(
+        &mut self,
+        id: &str,
+        patch: Vec<(String, serde_json::Value)>,
+        cx: &mut Context<Self>,
+    ) {
+        self.send(Command::UpdateTask(id.to_owned(), patch));
+        cx.notify();
+    }
+
+    /// A synced preference (`theme`, `week_starts_on`, `favorites`, …).
+    pub fn pref(&self, field: &str) -> Option<&serde_json::Value> {
+        self.snap.prefs.get(field)
+    }
+
+    /// Set a synced preference, at once here and on the server.
+    #[allow(dead_code)] // the settings and favorites write path
+    pub fn set_pref(&mut self, field: &str, value: serde_json::Value, cx: &mut Context<Self>) {
+        Rc::make_mut(&mut self.snap)
+            .prefs
+            .insert(field.to_owned(), value.clone());
+        self.send(Command::SetFields {
+            kind: "preference".into(),
+            id: crate::model::PREFERENCES_ID.into(),
+            fields: vec![(field.to_owned(), value)],
+        });
         cx.notify();
     }
 

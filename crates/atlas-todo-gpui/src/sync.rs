@@ -12,12 +12,15 @@ use atlas_todo_rules::client::TodoClient;
 use jiff::civil::Date;
 use serde_json::Value;
 
+use atlas_todo_rules::rules::task::{create_task, CreateTaskInput};
+
 use crate::model::{Snapshot, SyncState};
 
 /// How often the worker pulls when nothing happens.
 const POLL: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // the write paths the editing screens use as they arrive
 pub enum Command {
     /// Complete an open task, reopen a completed one.
     Toggle(String),
@@ -32,6 +35,29 @@ pub enum Command {
     ToggleHabit(String, Date),
     /// End the session (on the server for a password sign-in) and forget it.
     SignOut,
+    /// Change a task's fields (`update_task` of the shared rules: activity, recurrence, scope).
+    UpdateTask(String, Vec<(String, Value)>),
+    /// A new task, with every field the shared `create_task` takes (section, parent, dates, …).
+    CreateTask(CreateTaskInput),
+    /// Move a task to the trash, as the app's delete does.
+    DeleteTask(String),
+    /// Raw field writes to one entity of any kind (habit, section, project, preference,
+    /// focus_session, …), for what the shared rules have no function for yet.
+    SetFields {
+        kind: String,
+        id: String,
+        fields: Vec<(String, Value)>,
+    },
+    /// A new entity of `kind` with these fields (the worker makes its id).
+    CreateEntity {
+        kind: String,
+        fields: Vec<(String, Value)>,
+    },
+    /// Tombstone an entity.
+    RemoveEntity {
+        kind: String,
+        id: String,
+    },
 }
 
 /// How the window signs in.
@@ -285,6 +311,43 @@ fn apply(client: &mut TodoClient, cmd: Command) -> Result<(), String> {
                 .map_err(err)?;
         }
         Command::SignOut => {}
+        Command::UpdateTask(id, patch) => {
+            client.update_task(&id, patch).map_err(err)?;
+        }
+        Command::CreateTask(input) => {
+            let (tz, now) = (client.time_zone().clone(), client.now());
+            let user = client.user_id().to_owned();
+            create_task(
+                &mut client.session_mut().store,
+                &input,
+                Some(&user),
+                &tz,
+                now,
+            );
+            client.push().map_err(err)?;
+        }
+        Command::DeleteTask(id) => {
+            client.delete_task(&id).map_err(err)?;
+        }
+        Command::SetFields { kind, id, fields } => {
+            let store = &mut client.session_mut().store;
+            for (field, value) in fields {
+                store.set(kind.as_str(), &id, &field, value);
+            }
+            client.push().map_err(err)?;
+        }
+        Command::CreateEntity { kind, fields } => {
+            let store = &mut client.session_mut().store;
+            let id = store.new_entity_id();
+            for (field, value) in fields {
+                store.set(kind.as_str(), &id, &field, value);
+            }
+            client.push().map_err(err)?;
+        }
+        Command::RemoveEntity { kind, id } => {
+            client.session_mut().store.remove(kind.as_str(), &id);
+            client.push().map_err(err)?;
+        }
         Command::ToggleHabit(habit, date) => {
             let key = date.to_string();
             let store = &mut client.session_mut().store;

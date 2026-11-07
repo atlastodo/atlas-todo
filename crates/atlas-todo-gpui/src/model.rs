@@ -72,7 +72,13 @@ pub struct Snapshot {
     pub sync: SyncState,
     /// Just completed here: still listed for a moment while the row fades out.
     pub linger: HashSet<String>,
+    /// The synced preferences (`preference` entity [`PREFERENCES_ID`]): theme, accent,
+    /// week_starts_on, time_format, favorites, list_prefs, feature toggles, …
+    pub prefs: Map<String, Value>,
 }
+
+/// The one `preference` entity's id (`PREFERENCES_ID` in `packages/todo-core/src/ids.ts`).
+pub const PREFERENCES_ID: &str = "00000000-0000-4000-8000-000000000001";
 
 fn f64_field(f: &Map<String, Value>, k: &str) -> f64 {
     f.get(k).and_then(Value::as_f64).unwrap_or(0.0)
@@ -107,6 +113,7 @@ impl Snapshot {
             comments: Vec::new(),
             sync,
             linger: HashSet::new(),
+            prefs: Map::new(),
         }
     }
 
@@ -225,6 +232,7 @@ impl Snapshot {
             comments,
             sync,
             linger: HashSet::new(),
+            prefs: store.get("preference", PREFERENCES_ID).unwrap_or_default(),
         }
     }
 

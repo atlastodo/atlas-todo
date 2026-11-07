@@ -111,7 +111,20 @@ pub fn task_detail(
                 .flex()
                 .items_center()
                 .gap(px(20.))
-                .child(icon("ellipsis", 20., t.muted))
+                .child(
+                    div()
+                        .id("detail-delete")
+                        .cursor_pointer()
+                        .on_click(cx.listener({
+                            let id = task.id.clone();
+                            move |this, _: &ClickEvent, _, cx| {
+                                this.send(Command::DeleteTask(id.clone()));
+                                this.open_task = None;
+                                cx.notify();
+                            }
+                        }))
+                        .child(icon("trash", 19., t.muted)),
+                )
                 .child(
                     div()
                         .id("detail-close")
