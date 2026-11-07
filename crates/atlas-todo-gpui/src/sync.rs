@@ -293,12 +293,14 @@ fn apply(client: &mut TodoClient, cmd: Command) -> Result<(), String> {
         } => {
             let made = client.quick_add(&text).map_err(err)?;
             let mut patch = Vec::new();
+            // The list's section, unless a typed `#project` put the task elsewhere.
+            let here = made.task.project_id.is_none() || made.task.project_id == project_id;
             if made.task.project_id.is_none() {
                 if let Some(p) = project_id {
                     patch.push(("project_id".to_owned(), Value::from(p)));
                 }
             }
-            if let Some(s) = section_id {
+            if let Some(s) = section_id.filter(|_| here) {
                 patch.push(("section_id".to_owned(), Value::from(s)));
             }
             if !patch.is_empty() {
