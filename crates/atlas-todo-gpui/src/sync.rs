@@ -275,6 +275,41 @@ fn run(account: Account, rx: Receiver<Command>, updates: async_channel::Sender<U
     }
 }
 
+/// Whether a project is shared (has member rows): its tasks are encrypted under its own key.
+fn is_shared(client: &TodoClient, project_id: Option<&str>) -> bool {
+    let Some(project) = project_id.filter(|p| !p.is_empty()) else {
+        return false;
+    };
+    client
+        .session()
+        .store
+        .list("project_member")
+        .iter()
+        .any(|m| m.fields.get("project_id").and_then(Value::as_str) == Some(project))
+}
+
+/// Refuse moving a task into or out of a shared project. The web app re-encrypts the task and what
+/// links to it under the new scope (`rescopeTask`); core's Rust client cannot do that yet, and a move
+/// without it would leave the task unreadable to the project's members.
+fn refuse_shared_move(
+    client: &TodoClient,
+    id: &str,
+    patch: &[(String, Value)],
+) -> Result<(), String> {
+    let Some((_, to)) = patch.iter().find(|(k, _)| k == "project_id") else {
+        return Ok(());
+    };
+    let from = client.task(id).and_then(|t| t.task.project_id);
+    let to = to.as_str().filter(|s| !s.is_empty()).map(str::to_owned);
+    if from == to {
+        return Ok(());
+    }
+    if is_shared(client, from.as_deref()) || is_shared(client, to.as_deref()) {
+        return Err("Moving a task into or out of a shared project isn't possible in the desktop app yet; use the web or mobile app for that move.".into());
+    }
+    Ok(())
+}
+
 fn apply(client: &mut TodoClient, cmd: Command) -> Result<(), String> {
     let err = |e: atlas_client::error::Error| e.to_string();
     match cmd {
@@ -314,6 +349,7 @@ fn apply(client: &mut TodoClient, cmd: Command) -> Result<(), String> {
         }
         Command::SignOut => {}
         Command::UpdateTask(id, patch) => {
+            refuse_shared_move(client, &id, &patch)?;
             client.update_task(&id, patch).map_err(err)?;
         }
         Command::CreateTask(input) => {
