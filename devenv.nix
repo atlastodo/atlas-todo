@@ -25,6 +25,22 @@ let
       echo "   shows the sign-in screen's server field." >&2
     fi
   '';
+  # The GPUI desktop experiment (crates/atlas-todo-gpui) links these and loads some at run time
+  # (Vulkan, Wayland, xkbcommon); only the gpui:* scripts put them on the paths.
+  gpuiLibs = with pkgs; [ fontconfig freetype libxkbcommon wayland libxcb libx11 vulkan-loader alsa-lib openssl zstd ];
+  gpuiEnv = ''
+    export PKG_CONFIG_PATH="${lib.makeSearchPathOutput "dev" "lib/pkgconfig" gpuiLibs}''${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    export LIBRARY_PATH="${lib.makeLibraryPath gpuiLibs}''${LIBRARY_PATH:+:$LIBRARY_PATH}"
+    export LD_LIBRARY_PATH="${lib.makeLibraryPath gpuiLibs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    # A machine without the system's graphics drivers (no hardware.graphics on NixOS) gets Mesa's
+    # Vulkan drivers, fetched on first use (from the flake's nixpkgs).
+    if [ ! -d /run/opengl-driver/share/vulkan ] && [ -z "''${VK_ICD_FILENAMES:-}" ]; then
+      mesa="$(nix build --inputs-from "$DEVENV_ROOT" --no-link --print-out-paths 'nixpkgs#mesa^out')"
+      VK_ICD_FILENAMES="$(printf '%s:' "$mesa"/share/vulkan/icd.d/*.json)"
+      export VK_ICD_FILENAMES="''${VK_ICD_FILENAMES%:}"
+    fi
+    cd "$DEVENV_ROOT"
+  '';
   # The electron the desktop builds run (nix/electron.nix): nixpkgs' or a pinned newer release.
   electron = pkgs.callPackage ./nix/electron.nix { };
 in
@@ -80,6 +96,7 @@ in
     git
     curl
     cargo-nextest
+    pkg-config
     # Desktop tooling
     electron
   ];
@@ -166,6 +183,19 @@ in
     env -u LD_LIBRARY_PATH CHROMIUM="$chromium" BASE_URL=http://localhost:8090 node scripts/screenshots.mjs
     nix run --inputs-from . nixpkgs#pngquant -- --force --ext .png --quality 80-95 --skip-if-larger docs/screenshots/*.png
   '';
+  # `gpui:dev` -- the experimental native desktop app on GPUI (crates/atlas-todo-gpui), against
+  # ATLAS_SERVER/ATLAS_TOKEN or --server/--token (an API token from Settings), or its sign-in
+  # screen. Not built by test:all, lint or CI.
+  scripts."gpui:dev".exec = gpuiEnv + ''
+    cargo run --release -p atlas-todo-gpui -- "$@"
+  '';
+  # `gpui:screenshot OUT.png --server URL --token TOKEN [--view VIEW] [--task TITLE] [--dark]` --
+  # render one screen offscreen through GPUI's headless wgpu renderer, at the size of the README's
+  # desktop shots (1280x800 at 2x).
+  scripts."gpui:screenshot".exec = gpuiEnv + ''
+    out="$1"; shift
+    cargo run --release -p atlas-todo-gpui --features screenshots -- --screenshot "$out" "$@"
+  '';
   # Named test:all -- a script called "test" collides with the shell builtin, so `devenv shell
   # test` silently exits 0 instead of running this.
   # `set -e` so any failing step fails the script, not just the last one.
@@ -173,7 +203,7 @@ in
     set -euo pipefail
     cd "$DEVENV_ROOT"
     # `--bun` runs vitest itself under Bun's runtime (supported since Bun 1.4), matching CI.
-    cargo nextest run --workspace
+    cargo nextest run --workspace --exclude atlas-todo-gpui
     (cd packages/todo-core && bunx --bun vitest run)
     (cd apps/electron && bunx --bun vitest run)
     # jest-expo must run under real Node (`bun run` only starts it).
@@ -187,7 +217,7 @@ in
     set -euo pipefail
     cd "$DEVENV_ROOT"
     cargo fmt --all -- --check
-    cargo clippy --workspace --all-targets --no-deps -- -D warnings
+    cargo clippy --workspace --exclude atlas-todo-gpui --all-targets --no-deps -- -D warnings
     (cd packages/todo-core && bun run typecheck)
     (cd apps/mobile && bun run typecheck)
     (cd apps/electron && bun run typecheck)

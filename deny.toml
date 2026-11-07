@@ -5,6 +5,10 @@
 # Disallowed licences, untrusted sources and security advisories all fail the check. Exempt a known
 # advisory in `ignore` only with a written rationale; never disable a whole check.
 
+[graph]
+# The GPUI desktop experiment ships in no release; its dependency tree stays out of the audit.
+exclude = ["atlas-todo-gpui"]
+
 [advisories]
 ignore = []
 

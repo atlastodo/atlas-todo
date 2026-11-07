@@ -2,7 +2,7 @@
 // Run it through the `screenshots` devenv script, which starts a throwaway server and database. The
 // past days of habit check-ins, completed tasks and focus sessions are made by moving the browser's
 // clock, so the habits and stats screens have history.
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromium } from "playwright-core";
@@ -60,7 +60,13 @@ async function open(layout, colorScheme = "light") {
     ...layout,
   });
   if (layout === PHONE) await ctx.addInitScript(coarsePointer);
-  return { ctx, page: ctx.pages()[0] ?? (await ctx.newPage()) };
+  const page = ctx.pages()[0] ?? (await ctx.newPage());
+  // The web app's first-run dialogs (the recovery phrase, then the permission explainers: keep
+  // data on this device, reminders) open over the page on their own schedule; dismiss them
+  // whenever one covers the next action.
+  await page.addLocatorHandler(page.getByText("I have saved my recovery phrase"), (b) => b.click());
+  await page.addLocatorHandler(page.getByText("Not now", { exact: true }), (b) => b.click());
+  return { ctx, page };
 }
 
 const pause = (page, ms = 1500) => page.waitForTimeout(ms);
@@ -73,9 +79,23 @@ async function save(page, name) {
   console.log(`saved ${name}.png`);
 }
 
+/**
+ * A list's quick-add field: the input once it is open, else the "Add a task..." row that opens it.
+ */
+const addTaskField = (page) => () =>
+  page
+    .getByPlaceholder(/Add a task/)
+    .filter({ visible: true })
+    .or(page.getByText(/^Add a task/))
+    .first();
+
 async function addTasks(page, field, titles) {
   for (const title of titles) {
-    await field().click();
+    // A dismissed dialog's transparent backdrop can linger once the clock has been moved; the
+    // field under it still takes focus.
+    await field()
+      .click({ timeout: 5_000 })
+      .catch(() => field().focus());
     await page.keyboard.type(title);
     await page.keyboard.press("Enter");
     await pause(page, 500);
@@ -136,7 +156,7 @@ async function seedProjects(page) {
     "Update social profiles",
   ]);
 
-  const anyTask = () => page.getByPlaceholder(/Add a task/).first();
+  const anyTask = addTaskField(page);
   await page.goto(urls["Home"]);
   await addTasks(page, anyTask, [
     "Pay the electricity bill today p1",
@@ -181,6 +201,14 @@ async function seedTaskDetail(page, projectUrl) {
   await pause(page);
 }
 
+/**
+ * Click, or once the clock has been moved and a navigation layer lingers over the page, fire the
+ * click on the element itself (react-native-web presses on `click`).
+ */
+async function press(locator) {
+  await locator.click({ timeout: 5_000 }).catch(() => locator.dispatchEvent("click"));
+}
+
 /** Three weeks of habit check-ins, completed chores and focus sessions, one browser day at a time. */
 async function seedHistory(page) {
   const morning = new Date();
@@ -190,9 +218,9 @@ async function seedHistory(page) {
 
   await page.goto(`${BASE}/habits`);
   for (const name of HABITS) {
-    await page.getByText("Add habit", { exact: true }).first().click();
+    await press(page.getByText("Add habit", { exact: true }).first());
     await page.getByPlaceholder("e.g. Meditate").fill(name);
-    await page.getByText("Add", { exact: true }).last().click();
+    await press(page.getByText("Add", { exact: true }).last());
     await pause(page, 1000);
   }
 
@@ -205,7 +233,7 @@ async function seedHistory(page) {
     for (const [i, name] of HABITS.entries()) {
       const toggle = page.getByLabel(`Mark ${name} done today`);
       if (done[i] && (await toggle.count())) {
-        await toggle.first().click();
+        await press(toggle.first());
         await pause(page, 250);
       }
     }
@@ -215,22 +243,22 @@ async function seedHistory(page) {
     const n = 1 + ((d * 7) % 4);
     await addTasks(
       page,
-      () => page.getByPlaceholder(/Add a task/).first(),
+      addTaskField(page),
       Array.from({ length: n }, (_, i) => CHORES[(d + i) % CHORES.length]),
     );
     for (let i = 0; i < n; i++) {
-      await page.getByLabel("Complete task").first().click();
+      await press(page.getByLabel("Complete task").first());
       await pause(page, 700);
     }
 
     if (d <= 6 && d !== 4) {
       await page.goto(`${BASE}/focus`);
       for (let i = 0; i < 1 + (d % 3); i++) {
-        await page.getByText("Start focus").first().click();
+        await press(page.getByText("Start focus").first());
         await page.clock.runFor(25 * 60_000 + 2000);
         await pause(page, 1200);
         // A finished session queues a break; skip it so the next one is a focus session again.
-        await page.getByText("Skip phase").first().click();
+        await press(page.getByText("Skip phase").first());
         await pause(page, 400);
       }
     }
@@ -238,8 +266,20 @@ async function seedHistory(page) {
   }
   // Leave focus mode, or its floating bar shows on every screen.
   await page.goto(`${BASE}/focus`);
-  await page.getByText("Stop focus").first().click();
+  await press(page.getByText("Stop focus").first());
   await pause(page, 3000);
+}
+
+/** An API token, written to TOKEN_FILE: the GPUI desktop app signs in with one (`gpui:screenshot`). */
+async function mintToken(page, file) {
+  await page.goto(`${BASE}/settings?section=apiTokens`);
+  await page.getByLabel("Create token", { exact: true }).click();
+  await page.getByPlaceholder("e.g. n8n at home").fill("GPUI desktop");
+  await page.getByText("Create", { exact: true }).last().click();
+  const token = (await page.getByTestId("api-token-value").textContent({ timeout: 30_000 })).trim();
+  writeFileSync(file, token);
+  await page.getByText("Done", { exact: true }).last().click();
+  console.log(`wrote an API token to ${file}`);
 }
 
 async function captureDesktop(page, urls, prefix = "") {
@@ -289,6 +329,12 @@ try {
   ({ ctx, page } = await open(DESKTOP));
   await seedHistory(page);
   await ctx.close();
+
+  if (process.env.TOKEN_FILE) {
+    ({ ctx, page } = await open(DESKTOP));
+    await mintToken(page, process.env.TOKEN_FILE);
+    await ctx.close();
+  }
 
   ({ ctx, page } = await open(DESKTOP));
   await captureDesktop(page, urls);

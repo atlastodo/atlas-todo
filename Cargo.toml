@@ -1,6 +1,9 @@
 [workspace]
 resolver = "2"
-members = ["crates/atlas-todo-rules", "crates/atlas-todo-cli"]
+members = ["crates/atlas-todo-rules", "crates/atlas-todo-cli", "crates/atlas-todo-gpui"]
+# The GPUI desktop app is an experiment with heavy native dependencies (Vulkan, Wayland, X11): plain
+# `cargo` commands, `test:all`, `lint` and CI leave it out (`--exclude atlas-todo-gpui`).
+default-members = ["crates/atlas-todo-rules", "crates/atlas-todo-cli"]
 
 [workspace.package]
 version = "0.1.18"
@@ -12,8 +15,10 @@ rust-version = "1.94"
 
 [workspace.dependencies]
 # Atlas core's engine, from a core release tag (scripts/update-deps.sh moves it with the npm pin).
-atlas-client = { git = "https://github.com/atlastodo/atlas", tag = "v0.1.15" }
-atlas-core = { git = "https://github.com/atlastodo/atlas", tag = "v0.1.15" }
+# TEMPORARY (GPUI experiment): core's password sign-in (atlastodo/atlas#123), unreleased; back to
+# the core release tag (deps:update) once it ships.
+atlas-client = { git = "https://github.com/atlastodo/atlas", branch = "feat/client-password-login" }
+atlas-core = { git = "https://github.com/atlastodo/atlas", branch = "feat/client-password-login" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 uuid = { version = "1", features = ["v4", "v7", "serde"] }
@@ -40,3 +45,4 @@ opt-level = 3
 
 [profile.dev.package.hmac]
 opt-level = 3
+

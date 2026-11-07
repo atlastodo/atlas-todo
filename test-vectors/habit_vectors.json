@@ -1,0 +1,2748 @@
+{
+  "description": "Habit rules (packages/todo-core/src/habits.ts and habitGroups.ts), asserted by packages/todo-core/src/habitVectors.test.ts and crates/atlas-todo-rules/src/rules/vectors.rs. Days are local date keys: a habit's `created` stands for `created_at` at local noon of that day. To add a case, add its inputs and copy the values the TypeScript test reports into `expected`.",
+  "habits": [
+    {
+      "name": "daily: a skip bridges the streak, today still open",
+      "habit": {
+        "goal_kind": "daily",
+        "days": [],
+        "target": 1,
+        "created": "2026-07-06"
+      },
+      "checkins": {
+        "2026-07-06": "done",
+        "2026-07-07": "done",
+        "2026-07-08": "done",
+        "2026-07-09": "done",
+        "2026-07-10": "done",
+        "2026-07-11": "skip",
+        "2026-07-12": "done"
+      },
+      "today": "2026-07-13",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-06",
+      "expected": {
+        "current_streak": 6,
+        "best_streak": 6,
+        "total_checkins": 6,
+        "completion_rate": {
+          "periods": 6,
+          "met": 6
+        },
+        "next_due": "2026-07-13",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-13",
+          "to": "2026-07-13",
+          "scheduled": ["2026-07-13"],
+          "goal": 1,
+          "done": 0,
+          "skipped": 0,
+          "target": 1,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-06",
+            "scheduled": ["2026-07-06"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-07",
+            "to": "2026-07-07",
+            "scheduled": ["2026-07-07"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-08",
+            "to": "2026-07-08",
+            "scheduled": ["2026-07-08"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-09",
+            "to": "2026-07-09",
+            "scheduled": ["2026-07-09"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-10",
+            "to": "2026-07-10",
+            "scheduled": ["2026-07-10"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-11",
+            "to": "2026-07-11",
+            "scheduled": ["2026-07-11"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 1,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-12",
+            "to": "2026-07-12",
+            "scheduled": ["2026-07-12"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-13",
+            "to": "2026-07-13",
+            "scheduled": ["2026-07-13"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 1,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-06-30",
+          "2026-07-01",
+          "2026-07-02",
+          "2026-07-03",
+          "2026-07-04",
+          "2026-07-05",
+          "2026-07-06",
+          "2026-07-07",
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-18",
+          "2026-07-19",
+          "2026-07-20"
+        ],
+        "strength": 0.2737885719428377
+      }
+    },
+    {
+      "name": "daily: a missed day breaks the streak, the best run is kept",
+      "habit": {
+        "goal_kind": "daily",
+        "days": [],
+        "target": 1,
+        "created": "2026-07-01"
+      },
+      "checkins": {
+        "2026-07-01": "done",
+        "2026-07-02": "done",
+        "2026-07-03": "done",
+        "2026-07-04": "done",
+        "2026-07-06": "done",
+        "2026-07-07": "done"
+      },
+      "today": "2026-07-07",
+      "week_starts_on": 0,
+      "rate_from": "2026-07-01",
+      "expected": {
+        "current_streak": 2,
+        "best_streak": 4,
+        "total_checkins": 6,
+        "completion_rate": {
+          "periods": 7,
+          "met": 6
+        },
+        "next_due": "2026-07-08",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-07",
+          "to": "2026-07-07",
+          "scheduled": ["2026-07-07"],
+          "goal": 1,
+          "done": 1,
+          "skipped": 0,
+          "target": 1,
+          "met": true,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-01",
+            "to": "2026-07-01",
+            "scheduled": ["2026-07-01"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-02",
+            "to": "2026-07-02",
+            "scheduled": ["2026-07-02"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-03",
+            "to": "2026-07-03",
+            "scheduled": ["2026-07-03"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-04",
+            "to": "2026-07-04",
+            "scheduled": ["2026-07-04"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-05",
+            "to": "2026-07-05",
+            "scheduled": ["2026-07-05"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 1,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-06",
+            "scheduled": ["2026-07-06"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-07",
+            "to": "2026-07-07",
+            "scheduled": ["2026-07-07"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-06-24",
+          "2026-06-25",
+          "2026-06-26",
+          "2026-06-27",
+          "2026-06-28",
+          "2026-06-29",
+          "2026-06-30",
+          "2026-07-01",
+          "2026-07-02",
+          "2026-07-03",
+          "2026-07-04",
+          "2026-07-05",
+          "2026-07-06",
+          "2026-07-07",
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14"
+        ],
+        "strength": 0.2648246976358982
+      }
+    },
+    {
+      "name": "daily on Mon/Wed/Fri: off days neither count nor break",
+      "habit": {
+        "goal_kind": "daily",
+        "days": [1, 3, 5],
+        "target": 1,
+        "created": "2026-07-06"
+      },
+      "checkins": {
+        "2026-07-06": "done",
+        "2026-07-08": "done",
+        "2026-07-10": "done",
+        "2026-07-13": "done",
+        "2026-07-15": "skip",
+        "2026-07-17": "done"
+      },
+      "today": "2026-07-19",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-06",
+      "expected": {
+        "current_streak": 5,
+        "best_streak": 5,
+        "total_checkins": 5,
+        "completion_rate": {
+          "periods": 5,
+          "met": 5
+        },
+        "next_due": "2026-07-20",
+        "is_active_today": false,
+        "current_period": {
+          "from": "2026-07-19",
+          "to": "2026-07-19",
+          "scheduled": [],
+          "goal": 1,
+          "done": 0,
+          "skipped": 0,
+          "target": 0,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-06",
+            "scheduled": ["2026-07-06"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-07",
+            "to": "2026-07-07",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-08",
+            "to": "2026-07-08",
+            "scheduled": ["2026-07-08"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-09",
+            "to": "2026-07-09",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-10",
+            "to": "2026-07-10",
+            "scheduled": ["2026-07-10"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-11",
+            "to": "2026-07-11",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-12",
+            "to": "2026-07-12",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-13",
+            "to": "2026-07-13",
+            "scheduled": ["2026-07-13"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-14",
+            "to": "2026-07-14",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-15",
+            "to": "2026-07-15",
+            "scheduled": ["2026-07-15"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 1,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-16",
+            "to": "2026-07-16",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-17",
+            "to": "2026-07-17",
+            "scheduled": ["2026-07-17"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-18",
+            "to": "2026-07-18",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-19",
+            "to": "2026-07-19",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-07-06",
+          "2026-07-08",
+          "2026-07-10",
+          "2026-07-13",
+          "2026-07-15",
+          "2026-07-17",
+          "2026-07-20",
+          "2026-07-22",
+          "2026-07-24"
+        ],
+        "strength": 0.1601461923520303
+      }
+    },
+    {
+      "name": "daily on weekdays: a missed Wednesday",
+      "habit": {
+        "goal_kind": "daily",
+        "days": [1, 2, 3, 4, 5],
+        "target": 1,
+        "created": "2026-07-06"
+      },
+      "checkins": {
+        "2026-07-06": "done",
+        "2026-07-07": "done",
+        "2026-07-09": "done",
+        "2026-07-10": "done",
+        "2026-07-13": "done"
+      },
+      "today": "2026-07-14",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-06",
+      "expected": {
+        "current_streak": 3,
+        "best_streak": 3,
+        "total_checkins": 5,
+        "completion_rate": {
+          "periods": 6,
+          "met": 5
+        },
+        "next_due": "2026-07-14",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-14",
+          "to": "2026-07-14",
+          "scheduled": ["2026-07-14"],
+          "goal": 1,
+          "done": 0,
+          "skipped": 0,
+          "target": 1,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-06",
+            "scheduled": ["2026-07-06"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-07",
+            "to": "2026-07-07",
+            "scheduled": ["2026-07-07"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-08",
+            "to": "2026-07-08",
+            "scheduled": ["2026-07-08"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 1,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-09",
+            "to": "2026-07-09",
+            "scheduled": ["2026-07-09"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-10",
+            "to": "2026-07-10",
+            "scheduled": ["2026-07-10"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-11",
+            "to": "2026-07-11",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-12",
+            "to": "2026-07-12",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-13",
+            "to": "2026-07-13",
+            "scheduled": ["2026-07-13"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-14",
+            "to": "2026-07-14",
+            "scheduled": ["2026-07-14"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 1,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-07-01",
+          "2026-07-02",
+          "2026-07-03",
+          "2026-07-06",
+          "2026-07-07",
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-20",
+          "2026-07-21"
+        ],
+        "strength": 0.19841715863373668
+      }
+    },
+    {
+      "name": "weekly 3x from Monday: met weeks, a short week after a skip, this week in progress",
+      "habit": {
+        "goal_kind": "weekly",
+        "days": [],
+        "target": 3,
+        "created": "2026-07-06"
+      },
+      "checkins": {
+        "2026-07-06": "done",
+        "2026-07-08": "done",
+        "2026-07-10": "done",
+        "2026-07-13": "done",
+        "2026-07-14": "skip",
+        "2026-07-15": "skip",
+        "2026-07-16": "skip",
+        "2026-07-17": "skip",
+        "2026-07-18": "done",
+        "2026-07-21": "done"
+      },
+      "today": "2026-07-22",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-06",
+      "expected": {
+        "current_streak": 0,
+        "best_streak": 1,
+        "total_checkins": 6,
+        "completion_rate": {
+          "periods": 2,
+          "met": 1
+        },
+        "next_due": "2026-07-22",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-20",
+          "to": "2026-07-26",
+          "scheduled": [
+            "2026-07-20",
+            "2026-07-21",
+            "2026-07-22",
+            "2026-07-23",
+            "2026-07-24",
+            "2026-07-25",
+            "2026-07-26"
+          ],
+          "goal": 3,
+          "done": 1,
+          "skipped": 0,
+          "target": 3,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-12",
+            "scheduled": [
+              "2026-07-06",
+              "2026-07-07",
+              "2026-07-08",
+              "2026-07-09",
+              "2026-07-10",
+              "2026-07-11",
+              "2026-07-12"
+            ],
+            "goal": 3,
+            "done": 3,
+            "skipped": 0,
+            "target": 3,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-13",
+            "to": "2026-07-19",
+            "scheduled": [
+              "2026-07-13",
+              "2026-07-14",
+              "2026-07-15",
+              "2026-07-16",
+              "2026-07-17",
+              "2026-07-18",
+              "2026-07-19"
+            ],
+            "goal": 3,
+            "done": 2,
+            "skipped": 4,
+            "target": 3,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-20",
+            "to": "2026-07-26",
+            "scheduled": [
+              "2026-07-20",
+              "2026-07-21",
+              "2026-07-22",
+              "2026-07-23",
+              "2026-07-24",
+              "2026-07-25",
+              "2026-07-26"
+            ],
+            "goal": 3,
+            "done": 1,
+            "skipped": 0,
+            "target": 3,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-18",
+          "2026-07-19",
+          "2026-07-20",
+          "2026-07-21",
+          "2026-07-22",
+          "2026-07-23",
+          "2026-07-24",
+          "2026-07-25",
+          "2026-07-26",
+          "2026-07-27",
+          "2026-07-28",
+          "2026-07-29"
+        ],
+        "strength": 0.16978499652471044
+      }
+    },
+    {
+      "name": "weekly 3x from Sunday: the same days redrawn into other weeks",
+      "habit": {
+        "goal_kind": "weekly",
+        "days": [],
+        "target": 3,
+        "created": "2026-07-06"
+      },
+      "checkins": {
+        "2026-07-06": "done",
+        "2026-07-08": "done",
+        "2026-07-10": "done",
+        "2026-07-13": "done",
+        "2026-07-14": "skip",
+        "2026-07-15": "skip",
+        "2026-07-16": "skip",
+        "2026-07-17": "skip",
+        "2026-07-18": "done",
+        "2026-07-21": "done"
+      },
+      "today": "2026-07-22",
+      "week_starts_on": 0,
+      "rate_from": "2026-07-06",
+      "expected": {
+        "current_streak": 0,
+        "best_streak": 1,
+        "total_checkins": 6,
+        "completion_rate": {
+          "periods": 2,
+          "met": 1
+        },
+        "next_due": "2026-07-22",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-19",
+          "to": "2026-07-25",
+          "scheduled": [
+            "2026-07-19",
+            "2026-07-20",
+            "2026-07-21",
+            "2026-07-22",
+            "2026-07-23",
+            "2026-07-24",
+            "2026-07-25"
+          ],
+          "goal": 3,
+          "done": 1,
+          "skipped": 0,
+          "target": 3,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-05",
+            "to": "2026-07-11",
+            "scheduled": [
+              "2026-07-05",
+              "2026-07-06",
+              "2026-07-07",
+              "2026-07-08",
+              "2026-07-09",
+              "2026-07-10",
+              "2026-07-11"
+            ],
+            "goal": 3,
+            "done": 3,
+            "skipped": 0,
+            "target": 3,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-12",
+            "to": "2026-07-18",
+            "scheduled": [
+              "2026-07-12",
+              "2026-07-13",
+              "2026-07-14",
+              "2026-07-15",
+              "2026-07-16",
+              "2026-07-17",
+              "2026-07-18"
+            ],
+            "goal": 3,
+            "done": 2,
+            "skipped": 4,
+            "target": 3,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-19",
+            "to": "2026-07-25",
+            "scheduled": [
+              "2026-07-19",
+              "2026-07-20",
+              "2026-07-21",
+              "2026-07-22",
+              "2026-07-23",
+              "2026-07-24",
+              "2026-07-25"
+            ],
+            "goal": 3,
+            "done": 1,
+            "skipped": 0,
+            "target": 3,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-18",
+          "2026-07-19",
+          "2026-07-20",
+          "2026-07-21",
+          "2026-07-22",
+          "2026-07-23",
+          "2026-07-24",
+          "2026-07-25",
+          "2026-07-26",
+          "2026-07-27",
+          "2026-07-28",
+          "2026-07-29"
+        ],
+        "strength": 0.16978499652471044
+      }
+    },
+    {
+      "name": "weekly 2x: a week that fell short breaks the streak",
+      "habit": {
+        "goal_kind": "weekly",
+        "days": [],
+        "target": 2,
+        "created": "2026-06-29"
+      },
+      "checkins": {
+        "2026-06-29": "done",
+        "2026-07-01": "done",
+        "2026-07-07": "done",
+        "2026-07-13": "done",
+        "2026-07-16": "done",
+        "2026-07-20": "done",
+        "2026-07-21": "done"
+      },
+      "today": "2026-07-23",
+      "week_starts_on": 1,
+      "rate_from": "2026-06-29",
+      "expected": {
+        "current_streak": 2,
+        "best_streak": 2,
+        "total_checkins": 7,
+        "completion_rate": {
+          "periods": 4,
+          "met": 3
+        },
+        "next_due": "2026-07-27",
+        "is_active_today": false,
+        "current_period": {
+          "from": "2026-07-20",
+          "to": "2026-07-26",
+          "scheduled": [
+            "2026-07-20",
+            "2026-07-21",
+            "2026-07-22",
+            "2026-07-23",
+            "2026-07-24",
+            "2026-07-25",
+            "2026-07-26"
+          ],
+          "goal": 2,
+          "done": 2,
+          "skipped": 0,
+          "target": 2,
+          "met": true,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-06-29",
+            "to": "2026-07-05",
+            "scheduled": [
+              "2026-06-29",
+              "2026-06-30",
+              "2026-07-01",
+              "2026-07-02",
+              "2026-07-03",
+              "2026-07-04",
+              "2026-07-05"
+            ],
+            "goal": 2,
+            "done": 2,
+            "skipped": 0,
+            "target": 2,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-12",
+            "scheduled": [
+              "2026-07-06",
+              "2026-07-07",
+              "2026-07-08",
+              "2026-07-09",
+              "2026-07-10",
+              "2026-07-11",
+              "2026-07-12"
+            ],
+            "goal": 2,
+            "done": 1,
+            "skipped": 0,
+            "target": 2,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-13",
+            "to": "2026-07-19",
+            "scheduled": [
+              "2026-07-13",
+              "2026-07-14",
+              "2026-07-15",
+              "2026-07-16",
+              "2026-07-17",
+              "2026-07-18",
+              "2026-07-19"
+            ],
+            "goal": 2,
+            "done": 2,
+            "skipped": 0,
+            "target": 2,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-20",
+            "to": "2026-07-26",
+            "scheduled": [
+              "2026-07-20",
+              "2026-07-21",
+              "2026-07-22",
+              "2026-07-23",
+              "2026-07-24",
+              "2026-07-25",
+              "2026-07-26"
+            ],
+            "goal": 2,
+            "done": 2,
+            "skipped": 0,
+            "target": 2,
+            "met": true,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-18",
+          "2026-07-19",
+          "2026-07-20",
+          "2026-07-21",
+          "2026-07-22",
+          "2026-07-23",
+          "2026-07-24",
+          "2026-07-25",
+          "2026-07-26",
+          "2026-07-27",
+          "2026-07-28",
+          "2026-07-29",
+          "2026-07-30"
+        ],
+        "strength": 0.4284184629603698
+      }
+    },
+    {
+      "name": "every 3 days: blocks tiled from creation",
+      "habit": {
+        "goal_kind": "interval",
+        "days": [],
+        "target": 3,
+        "created": "2026-07-01"
+      },
+      "checkins": {
+        "2026-07-02": "done",
+        "2026-07-04": "done",
+        "2026-07-09": "done",
+        "2026-07-12": "done",
+        "2026-07-14": "done"
+      },
+      "today": "2026-07-17",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-01",
+      "expected": {
+        "current_streak": 5,
+        "best_streak": 5,
+        "total_checkins": 5,
+        "completion_rate": {
+          "periods": 5,
+          "met": 5
+        },
+        "next_due": "2026-07-17",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-16",
+          "to": "2026-07-18",
+          "scheduled": ["2026-07-16", "2026-07-17", "2026-07-18"],
+          "goal": 1,
+          "done": 0,
+          "skipped": 0,
+          "target": 1,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-01",
+            "to": "2026-07-03",
+            "scheduled": ["2026-07-01", "2026-07-02", "2026-07-03"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-04",
+            "to": "2026-07-06",
+            "scheduled": ["2026-07-04", "2026-07-05", "2026-07-06"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-07",
+            "to": "2026-07-09",
+            "scheduled": ["2026-07-07", "2026-07-08", "2026-07-09"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-10",
+            "to": "2026-07-12",
+            "scheduled": ["2026-07-10", "2026-07-11", "2026-07-12"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-13",
+            "to": "2026-07-15",
+            "scheduled": ["2026-07-13", "2026-07-14", "2026-07-15"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-16",
+            "to": "2026-07-18",
+            "scheduled": ["2026-07-16", "2026-07-17", "2026-07-18"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 1,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-07-04",
+          "2026-07-05",
+          "2026-07-06",
+          "2026-07-07",
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-18",
+          "2026-07-19",
+          "2026-07-20",
+          "2026-07-21",
+          "2026-07-22",
+          "2026-07-23",
+          "2026-07-24"
+        ],
+        "strength": 0.3698240452439281
+      }
+    },
+    {
+      "name": "every 2 days: a fully skipped block is dropped and bridged",
+      "habit": {
+        "goal_kind": "interval",
+        "days": [],
+        "target": 2,
+        "created": "2026-07-01"
+      },
+      "checkins": {
+        "2026-07-01": "done",
+        "2026-07-03": "skip",
+        "2026-07-04": "skip",
+        "2026-07-06": "done",
+        "2026-07-07": "done"
+      },
+      "today": "2026-07-09",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-01",
+      "expected": {
+        "current_streak": 3,
+        "best_streak": 3,
+        "total_checkins": 3,
+        "completion_rate": {
+          "periods": 3,
+          "met": 3
+        },
+        "next_due": "2026-07-09",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-09",
+          "to": "2026-07-10",
+          "scheduled": ["2026-07-09", "2026-07-10"],
+          "goal": 1,
+          "done": 0,
+          "skipped": 0,
+          "target": 1,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-01",
+            "to": "2026-07-02",
+            "scheduled": ["2026-07-01", "2026-07-02"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-03",
+            "to": "2026-07-04",
+            "scheduled": ["2026-07-03", "2026-07-04"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 2,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-05",
+            "to": "2026-07-06",
+            "scheduled": ["2026-07-05", "2026-07-06"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-07",
+            "to": "2026-07-08",
+            "scheduled": ["2026-07-07", "2026-07-08"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-09",
+            "to": "2026-07-10",
+            "scheduled": ["2026-07-09", "2026-07-10"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 1,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-06-26",
+          "2026-06-27",
+          "2026-06-28",
+          "2026-06-29",
+          "2026-06-30",
+          "2026-07-01",
+          "2026-07-02",
+          "2026-07-03",
+          "2026-07-04",
+          "2026-07-05",
+          "2026-07-06",
+          "2026-07-07",
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16"
+        ],
+        "strength": 0.20245212734999601
+      }
+    },
+    {
+      "name": "a backfill before creation counts, and nothing recorded yet today",
+      "habit": {
+        "goal_kind": "daily",
+        "days": [],
+        "target": 1,
+        "created": "2026-07-10"
+      },
+      "checkins": {
+        "2026-07-08": "done",
+        "2026-07-09": "done",
+        "2026-07-10": "done",
+        "2026-07-11": "done"
+      },
+      "today": "2026-07-12",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-08",
+      "expected": {
+        "current_streak": 4,
+        "best_streak": 4,
+        "total_checkins": 4,
+        "completion_rate": {
+          "periods": 4,
+          "met": 4
+        },
+        "next_due": "2026-07-12",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-12",
+          "to": "2026-07-12",
+          "scheduled": ["2026-07-12"],
+          "goal": 1,
+          "done": 0,
+          "skipped": 0,
+          "target": 1,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-08",
+            "to": "2026-07-08",
+            "scheduled": ["2026-07-08"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-09",
+            "to": "2026-07-09",
+            "scheduled": ["2026-07-09"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-10",
+            "to": "2026-07-10",
+            "scheduled": ["2026-07-10"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-11",
+            "to": "2026-07-11",
+            "scheduled": ["2026-07-11"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-12",
+            "to": "2026-07-12",
+            "scheduled": ["2026-07-12"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 1,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-06-29",
+          "2026-06-30",
+          "2026-07-01",
+          "2026-07-02",
+          "2026-07-03",
+          "2026-07-04",
+          "2026-07-05",
+          "2026-07-06",
+          "2026-07-07",
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-18",
+          "2026-07-19"
+        ],
+        "strength": 0.1920669279854274
+      }
+    },
+    {
+      "name": "no check-ins at all",
+      "habit": {
+        "goal_kind": "weekly",
+        "days": [],
+        "target": 2,
+        "created": "2026-07-06"
+      },
+      "checkins": {},
+      "today": "2026-07-15",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-06",
+      "expected": {
+        "current_streak": 0,
+        "best_streak": 0,
+        "total_checkins": 0,
+        "completion_rate": {
+          "periods": 1,
+          "met": 0
+        },
+        "next_due": "2026-07-15",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-13",
+          "to": "2026-07-19",
+          "scheduled": [
+            "2026-07-13",
+            "2026-07-14",
+            "2026-07-15",
+            "2026-07-16",
+            "2026-07-17",
+            "2026-07-18",
+            "2026-07-19"
+          ],
+          "goal": 2,
+          "done": 0,
+          "skipped": 0,
+          "target": 2,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-12",
+            "scheduled": [
+              "2026-07-06",
+              "2026-07-07",
+              "2026-07-08",
+              "2026-07-09",
+              "2026-07-10",
+              "2026-07-11",
+              "2026-07-12"
+            ],
+            "goal": 2,
+            "done": 0,
+            "skipped": 0,
+            "target": 2,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-13",
+            "to": "2026-07-19",
+            "scheduled": [
+              "2026-07-13",
+              "2026-07-14",
+              "2026-07-15",
+              "2026-07-16",
+              "2026-07-17",
+              "2026-07-18",
+              "2026-07-19"
+            ],
+            "goal": 2,
+            "done": 0,
+            "skipped": 0,
+            "target": 2,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-07-02",
+          "2026-07-03",
+          "2026-07-04",
+          "2026-07-05",
+          "2026-07-06",
+          "2026-07-07",
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-18",
+          "2026-07-19",
+          "2026-07-20",
+          "2026-07-21",
+          "2026-07-22"
+        ],
+        "strength": 0
+      }
+    },
+    {
+      "name": "archived: never active",
+      "habit": {
+        "goal_kind": "daily",
+        "days": [],
+        "target": 1,
+        "created": "2026-07-06",
+        "archived_at": 1783771200000
+      },
+      "checkins": {
+        "2026-07-06": "done",
+        "2026-07-07": "done"
+      },
+      "today": "2026-07-08",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-06",
+      "expected": {
+        "current_streak": 2,
+        "best_streak": 2,
+        "total_checkins": 2,
+        "completion_rate": {
+          "periods": 2,
+          "met": 2
+        },
+        "next_due": "2026-07-08",
+        "is_active_today": false,
+        "current_period": {
+          "from": "2026-07-08",
+          "to": "2026-07-08",
+          "scheduled": ["2026-07-08"],
+          "goal": 1,
+          "done": 0,
+          "skipped": 0,
+          "target": 1,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-06",
+            "scheduled": ["2026-07-06"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-07",
+            "to": "2026-07-07",
+            "scheduled": ["2026-07-07"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-08",
+            "to": "2026-07-08",
+            "scheduled": ["2026-07-08"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 1,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-06-25",
+          "2026-06-26",
+          "2026-06-27",
+          "2026-06-28",
+          "2026-06-29",
+          "2026-06-30",
+          "2026-07-01",
+          "2026-07-02",
+          "2026-07-03",
+          "2026-07-04",
+          "2026-07-05",
+          "2026-07-06",
+          "2026-07-07",
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15"
+        ],
+        "strength": 0.1011490268044582
+      }
+    },
+    {
+      "name": "schedule history: daily, then weekdays, then weekly 2x (aligned to the next week)",
+      "habit": {
+        "goal_kind": "weekly",
+        "days": [],
+        "target": 2,
+        "created": "2026-07-01",
+        "schedule_history": [
+          {
+            "from": "2026-07-15",
+            "goal_kind": "weekly",
+            "days": [],
+            "target": 2
+          },
+          {
+            "from": "2026-07-01",
+            "goal_kind": "daily",
+            "days": [],
+            "target": 1
+          },
+          {
+            "from": "2026-07-08",
+            "goal_kind": "daily",
+            "days": [1, 2, 3, 4, 5],
+            "target": 1
+          }
+        ]
+      },
+      "checkins": {
+        "2026-07-01": "done",
+        "2026-07-02": "done",
+        "2026-07-03": "done",
+        "2026-07-04": "done",
+        "2026-07-05": "done",
+        "2026-07-06": "done",
+        "2026-07-07": "done",
+        "2026-07-08": "done",
+        "2026-07-09": "done",
+        "2026-07-10": "done",
+        "2026-07-13": "done",
+        "2026-07-14": "done",
+        "2026-07-15": "done",
+        "2026-07-16": "done",
+        "2026-07-17": "done",
+        "2026-07-21": "done",
+        "2026-07-23": "done"
+      },
+      "today": "2026-07-29",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-01",
+      "expected": {
+        "current_streak": 16,
+        "best_streak": 16,
+        "total_checkins": 17,
+        "completion_rate": {
+          "periods": 16,
+          "met": 16
+        },
+        "next_due": "2026-07-29",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-27",
+          "to": "2026-08-02",
+          "scheduled": [
+            "2026-07-27",
+            "2026-07-28",
+            "2026-07-29",
+            "2026-07-30",
+            "2026-07-31",
+            "2026-08-01",
+            "2026-08-02"
+          ],
+          "goal": 2,
+          "done": 0,
+          "skipped": 0,
+          "target": 2,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-01",
+            "to": "2026-07-01",
+            "scheduled": ["2026-07-01"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-02",
+            "to": "2026-07-02",
+            "scheduled": ["2026-07-02"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-03",
+            "to": "2026-07-03",
+            "scheduled": ["2026-07-03"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-04",
+            "to": "2026-07-04",
+            "scheduled": ["2026-07-04"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-05",
+            "to": "2026-07-05",
+            "scheduled": ["2026-07-05"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-06",
+            "scheduled": ["2026-07-06"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-07",
+            "to": "2026-07-07",
+            "scheduled": ["2026-07-07"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-08",
+            "to": "2026-07-08",
+            "scheduled": ["2026-07-08"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-09",
+            "to": "2026-07-09",
+            "scheduled": ["2026-07-09"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-10",
+            "to": "2026-07-10",
+            "scheduled": ["2026-07-10"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-11",
+            "to": "2026-07-11",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-12",
+            "to": "2026-07-12",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-13",
+            "to": "2026-07-13",
+            "scheduled": ["2026-07-13"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-14",
+            "to": "2026-07-14",
+            "scheduled": ["2026-07-14"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-15",
+            "to": "2026-07-15",
+            "scheduled": ["2026-07-15"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-16",
+            "to": "2026-07-16",
+            "scheduled": ["2026-07-16"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-17",
+            "to": "2026-07-17",
+            "scheduled": ["2026-07-17"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-18",
+            "to": "2026-07-18",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-19",
+            "to": "2026-07-19",
+            "scheduled": [],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-20",
+            "to": "2026-07-26",
+            "scheduled": [
+              "2026-07-20",
+              "2026-07-21",
+              "2026-07-22",
+              "2026-07-23",
+              "2026-07-24",
+              "2026-07-25",
+              "2026-07-26"
+            ],
+            "goal": 2,
+            "done": 2,
+            "skipped": 0,
+            "target": 2,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-27",
+            "to": "2026-08-02",
+            "scheduled": [
+              "2026-07-27",
+              "2026-07-28",
+              "2026-07-29",
+              "2026-07-30",
+              "2026-07-31",
+              "2026-08-01",
+              "2026-08-02"
+            ],
+            "goal": 2,
+            "done": 0,
+            "skipped": 0,
+            "target": 2,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-20",
+          "2026-07-21",
+          "2026-07-22",
+          "2026-07-23",
+          "2026-07-24",
+          "2026-07-25",
+          "2026-07-26",
+          "2026-07-27",
+          "2026-07-28",
+          "2026-07-29",
+          "2026-07-30",
+          "2026-07-31",
+          "2026-08-01",
+          "2026-08-02",
+          "2026-08-03",
+          "2026-08-04",
+          "2026-08-05"
+        ],
+        "strength": 0.6067213601036381
+      }
+    },
+    {
+      "name": "schedule history: interval re-anchors at its own start",
+      "habit": {
+        "goal_kind": "interval",
+        "days": [],
+        "target": 4,
+        "created": "2026-07-01",
+        "schedule_history": [
+          {
+            "from": "2026-07-01",
+            "goal_kind": "interval",
+            "days": [],
+            "target": 2
+          },
+          {
+            "from": "2026-07-06",
+            "goal_kind": "interval",
+            "days": [],
+            "target": 4
+          }
+        ]
+      },
+      "checkins": {
+        "2026-07-01": "done",
+        "2026-07-04": "done",
+        "2026-07-06": "done",
+        "2026-07-12": "done",
+        "2026-07-14": "done"
+      },
+      "today": "2026-07-19",
+      "week_starts_on": 1,
+      "rate_from": "2026-07-01",
+      "expected": {
+        "current_streak": 5,
+        "best_streak": 5,
+        "total_checkins": 5,
+        "completion_rate": {
+          "periods": 5,
+          "met": 5
+        },
+        "next_due": "2026-07-19",
+        "is_active_today": true,
+        "current_period": {
+          "from": "2026-07-18",
+          "to": "2026-07-21",
+          "scheduled": ["2026-07-18", "2026-07-19", "2026-07-20", "2026-07-21"],
+          "goal": 1,
+          "done": 0,
+          "skipped": 0,
+          "target": 1,
+          "met": false,
+          "in_progress": true
+        },
+        "periods": [
+          {
+            "from": "2026-07-01",
+            "to": "2026-07-02",
+            "scheduled": ["2026-07-01", "2026-07-02"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-03",
+            "to": "2026-07-04",
+            "scheduled": ["2026-07-03", "2026-07-04"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-05",
+            "to": "2026-07-05",
+            "scheduled": ["2026-07-05"],
+            "goal": 0,
+            "done": 0,
+            "skipped": 0,
+            "target": 0,
+            "met": false,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-06",
+            "to": "2026-07-09",
+            "scheduled": ["2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-10",
+            "to": "2026-07-13",
+            "scheduled": ["2026-07-10", "2026-07-11", "2026-07-12", "2026-07-13"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-14",
+            "to": "2026-07-17",
+            "scheduled": ["2026-07-14", "2026-07-15", "2026-07-16", "2026-07-17"],
+            "goal": 1,
+            "done": 1,
+            "skipped": 0,
+            "target": 1,
+            "met": true,
+            "in_progress": false
+          },
+          {
+            "from": "2026-07-18",
+            "to": "2026-07-21",
+            "scheduled": ["2026-07-18", "2026-07-19", "2026-07-20", "2026-07-21"],
+            "goal": 1,
+            "done": 0,
+            "skipped": 0,
+            "target": 1,
+            "met": false,
+            "in_progress": true
+          }
+        ],
+        "scheduled": [
+          "2026-07-06",
+          "2026-07-07",
+          "2026-07-08",
+          "2026-07-09",
+          "2026-07-10",
+          "2026-07-11",
+          "2026-07-12",
+          "2026-07-13",
+          "2026-07-14",
+          "2026-07-15",
+          "2026-07-16",
+          "2026-07-17",
+          "2026-07-18",
+          "2026-07-19",
+          "2026-07-20",
+          "2026-07-21",
+          "2026-07-22",
+          "2026-07-23",
+          "2026-07-24",
+          "2026-07-25",
+          "2026-07-26"
+        ],
+        "strength": 0.37544946283314984
+      }
+    }
+  ],
+  "to_habit": [
+    {
+      "name": "empty fields take the defaults",
+      "fields": {},
+      "expected": {
+        "id": "h1",
+        "name": "",
+        "kind": "habit",
+        "parent_id": null,
+        "goal_kind": "daily",
+        "days": [],
+        "target": 1,
+        "color": "#6366f1",
+        "icon": "hash",
+        "notes": "",
+        "steps": [],
+        "unit": "",
+        "reminder_time": null,
+        "schedule_history": [],
+        "archived_at": null,
+        "created_at": 0,
+        "sort_order": 0
+      }
+    },
+    {
+      "name": "malformed values are normalised",
+      "fields": {
+        "name": "Read",
+        "kind": "group",
+        "parent_id": 7,
+        "goal_kind": "monthly",
+        "days": [1, 9, -1, "2", 3, 6, 0],
+        "target": 2.7,
+        "color": "#ef4444",
+        "icon": "book",
+        "notes": "n",
+        "steps": ["a", "", 3, "b"],
+        "unit": "pages",
+        "reminder_time": "07:30",
+        "schedule_history": [
+          {
+            "from": "2026-07-09",
+            "goal_kind": "weekly",
+            "days": [],
+            "target": 3
+          },
+          {
+            "from": "bad",
+            "goal_kind": "weekly"
+          },
+          "x",
+          {
+            "from": "2026-07-01",
+            "goal_kind": "nope",
+            "days": [8, 2],
+            "target": 0
+          }
+        ],
+        "archived_at": null,
+        "sort_order": 5
+      },
+      "expected": {
+        "id": "h1",
+        "name": "Read",
+        "kind": "group",
+        "parent_id": null,
+        "goal_kind": "daily",
+        "days": [1, 3, 6, 0],
+        "target": 2,
+        "color": "#ef4444",
+        "icon": "book",
+        "notes": "n",
+        "steps": ["a", "b"],
+        "unit": "pages",
+        "reminder_time": "07:30",
+        "schedule_history": [
+          {
+            "from": "2026-07-01",
+            "goal_kind": "daily",
+            "days": [2],
+            "target": 1
+          },
+          {
+            "from": "2026-07-09",
+            "goal_kind": "weekly",
+            "days": [],
+            "target": 3
+          }
+        ],
+        "archived_at": null,
+        "created_at": 0,
+        "sort_order": 5
+      }
+    },
+    {
+      "name": "a weekly target below 1 reads as 1",
+      "fields": {
+        "goal_kind": "weekly",
+        "target": 0.5,
+        "parent_id": "g1",
+        "archived_at": 99
+      },
+      "expected": {
+        "id": "h1",
+        "name": "",
+        "kind": "habit",
+        "parent_id": "g1",
+        "goal_kind": "weekly",
+        "days": [],
+        "target": 1,
+        "color": "#6366f1",
+        "icon": "hash",
+        "notes": "",
+        "steps": [],
+        "unit": "",
+        "reminder_time": null,
+        "schedule_history": [],
+        "archived_at": 99,
+        "created_at": 0,
+        "sort_order": 0
+      }
+    }
+  ],
+  "checkins": [
+    {
+      "name": "a row from before skip days",
+      "fields": {
+        "habit_id": "h1",
+        "date": "2026-07-06"
+      },
+      "expected": {
+        "id": "c1",
+        "habit_id": "h1",
+        "date": "2026-07-06",
+        "state": "done",
+        "value": 1,
+        "note": "",
+        "created_at": 0
+      }
+    },
+    {
+      "name": "a skip with a note",
+      "fields": {
+        "habit_id": "h1",
+        "date": "2026-07-07",
+        "state": "skip",
+        "value": 2,
+        "note": "ill",
+        "created_at": 5
+      },
+      "expected": {
+        "id": "c1",
+        "habit_id": "h1",
+        "date": "2026-07-07",
+        "state": "skip",
+        "value": 2,
+        "note": "ill",
+        "created_at": 5
+      }
+    }
+  ],
+  "schedule_changes": [
+    {
+      "name": "no change to the goal",
+      "habit": {
+        "goal_kind": "daily",
+        "days": [],
+        "target": 1,
+        "created": "2026-07-01"
+      },
+      "patch": {
+        "target": 4
+      },
+      "today": "2026-07-10",
+      "expected": null
+    },
+    {
+      "name": "the first change records the original schedule too",
+      "habit": {
+        "goal_kind": "daily",
+        "days": [],
+        "target": 1,
+        "created": "2026-07-01"
+      },
+      "patch": {
+        "goal_kind": "weekly",
+        "target": 3
+      },
+      "today": "2026-07-10",
+      "expected": [
+        {
+          "from": "2026-07-01",
+          "goal_kind": "daily",
+          "days": [],
+          "target": 1
+        },
+        {
+          "from": "2026-07-10",
+          "goal_kind": "weekly",
+          "days": [],
+          "target": 3
+        }
+      ]
+    },
+    {
+      "name": "a second change the same day replaces that day's entry",
+      "habit": {
+        "goal_kind": "weekly",
+        "days": [],
+        "target": 3,
+        "created": "2026-07-01",
+        "schedule_history": [
+          {
+            "from": "2026-07-01",
+            "goal_kind": "daily",
+            "days": [],
+            "target": 1
+          },
+          {
+            "from": "2026-07-10",
+            "goal_kind": "weekly",
+            "days": [],
+            "target": 3
+          }
+        ]
+      },
+      "patch": {
+        "target": 4
+      },
+      "today": "2026-07-10",
+      "expected": [
+        {
+          "from": "2026-07-01",
+          "goal_kind": "daily",
+          "days": [],
+          "target": 1
+        },
+        {
+          "from": "2026-07-10",
+          "goal_kind": "weekly",
+          "days": [],
+          "target": 4
+        }
+      ]
+    },
+    {
+      "name": "flipping back the same day is a no-op",
+      "habit": {
+        "goal_kind": "weekly",
+        "days": [],
+        "target": 3,
+        "created": "2026-07-01",
+        "schedule_history": [
+          {
+            "from": "2026-07-01",
+            "goal_kind": "daily",
+            "days": [2, 4],
+            "target": 1
+          },
+          {
+            "from": "2026-07-10",
+            "goal_kind": "weekly",
+            "days": [],
+            "target": 3
+          }
+        ]
+      },
+      "patch": {
+        "goal_kind": "daily",
+        "days": [4, 2],
+        "target": 1
+      },
+      "today": "2026-07-10",
+      "expected": [
+        {
+          "from": "2026-07-01",
+          "goal_kind": "daily",
+          "days": [2, 4],
+          "target": 1
+        }
+      ]
+    },
+    {
+      "name": "weekdays changed on a later day",
+      "habit": {
+        "goal_kind": "daily",
+        "days": [1, 3],
+        "target": 1,
+        "created": "2026-07-01"
+      },
+      "patch": {
+        "days": [1, 3, 5]
+      },
+      "today": "2026-07-12",
+      "expected": [
+        {
+          "from": "2026-07-01",
+          "goal_kind": "daily",
+          "days": [1, 3],
+          "target": 1
+        },
+        {
+          "from": "2026-07-12",
+          "goal_kind": "daily",
+          "days": [1, 3, 5],
+          "target": 1
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "a daily and a weekly member",
+      "members": [
+        {
+          "habit": {
+            "goal_kind": "daily",
+            "days": [],
+            "target": 1,
+            "created": "2026-07-06"
+          },
+          "checkins": {
+            "2026-07-06": "done",
+            "2026-07-07": "done",
+            "2026-07-08": "done",
+            "2026-07-09": "skip",
+            "2026-07-10": "done",
+            "2026-07-11": "done",
+            "2026-07-13": "done"
+          }
+        },
+        {
+          "habit": {
+            "goal_kind": "weekly",
+            "days": [],
+            "target": 2,
+            "created": "2026-07-06"
+          },
+          "checkins": {
+            "2026-07-07": "done",
+            "2026-07-10": "done",
+            "2026-07-13": "done"
+          }
+        }
+      ],
+      "today": "2026-07-13",
+      "week_starts_on": 1,
+      "expected": {
+        "streak": 1,
+        "today": {
+          "date": "2026-07-13",
+          "due": 2,
+          "done": 2,
+          "excluded": false,
+          "met": true,
+          "in_progress": true,
+          "missing": []
+        },
+        "days": [
+          {
+            "date": "2026-07-06",
+            "due": 1,
+            "done": 1,
+            "excluded": false,
+            "met": true,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-07",
+            "due": 2,
+            "done": 2,
+            "excluded": false,
+            "met": true,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-08",
+            "due": 1,
+            "done": 1,
+            "excluded": false,
+            "met": true,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-09",
+            "due": 0,
+            "done": 0,
+            "excluded": true,
+            "met": false,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-10",
+            "due": 2,
+            "done": 2,
+            "excluded": false,
+            "met": true,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-11",
+            "due": 1,
+            "done": 1,
+            "excluded": false,
+            "met": true,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-12",
+            "due": 1,
+            "done": 0,
+            "excluded": false,
+            "met": false,
+            "in_progress": false,
+            "missing": ["m0"]
+          },
+          {
+            "date": "2026-07-13",
+            "due": 2,
+            "done": 2,
+            "excluded": false,
+            "met": true,
+            "in_progress": true,
+            "missing": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "a member added later owes nothing before it existed",
+      "members": [
+        {
+          "habit": {
+            "goal_kind": "daily",
+            "days": [],
+            "target": 1,
+            "created": "2026-07-01"
+          },
+          "checkins": {
+            "2026-07-01": "done",
+            "2026-07-02": "done",
+            "2026-07-03": "done",
+            "2026-07-04": "done",
+            "2026-07-05": "done"
+          }
+        },
+        {
+          "habit": {
+            "goal_kind": "daily",
+            "days": [],
+            "target": 1,
+            "created": "2026-07-04"
+          },
+          "checkins": {
+            "2026-07-04": "done"
+          }
+        }
+      ],
+      "today": "2026-07-06",
+      "week_starts_on": 1,
+      "expected": {
+        "streak": 0,
+        "today": {
+          "date": "2026-07-06",
+          "due": 2,
+          "done": 0,
+          "excluded": false,
+          "met": false,
+          "in_progress": true,
+          "missing": ["m0", "m1"]
+        },
+        "days": [
+          {
+            "date": "2026-07-01",
+            "due": 1,
+            "done": 1,
+            "excluded": false,
+            "met": true,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-02",
+            "due": 1,
+            "done": 1,
+            "excluded": false,
+            "met": true,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-03",
+            "due": 1,
+            "done": 1,
+            "excluded": false,
+            "met": true,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-04",
+            "due": 2,
+            "done": 2,
+            "excluded": false,
+            "met": true,
+            "in_progress": false,
+            "missing": []
+          },
+          {
+            "date": "2026-07-05",
+            "due": 2,
+            "done": 1,
+            "excluded": false,
+            "met": false,
+            "in_progress": false,
+            "missing": ["m1"]
+          },
+          {
+            "date": "2026-07-06",
+            "due": 2,
+            "done": 0,
+            "excluded": false,
+            "met": false,
+            "in_progress": true,
+            "missing": ["m0", "m1"]
+          }
+        ]
+      }
+    }
+  ],
+  "derived_ids": [
+    {
+      "namespace": "habit_checkin",
+      "key": "h1\u00002026-07-06",
+      "expected": "f03f5286-b08a-80c7-84d5-b75ae1a24cd1"
+    },
+    {
+      "namespace": "habit_checkin",
+      "key": "ee4fc151-75e1-446c-bd80-a032138ca39c\u00002025-12-08",
+      "expected": "4ba7b084-b317-81d7-b772-287d27a66abb"
+    },
+    {
+      "namespace": "ns",
+      "key": "æøå 🎉",
+      "expected": "3203e8ba-fc6b-8900-9f89-97687654cc68"
+    }
+  ]
+}

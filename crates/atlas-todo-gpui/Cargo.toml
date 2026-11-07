@@ -1,0 +1,42 @@
+[package]
+name = "atlas-todo-gpui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+description = "An experimental native desktop app for Atlas Todo on GPUI, Zed's GPU-accelerated UI framework."
+publish = false
+
+[[bin]]
+name = "atlas-todo-gpui"
+path = "src/main.rs"
+
+[dependencies]
+atlas-client = { workspace = true }
+atlas-core = { workspace = true }
+atlas-todo-rules = { path = "../atlas-todo-rules" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+jiff = { workspace = true }
+async-channel = "2"
+keyring = { version = "3.6", default-features = false, features = ["async-secret-service", "async-io", "crypto-rust"] }
+uuid = { workspace = true }
+rust-embed = "8"
+unicode-segmentation = "1"
+# Zed's GPUI as published on crates.io by the gpui-component project: a snapshot of zed@f816e1f
+# (Apache-2.0). The crate is `gpui-pre`; it is imported as `gpui`. `gpui-pre-platform` picks the
+# platform backend (Wayland and X11 on Linux, through wgpu).
+gpui = { package = "gpui-pre", version = "=0.3.11" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.11", features = ["wayland", "x11"] }
+gpui_wgpu = { package = "gpui-pre-wgpu", version = "=0.3.11", optional = true }
+image = { version = "0.25", default-features = false, features = ["png"] }
+ksni = { version = "0.3", default-features = false, features = ["blocking", "async-io"] }
+# Desktop notifications (reminders, the focus timer's phase ends) over D-Bus, on the pure-Rust zbus.
+notify-rust = { version = "4.18", default-features = false, features = ["z"] }
+
+[features]
+# `--screenshot`: render a screen offscreen through GPUI's headless wgpu renderer into a PNG
+# (`gpui:screenshots`). Off by default: it builds GPUI's test platform in.
+screenshots = ["gpui/test-support", "gpui_platform/test-support", "dep:gpui_wgpu", "gpui_wgpu/test-support"]

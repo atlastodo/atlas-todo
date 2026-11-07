@@ -16,6 +16,7 @@ serde_json = { workspace = true }
 uuid = { workspace = true }
 jiff = { workspace = true }
 unicode-normalization = "0.1"
+sha2 = "0.10"
 
 [dev-dependencies]
 atlas-client = { workspace = true }
