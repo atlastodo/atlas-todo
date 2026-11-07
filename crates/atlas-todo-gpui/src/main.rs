@@ -25,6 +25,7 @@ mod list;
 mod model;
 mod motion;
 mod secrets;
+mod settings;
 mod stats;
 mod sync;
 mod theme;
@@ -193,6 +194,7 @@ fn route_for(view: &str, snap: &Snapshot) -> Option<(Route, Option<bool>)> {
         "habits" => Route::Habits,
         "stats" => Route::Stats,
         "countdowns" => Route::Countdowns,
+        "settings" => Route::Settings,
         _ => return None,
     };
     Some((r, None))
@@ -492,8 +494,18 @@ impl Render for SignIn {
 }
 
 /// The app over a live account: the sync worker, and the view.
+/// The server and who signs in, for the settings' account section.
+fn account_label(account: &Account) -> (String, String) {
+    match account {
+        Account::Token { server, .. } => (server.clone(), "An API token".into()),
+        Account::Login { server, email, .. } => (server.clone(), email.clone()),
+        Account::Saved(c) => (c.server_url.clone(), last_sign_in().1),
+    }
+}
+
 fn start(account: Account, args: &Args, cx: &mut App) -> Entity<AtlasApp> {
     let (utx, urx) = async_channel::unbounded();
+    let label = account_label(&account);
     let tx = sync::spawn(account, utx);
     let snap = Snapshot::empty(
         atlas_client::zoned::resolve_time_zone(None),
@@ -501,6 +513,7 @@ fn start(account: Account, args: &Args, cx: &mut App) -> Entity<AtlasApp> {
     );
     cx.new(|cx| {
         let mut app = AtlasApp::new(snap, Some(tx), Some(urx), now_ms(), cx);
+        app.account = Some(label);
         configure(&mut app, args);
         if std::env::var_os("ATLAS_GPUI_TOUR").is_some() {
             tour::start(cx);
@@ -708,7 +721,14 @@ fn open_window(root: Entity<Root>, cx: &mut App) {
 fn screenshot(account: &Account, args: &Args, out: &std::path::Path) -> Result<(), String> {
     use std::sync::Arc;
     motion::disable();
-    let snap = sync::load_once(account)?;
+    let mut snap = sync::load_once(account)?;
+    // `ATLAS_GPUI_PREFS='{"accent":"rose"}'`: render with these preferences over the account's,
+    // without writing them.
+    if let Ok(text) = std::env::var("ATLAS_GPUI_PREFS") {
+        let over: serde_json::Map<String, serde_json::Value> =
+            serde_json::from_str(&text).map_err(|e| format!("ATLAS_GPUI_PREFS: {e}"))?;
+        snap.prefs.extend(over);
+    }
     let text_system = Arc::new(gpui_wgpu::CosmicTextSystem::new(FONT));
     let mut cx = gpui::HeadlessAppContext::with_platform(text_system, Arc::new(Assets), || {
         gpui_platform::current_headless_renderer()
@@ -721,6 +741,7 @@ fn screenshot(account: &Account, args: &Args, out: &std::path::Path) -> Result<(
         .open_window(size(px(1280.), px(800.)), |_, cx| {
             cx.new(|cx| {
                 let mut app = AtlasApp::new(snap, None, None, now_ms(), cx);
+                app.account = Some(account_label(account));
                 configure(&mut app, args);
                 app
             })

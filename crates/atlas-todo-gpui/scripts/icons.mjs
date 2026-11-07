@@ -49,6 +49,9 @@ const ICONS = [
   "user-round",
   "x",
   "calendar-range",
+  "monitor",
+  "palette",
+  "settings",
 ];
 
 // The version apps/mobile resolves (the store may hold others).

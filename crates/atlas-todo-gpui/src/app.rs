@@ -18,7 +18,7 @@ use crate::sync::{Command, Update};
 use crate::theme::{project_color, Theme};
 use crate::ui::icon;
 use crate::ui::ts;
-use crate::{board, calendar, detail, habits, list, stats};
+use crate::{board, calendar, detail, habits, list, settings, stats};
 
 /// How long a completed row stays before it leaves the list.
 pub const LINGER: std::time::Duration = std::time::Duration::from_millis(900);
@@ -40,6 +40,7 @@ pub enum Route {
     Stats,
     Countdowns,
     Project(String),
+    Settings,
 }
 
 /// The session ended: the window goes back to the sign-in screen, saying this (empty after a
@@ -83,6 +84,8 @@ pub struct AtlasApp {
     pub pending: Option<Pending>,
     /// Draft view modes picked by the user per project, over the project's default.
     view_picked: HashMap<String, bool>,
+    /// The server and who is signed in (an email, or "API token"), for the settings.
+    pub account: Option<(String, String)>,
 }
 
 impl AtlasApp {
@@ -150,6 +153,7 @@ impl AtlasApp {
             linger: HashSet::new(),
             pending: None,
             view_picked: HashMap::new(),
+            account: None,
         }
     }
 
@@ -464,6 +468,13 @@ impl AtlasApp {
                     cx,
                 ))
             })
+            .child(self.nav_item(
+                ("settings", "Settings", "settings"),
+                None,
+                Route::Settings,
+                t,
+                cx,
+            ))
             .child(
                 div()
                     .id("nav-sign-out")
@@ -550,6 +561,7 @@ impl AtlasApp {
             Route::Calendar => calendar::calendar(self, t, cx),
             Route::Habits => habits::habits(self, t, cx),
             Route::Stats => stats::stats(self, t, cx),
+            Route::Settings => settings::settings(self, t, cx),
             Route::Filters => list::placeholder(
                 self,
                 "Filters",

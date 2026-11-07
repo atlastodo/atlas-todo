@@ -216,7 +216,6 @@ impl DesktopSettings {
     }
 }
 
-#[allow(dead_code)] // for the settings screen
 fn autostart_path() -> Option<PathBuf> {
     let base = std::env::var_os("XDG_CONFIG_HOME")
         .map(PathBuf::from)
@@ -224,13 +223,11 @@ fn autostart_path() -> Option<PathBuf> {
     Some(base.join(format!("autostart/{APP_ID}.desktop")))
 }
 
-#[allow(dead_code)] // for the settings screen
 /// Whether the app starts at login (an XDG autostart entry).
 pub fn starts_at_login() -> bool {
     autostart_path().is_some_and(|p| p.exists())
 }
 
-#[allow(dead_code)] // for the settings screen
 /// Start at login (an entry in `~/.config/autostart` that runs this binary into the tray), or not.
 pub fn set_start_at_login(on: bool) -> std::io::Result<()> {
     let Some(path) = autostart_path() else {
