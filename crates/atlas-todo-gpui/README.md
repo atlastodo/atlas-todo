@@ -50,13 +50,20 @@ that server and token.
 ## How it is built
 
 - **Data**: `atlas-todo-rules`' `TodoClient` (core's `atlas-client`) on a worker thread: sign-in,
-  pull and decrypt, then a sync every 5 s. The UI gets a plain `Snapshot` of the account after each
-  change and sends commands back (complete/reopen, quick add, priority, habit check-ins), applied
-  optimistically. Tasks go through the shared todo rules (recurrence, quick add, …); sections,
-  habits, focus sessions, reminders and comments are read from the fields the mobile app writes.
-- **Screens**: sidebar, Today, Upcoming, Inbox, Assigned, All tasks, Completed, Projects, a project's
-  list and board, Calendar (month and week, agenda), Habits, Stats and the task dialog. Filters,
-  Notifications, Focus and Countdowns are placeholders.
+  pull and decrypt, then a sync every 5 s; an offline start shows the cached account. The UI gets a
+  plain `Snapshot` of the account (and the synced preferences) after each change and sends
+  commands back (`sync.rs`: task updates through the shared rules' `update_task`, creates, deletes,
+  moves, and raw entity writes for sections, projects, habits, preferences and focus sessions),
+  applied optimistically. Rules live in `atlas-todo-rules` (tasks, recurrence, quick add, filters,
+  habits, pomodoro, countdowns, reminders), checked by fixtures the TypeScript tests read too.
+- **Screens**: sidebar (favorites, folders), Today, Upcoming, Inbox, Assigned, All tasks, Completed,
+  Projects, a project's list and board (drag and drop, sections, the project sheet), Calendar,
+  Habits (skips, groups, add/edit), Stats, Focus (pomodoro, floating bar), Countdowns, Settings, the
+  task dialog (title, notes, dates, labels, move, repeat, subtasks, duplicate, delete), a
+  right-click menu on tasks, search, the command palette (Ctrl+K) and keyboard shortcuts (`?`).
+  Reminders become desktop notifications. Filters and Notifications are placeholders.
+- **Desktop**: one instance (a second launch focuses the window), the window frame remembered, a
+  tray (close to tray is a setting), start at login, zoom (Ctrl+= / Ctrl+- / Ctrl+0), Ctrl+Q.
 - **Look**: Tailwind's neutral scale and the indigo accent (`theme.rs`), the app's Lucide icons
   (`assets/icons`, from the `lucide-react-native` the mobile app ships: `scripts/icons.mjs`) and
   Noto Sans, the font Chromium renders the web app in on Linux, as static weights (`assets/fonts`,
@@ -70,8 +77,9 @@ that server and token.
 
 ## Not there yet
 
-Editing beyond completing, quick add, priority and habit check-ins; drag and drop; the list
-cursor shortcuts (J/K, complete, reschedule, delete) and multi-select; filters; sharing; notifications and the tray;
-passkey sign-in and local-only accounts (atlastodo/atlas#124); weekly and
-interval habit goals (streaks are daily); i18n (English strings); packaging, the updater and
-macOS/Windows (only Linux, Wayland, was tried).
+Saved filters and the Notifications screen (invites need core support); the list cursor shortcuts
+(J/K, complete, reschedule, delete) and multi-select; comments, attachments and the task's
+reminders and assignee; the habit detail screen; undo toasts; sharing, and moving a task into or out
+of a shared project (refused until core's Rust client can re-encrypt it, as the web's `rescopeTask`
+does); passkey sign-in and local-only accounts (atlastodo/atlas#124); i18n (English strings);
+packaging, the updater and macOS/Windows (only Linux, Wayland, was tried).
