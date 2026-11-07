@@ -75,6 +75,8 @@ pub struct Snapshot {
     /// The synced preferences (`preference` entity [`PREFERENCES_ID`]): theme, accent,
     /// week_starts_on, time_format, favorites, list_prefs, feature toggles, …
     pub prefs: Map<String, Value>,
+    /// Folders: projects that hold projects instead of tasks (the sidebar's tree).
+    pub folders: Vec<Project>,
 }
 
 /// The one `preference` entity's id (`PREFERENCES_ID` in `packages/todo-core/src/ids.ts`).
@@ -114,6 +116,7 @@ impl Snapshot {
             sync,
             linger: HashSet::new(),
             prefs: Map::new(),
+            folders: Vec::new(),
         }
     }
 
@@ -152,8 +155,13 @@ impl Snapshot {
             .into_iter()
             .filter(|t| t.deleted_at.is_none() && t.archived_at.is_none())
             .filter(|t| {
-                !t.section_id.as_ref().is_some_and(|s| gone_sections.contains(s))
-                    && !t.project_id.as_ref().is_some_and(|p| gone_projects.contains(p))
+                !t.section_id
+                    .as_ref()
+                    .is_some_and(|s| gone_sections.contains(s))
+                    && !t
+                        .project_id
+                        .as_ref()
+                        .is_some_and(|p| gone_projects.contains(p))
             })
             .collect();
         tasks.sort_by(|a, b| {
@@ -229,7 +237,13 @@ impl Snapshot {
             .collect();
         comments.sort_by_key(|c| c.created_at);
 
+        let folders = projects
+            .iter()
+            .filter(|p| p.kind == "folder")
+            .cloned()
+            .collect();
         Self {
+            folders,
             user_id: user_id.to_owned(),
             tz,
             projects: projects

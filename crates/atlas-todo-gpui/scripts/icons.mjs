@@ -23,6 +23,7 @@ const ICONS = [
   "ellipsis-vertical",
   "flag",
   "flame",
+  "folder",
   "folder-input",
   "folder-plus",
   "globe",

@@ -15,7 +15,7 @@ use gpui::Focusable;
 use crate::input::TextInput;
 use crate::model::{Snapshot, SyncState};
 use crate::sync::{Command, Update};
-use crate::theme::{project_color, Theme};
+use crate::theme::Theme;
 use crate::ui::icon;
 use crate::ui::ts;
 use crate::{board, calendar, detail, habits, list, stats};
@@ -288,7 +288,7 @@ impl AtlasApp {
     }
 
     /// A sidebar entry: `(id, label, icon)`, its icon's colour when not the default, and its route.
-    fn nav_item(
+    pub fn nav_item(
         &self,
         (id, label, glyph): (&str, &str, &str),
         glyph_color: Option<gpui::Rgba>,
@@ -402,6 +402,10 @@ impl AtlasApp {
             col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
         }
         col = col.child(divider());
+        let favorites = self.sidebar_favorites(t, cx);
+        if !favorites.is_empty() {
+            col = col.children(favorites).child(divider());
+        }
         let views = [
             ("projects", "Projects", "hash", Route::Projects),
             ("calendar", "Calendar", "calendar-days", Route::Calendar),
@@ -421,16 +425,7 @@ impl AtlasApp {
             col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
         }
         col = col.child(divider());
-        for p in self.snap.projects.iter().filter(|p| p.parent_id.is_none()) {
-            let color = project_color(&p.id, &p.color);
-            col = col.child(self.nav_item(
-                (&p.id, &p.name, "hash"),
-                Some(color),
-                Route::Project(p.id.clone()),
-                t,
-                cx,
-            ));
-        }
+        col = col.children(self.sidebar_projects(t, cx));
         col.child(divider())
             .child(self.nav_item(
                 ("completed", "Completed", "circle-check-big"),

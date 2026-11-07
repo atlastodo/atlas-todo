@@ -1006,14 +1006,14 @@ fn label(text: &str, t: &Theme) -> gpui::Div {
 fn project_sheet(app: &AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> Option<AnyElement> {
     let sheet = app.org.sheet.as_ref()?;
     let editing = sheet.id.clone();
-    let mut swatches = div().flex().flex_wrap().gap(px(10.));
+    let mut swatches = div().flex().flex_wrap().gap(px(8.));
     for c in PROJECT_COLORS {
         let hex = hex_of(gpui::rgb(c));
         let on = sheet.color.eq_ignore_ascii_case(&hex);
         swatches = swatches.child(
             div()
                 .id(SharedString::from(format!("swatch-{hex}")))
-                .size(px(30.))
+                .size(px(28.))
                 .rounded_full()
                 .flex()
                 .items_center()
@@ -1029,7 +1029,7 @@ fn project_sheet(app: &AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> Optio
                 }))
                 .child(
                     div()
-                        .size(px(22.))
+                        .size(px(20.))
                         .rounded_full()
                         .bg(gpui::rgb(c))
                         .flex()
@@ -1165,4 +1165,143 @@ fn project_sheet(app: &AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> Optio
         180,
         |el, v| el.opacity(v),
     ))
+}
+
+// The sidebar: favorites, the project tree and "New project" (`(drawer)/_layout.tsx`).
+
+impl AtlasApp {
+    /// Favorited projects, above the views.
+    pub fn sidebar_favorites(&self, t: &Theme, cx: &mut Context<Self>) -> Vec<AnyElement> {
+        let snap = self.snap.clone();
+        snap.projects
+            .iter()
+            .filter(|p| self.is_favorite(&p.id))
+            .map(|p| {
+                self.nav_item(
+                    (&format!("fav-{}", p.id), &p.name, "hash"),
+                    Some(project_color(&p.id, &p.color)),
+                    Route::Project(p.id.clone()),
+                    t,
+                    cx,
+                )
+            })
+            .collect()
+    }
+
+    /// Projects and folders as a tree (a folder folds its projects away), then "New project".
+    pub fn sidebar_projects(&self, t: &Theme, cx: &mut Context<Self>) -> Vec<AnyElement> {
+        let snap = self.snap.clone();
+        let mut all: Vec<&Project> = snap.projects.iter().chain(snap.folders.iter()).collect();
+        all.sort_by(|a, b| {
+            let (x, y) = (
+                a.sort_order.as_f64().unwrap_or(0.),
+                b.sort_order.as_f64().unwrap_or(0.),
+            );
+            x.total_cmp(&y).then(a.name.cmp(&b.name))
+        });
+        let mut out = Vec::new();
+        self.project_rows(&all, None, 0, t, cx, &mut out);
+        out.push(
+            div()
+                .id("nav-new-project")
+                .mx(px(8.))
+                .h(px(40.))
+                .px(px(12.))
+                .flex()
+                .items_center()
+                .gap(px(14.))
+                .rounded(px(8.))
+                .cursor_pointer()
+                .text_size(ts(16.))
+                .text_color(t.faint)
+                .hover(|d| d.bg(t.hover).text_color(t.text_soft))
+                .on_click(cx.listener(|this, _: &ClickEvent, window, cx| {
+                    this.open_project_sheet(None, window, cx)
+                }))
+                .child(icon("plus", 20., t.faint))
+                .child("New project")
+                .into_any_element(),
+        );
+        out
+    }
+
+    fn project_rows(
+        &self,
+        all: &[&Project],
+        parent: Option<&str>,
+        depth: usize,
+        t: &Theme,
+        cx: &mut Context<Self>,
+        out: &mut Vec<AnyElement>,
+    ) {
+        if depth > 8 {
+            return; // a cycle in synced data
+        }
+        // A project whose folder is gone (archived, trashed) is hidden with it.
+        let rows: Vec<&Project> = all
+            .iter()
+            .copied()
+            .filter(|p| p.parent_id.as_deref() == parent)
+            .collect();
+        for p in rows {
+            let folder = p.kind == "folder";
+            let key = format!("folder:{}", p.id);
+            let open = !self.collapsed.contains(&key);
+            let on = self.route == Route::Project(p.id.clone());
+            let color = project_color(&p.id, &p.color);
+            let id = p.id.clone();
+            let has_children = all.iter().any(|c| c.parent_id.as_deref() == Some(&p.id));
+            out.push(
+                div()
+                    .id(SharedString::from(format!("nav-{}", p.id)))
+                    .mx(px(8.))
+                    .h(px(40.))
+                    .pl(px(12. + depth as f32 * 14.))
+                    .pr(px(12.))
+                    .flex()
+                    .items_center()
+                    .gap(px(14.))
+                    .rounded(px(8.))
+                    .cursor_pointer()
+                    .when(on, |d| d.bg(t.selected))
+                    .when(!on, |d| d.hover(|s| s.bg(t.hover)))
+                    .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
+                        if folder {
+                            if !this.collapsed.remove(&key) {
+                                this.collapsed.insert(key.clone());
+                            }
+                            cx.notify();
+                        } else {
+                            this.go(Route::Project(id.clone()), cx)
+                        }
+                    }))
+                    .child(icon(
+                        if folder { "folder" } else { "hash" },
+                        20.,
+                        if on { t.selected_text } else { color },
+                    ))
+                    .child(
+                        div()
+                            .flex_1()
+                            .truncate()
+                            .text_size(ts(16.))
+                            .text_color(if on { t.selected_text } else { t.text_soft })
+                            .when(on, |d| d.font_weight(FontWeight::SEMIBOLD))
+                            .child(SharedString::from(p.name.clone())),
+                    )
+                    .when(folder && has_children, |d| {
+                        d.child(crate::ui::chevron(
+                            SharedString::from(format!("chev-folder-{}", p.id)),
+                            open,
+                            16.,
+                            t.muted,
+                        ))
+                    })
+                    .into_any_element(),
+            );
+            if !folder || open {
+                self.project_rows(all, Some(&p.id), depth + 1, t, cx, out);
+            }
+        }
+    }
 }
