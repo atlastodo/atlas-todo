@@ -83,6 +83,10 @@ pub struct AtlasApp {
     pub pending: Option<Pending>,
     /// Draft view modes picked by the user per project, over the project's default.
     view_picked: HashMap<String, bool>,
+    /// The open task's editable fields and popovers.
+    pub editor: Option<crate::detail::Editor>,
+    /// A task's right-click menu.
+    pub menu: Option<crate::context_menu::Menu>,
 }
 
 impl AtlasApp {
@@ -149,6 +153,8 @@ impl AtlasApp {
             linger: HashSet::new(),
             pending: None,
             view_picked: HashMap::new(),
+            editor: None,
+            menu: None,
         }
     }
 
@@ -572,7 +578,8 @@ impl Render for AtlasApp {
         let modal = self
             .open_task
             .clone()
-            .and_then(|id| detail::task_detail(self, &id, &t, cx));
+            .and_then(|id| detail::task_detail(self, &id, &t, window, cx));
+        let menu = crate::context_menu::render(self, &t, cx);
         div()
             .size_full()
             .relative()
@@ -607,5 +614,6 @@ impl Render for AtlasApp {
                 )
             })
             .when_some(modal, |d, m| d.child(m))
+            .when_some(menu, |d, m| d.child(m))
     }
 }

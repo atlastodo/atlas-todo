@@ -49,6 +49,7 @@ const ICONS = [
   "user-round",
   "x",
   "calendar-range",
+  "copy-plus",
 ];
 
 // The version apps/mobile resolves (the store may hold others).

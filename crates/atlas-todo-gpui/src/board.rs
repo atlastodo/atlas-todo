@@ -144,6 +144,12 @@ fn card(app: &AtlasApp, task: &Task, t: &Theme, cx: &mut Context<AtlasApp>) -> A
             this.open_task = Some(open_id.clone());
             cx.notify();
         }))
+        .on_mouse_down(gpui::MouseButton::Right, {
+            let id = task.id.clone();
+            cx.listener(move |this, ev: &gpui::MouseDownEvent, _, cx| {
+                crate::context_menu::open(this, &id, ev, cx)
+            })
+        })
         .child(body)
         .into_any_element()
 }
