@@ -1,5 +1,7 @@
 //! Small building blocks shared by the screens.
 
+use std::sync::atomic::{AtomicU32, Ordering};
+
 use gpui::{
     div, prelude::*, px, relative, svg, AnyElement, App, ElementId, Hsla, IntoElement, Rgba,
     SharedString, Transformation, Window,
@@ -8,10 +10,23 @@ use gpui::{
 use crate::motion;
 use crate::theme::Theme;
 
+/// The text zoom (Ctrl+= / Ctrl+- / Ctrl+0), as `f32` bits; 1.0 by default.
+static ZOOM: AtomicU32 = AtomicU32::new(0x3f80_0000);
+
+pub fn zoom() -> f32 {
+    f32::from_bits(ZOOM.load(Ordering::Relaxed))
+}
+
+/// Set the text zoom, kept between 50% and 200%.
+pub fn set_zoom(z: f32) {
+    ZOOM.store(z.clamp(0.5, 2.0).to_bits(), Ordering::Relaxed);
+}
+
 /// Text at the web app's size. GPUI draws the same font about 14% larger than Chromium at the
-/// same pixel size, so sizes given as the web app's CSS pixels are scaled to match.
+/// same pixel size, so sizes given as the web app's CSS pixels are scaled to match (and then by
+/// the zoom).
 pub fn ts(css_px: f32) -> gpui::Pixels {
-    px(css_px * 0.875)
+    px(css_px * 0.875 * zoom())
 }
 
 /// A Lucide icon from `assets/icons`, tinted.

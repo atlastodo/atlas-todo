@@ -35,8 +35,9 @@ use std::borrow::Cow;
 use std::path::PathBuf;
 
 use gpui::{
-    div, prelude::*, px, size, App, AssetSource, Bounds, ClickEvent, Context, Entity, Focusable,
-    FontWeight, SharedString, TitlebarOptions, Window, WindowBounds, WindowOptions,
+    actions, div, point, prelude::*, px, size, App, AssetSource, Bounds, ClickEvent, Context,
+    Entity, FocusHandle, Focusable, FontWeight, KeyBinding, SharedString, TitlebarOptions, Window,
+    WindowBounds, WindowOptions,
 };
 
 use crate::app::{AtlasApp, Route};
@@ -93,6 +94,8 @@ struct Args {
     view: Option<String>,
     task: Option<String>,
     screenshot: Option<PathBuf>,
+    /// Start in the tray, without the window (the autostart entry's `--hidden`).
+    hidden: bool,
 }
 
 fn parse_args() -> Args {
@@ -107,9 +110,10 @@ fn parse_args() -> Args {
             "--view" => a.view = it.next(),
             "--task" => a.task = it.next(),
             "--screenshot" => a.screenshot = it.next().map(PathBuf::from),
+            "--hidden" => a.hidden = true,
             "-h" | "--help" => {
                 println!(
-                    "atlas-todo-gpui [--server URL --token TOKEN] [--dark|--light] [--view VIEW] [--task TITLE] [--screenshot OUT.png]"
+                    "atlas-todo-gpui [--server URL --token TOKEN] [--dark|--light] [--view VIEW] [--task TITLE] [--hidden] [--screenshot OUT.png]"
                 );
                 std::process::exit(0);
             }
@@ -228,14 +232,43 @@ fn navigate(app: &mut AtlasApp, args: &Args) {
     }
 }
 
+actions!(atlas, [Quit, ZoomIn, ZoomOut, ZoomReset]);
+
+/// The app's own shortcuts, as the Electron app's: Ctrl+Q quits, Ctrl+= / Ctrl+- / Ctrl+0 zoom.
+fn bind_app_keys(cx: &mut App) {
+    cx.bind_keys([
+        KeyBinding::new("ctrl-q", Quit, None),
+        KeyBinding::new("ctrl-=", ZoomIn, None),
+        KeyBinding::new("ctrl-+", ZoomIn, None),
+        KeyBinding::new("ctrl--", ZoomOut, None),
+        KeyBinding::new("ctrl-0", ZoomReset, None),
+    ]);
+    cx.on_action(|_: &Quit, cx| cx.quit());
+    let zoom = |z: f32, cx: &mut App| {
+        ui::set_zoom((z * 10.).round() / 10.);
+        desktop::DesktopSettings::update(|s| s.zoom = ui::zoom());
+        cx.refresh_windows();
+    };
+    cx.on_action(move |_: &ZoomIn, cx| zoom(ui::zoom() + 0.1, cx));
+    cx.on_action(move |_: &ZoomOut, cx| zoom(ui::zoom() - 0.1, cx));
+    cx.on_action(move |_: &ZoomReset, cx| zoom(1.0, cx));
+}
+
 /// The window's root: the sign-in screen, then the app, and back on sign-out.
 struct Root {
     view: gpui::AnyView,
+    /// Holds the focus when nothing in the view does, so the app's shortcuts always dispatch.
+    focus: FocusHandle,
+    /// Bumped at every resize or move; the frame is saved once it settles.
+    bounds_gen: usize,
 }
 
 impl Render for Root {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        self.view.clone()
+        div()
+            .size_full()
+            .track_focus(&self.focus)
+            .child(self.view.clone())
     }
 }
 
@@ -496,16 +529,24 @@ fn main() {
         return;
     }
 
+    // A second launch shows the running instance's window instead.
+    let Some(launches) = desktop::single_instance() else {
+        return;
+    };
     desktop::install_entry();
+    ui::set_zoom(desktop::DesktopSettings::load().zoom);
     gpui_platform::application()
         .with_assets(Assets)
         .run(move |cx: &mut App| {
             load_fonts(cx);
             input::bind_keys(cx);
+            bind_app_keys(cx);
             let account = initial_account(&args);
             let root = cx.new(|cx: &mut Context<Root>| {
                 let mut root = Root {
                     view: cx.new(|_| Blank).into(),
+                    focus: cx.focus_handle(),
+                    bounds_gen: 0,
                 };
                 match account {
                     Some(account) => root.show_app(account, &args, cx),
@@ -513,33 +554,52 @@ fn main() {
                 }
                 root
             });
-            open_window(root.clone(), cx);
             // With a tray, closing the window leaves the app (and its sync) in the tray, which
-            // opens it again or quits; without one, closing quits.
-            match desktop::spawn_tray() {
-                Some(events) => {
-                    cx.spawn(async move |cx| {
-                        while let Ok(event) = events.recv().await {
-                            let root = root.clone();
-                            cx.update(|cx| match event {
-                                desktop::TrayEvent::Open => {
-                                    if let Some(window) = cx.windows().into_iter().next() {
-                                        let _ = window
-                                            .update(cx, |_, window, _| window.activate_window());
-                                    } else {
-                                        open_window(root, cx);
-                                    }
-                                }
-                                desktop::TrayEvent::Quit => cx.quit(),
-                            });
-                        }
-                    })
-                    .detach();
-                }
-                None => cx.on_window_closed(|cx, _| cx.quit()).detach(),
+            // opens it again or quits, unless "Close to tray" is off; without one, closing quits.
+            let tray = desktop::spawn_tray();
+            let has_tray = tray.is_some();
+            if !(args.hidden && has_tray) {
+                open_window(root.clone(), cx);
             }
+            cx.on_window_closed(move |cx, _| {
+                if !has_tray || !desktop::DesktopSettings::load().close_to_tray {
+                    cx.quit();
+                }
+            })
+            .detach();
+            if let Some(events) = tray {
+                let root = root.clone();
+                cx.spawn(async move |cx| {
+                    while let Ok(event) = events.recv().await {
+                        let root = root.clone();
+                        cx.update(|cx| match event {
+                            desktop::TrayEvent::Open => show_window(root, cx),
+                            desktop::TrayEvent::Quit => cx.quit(),
+                        });
+                    }
+                })
+                .detach();
+            }
+            cx.spawn(async move |cx| {
+                while launches.recv().await.is_ok() {
+                    let root = root.clone();
+                    cx.update(|cx| show_window(root, cx));
+                }
+            })
+            .detach();
+            cx.on_app_quit(|_| async { desktop::release_instance() })
+                .detach();
             cx.activate(true);
         });
+}
+
+/// Bring the window to the front, or open it again from the tray.
+fn show_window(root: Entity<Root>, cx: &mut App) {
+    if let Some(window) = cx.windows().into_iter().next() {
+        let _ = window.update(cx, |_, window, _| window.activate_window());
+    } else {
+        open_window(root, cx);
+    }
 }
 
 /// Nothing, while the window's first view is made.
@@ -551,11 +611,55 @@ impl Render for Blank {
     }
 }
 
-/// The window, around the root view (kept between windows when the app lives in the tray).
+/// The frame the window had when it last closed, clamped onto today's displays; else centered.
+fn initial_bounds(cx: &App) -> WindowBounds {
+    let Some(saved) = desktop::WindowState::load() else {
+        return WindowBounds::Windowed(Bounds::centered(None, size(px(1280.), px(800.)), cx));
+    };
+    let displays: Vec<_> = cx
+        .displays()
+        .iter()
+        .map(|d| {
+            let b = d.bounds();
+            (
+                f32::from(b.origin.x),
+                f32::from(b.origin.y),
+                f32::from(b.size.width),
+                f32::from(b.size.height),
+            )
+        })
+        .collect();
+    let s = saved.clamp(&displays);
+    let bounds = Bounds::new(point(px(s.x), px(s.y)), size(px(s.width), px(s.height)));
+    if s.maximized {
+        WindowBounds::Maximized(bounds)
+    } else {
+        WindowBounds::Windowed(bounds)
+    }
+}
+
+/// Remember the window's frame (its restore size when maximized).
+fn save_bounds(window: &Window) {
+    let (bounds, maximized) = match window.window_bounds() {
+        WindowBounds::Windowed(b) => (b, false),
+        WindowBounds::Maximized(b) | WindowBounds::Fullscreen(b) => (b, true),
+    };
+    desktop::WindowState {
+        x: f32::from(bounds.origin.x),
+        y: f32::from(bounds.origin.y),
+        width: f32::from(bounds.size.width),
+        height: f32::from(bounds.size.height),
+        maximized,
+    }
+    .save();
+}
+
+/// The window, around the root view (kept between windows when the app lives in the tray). Its
+/// frame comes back from the last run, and is saved once a resize settles and when it closes.
 fn open_window(root: Entity<Root>, cx: &mut App) {
-    let bounds = Bounds::centered(None, size(px(1280.), px(800.)), cx);
     let opts = WindowOptions {
-        window_bounds: Some(WindowBounds::Windowed(bounds)),
+        window_bounds: Some(initial_bounds(cx)),
+        window_min_size: Some(size(px(desktop::MIN_WIDTH), px(desktop::MIN_HEIGHT))),
         titlebar: Some(TitlebarOptions {
             title: Some("Atlas Todo".into()),
             ..Default::default()
@@ -563,7 +667,33 @@ fn open_window(root: Entity<Root>, cx: &mut App) {
         app_id: Some(APP_ID.into()),
         ..Default::default()
     };
-    if let Err(e) = cx.open_window(opts, |_, _| root) {
+    let opened = cx.open_window(opts, |window, cx| {
+        root.update(cx, |r, cx| {
+            window.focus(&r.focus, cx);
+            cx.observe_window_bounds(window, |root, window, cx| {
+                root.bounds_gen += 1;
+                let gen = root.bounds_gen;
+                cx.spawn_in(window, async move |this, cx| {
+                    cx.background_executor()
+                        .timer(std::time::Duration::from_millis(500))
+                        .await;
+                    let _ = this.update_in(cx, |root, window, _| {
+                        if root.bounds_gen == gen {
+                            save_bounds(window);
+                        }
+                    });
+                })
+                .detach();
+            })
+            .detach();
+        });
+        window.on_window_should_close(cx, |window, _| {
+            save_bounds(window);
+            true
+        });
+        root
+    });
+    if let Err(e) = opened {
         eprintln!("could not open the window: {e}");
     }
 }

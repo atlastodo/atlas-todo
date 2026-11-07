@@ -154,3 +154,260 @@ pub fn spawn_tray() -> Option<async_channel::Receiver<TrayEvent>> {
         }
     }
 }
+
+/// The desktop-only settings (not synced): `$XDG_CONFIG_HOME/atlas-todo-gpui/desktop.json`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct DesktopSettings {
+    /// Closing the window keeps the app in the tray (when there is one), as the Electron app's
+    /// default.
+    pub close_to_tray: bool,
+    /// The text zoom.
+    pub zoom: f32,
+}
+
+impl Default for DesktopSettings {
+    fn default() -> Self {
+        Self {
+            close_to_tray: true,
+            zoom: 1.0,
+        }
+    }
+}
+
+fn settings_path() -> Option<PathBuf> {
+    crate::config_dir().map(|d| d.join("desktop.json"))
+}
+
+impl DesktopSettings {
+    pub fn load() -> Self {
+        let v: serde_json::Value = settings_path()
+            .and_then(|p| std::fs::read_to_string(p).ok())
+            .and_then(|t| serde_json::from_str(&t).ok())
+            .unwrap_or_default();
+        let d = Self::default();
+        Self {
+            close_to_tray: v
+                .get("close_to_tray")
+                .and_then(|x| x.as_bool())
+                .unwrap_or(d.close_to_tray),
+            zoom: v
+                .get("zoom")
+                .and_then(|x| x.as_f64())
+                .map_or(d.zoom, |z| z as f32),
+        }
+    }
+
+    fn save(&self) {
+        let Some(path) = settings_path() else {
+            return;
+        };
+        let body = serde_json::json!({ "close_to_tray": self.close_to_tray, "zoom": self.zoom });
+        if let Err(e) = write_if_changed(&path, body.to_string().as_bytes()) {
+            eprintln!("could not save the desktop settings: {e}");
+        }
+    }
+
+    /// Change and save.
+    pub fn update(f: impl FnOnce(&mut Self)) -> Self {
+        let mut s = Self::load();
+        f(&mut s);
+        s.save();
+        s
+    }
+}
+
+#[allow(dead_code)] // for the settings screen
+fn autostart_path() -> Option<PathBuf> {
+    let base = std::env::var_os("XDG_CONFIG_HOME")
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".config")))?;
+    Some(base.join(format!("autostart/{APP_ID}.desktop")))
+}
+
+#[allow(dead_code)] // for the settings screen
+/// Whether the app starts at login (an XDG autostart entry).
+pub fn starts_at_login() -> bool {
+    autostart_path().is_some_and(|p| p.exists())
+}
+
+#[allow(dead_code)] // for the settings screen
+/// Start at login (an entry in `~/.config/autostart` that runs this binary into the tray), or not.
+pub fn set_start_at_login(on: bool) -> std::io::Result<()> {
+    let Some(path) = autostart_path() else {
+        return Ok(());
+    };
+    if !on {
+        return match std::fs::remove_file(&path) {
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e),
+            _ => Ok(()),
+        };
+    }
+    let exe = std::env::current_exe()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|_| "atlas-todo-gpui".into());
+    let entry = format!(
+        "[Desktop Entry]\nType=Application\nName=Atlas Todo (GPUI)\nExec={exe} --hidden\nIcon={APP_ID}\nTerminal=false\nX-GNOME-Autostart-enabled=true\n"
+    );
+    write_if_changed(&path, entry.as_bytes())
+}
+
+/// Where the running instance listens: `$XDG_RUNTIME_DIR/atlas-todo-gpui.sock`.
+fn socket_path() -> Option<PathBuf> {
+    std::env::var_os("XDG_RUNTIME_DIR")
+        .map(|d| PathBuf::from(d).join("atlas-todo-gpui.sock"))
+        .or_else(|| crate::config_dir().map(|d| d.join("instance.sock")))
+}
+
+/// One instance per user, as the Electron app's single-instance lock: when one runs already, ask
+/// it to show its window and return `None` (this run exits). Otherwise listen for later launches,
+/// each of which sends one event.
+pub fn single_instance() -> Option<async_channel::Receiver<()>> {
+    use std::io::{BufRead, Write};
+    use std::os::unix::net::{UnixListener, UnixStream};
+    let (tx, rx) = async_channel::unbounded();
+    let Some(path) = socket_path() else {
+        return Some(rx);
+    };
+    if let Ok(mut s) = UnixStream::connect(&path) {
+        if s.write_all(b"show\n").is_ok() {
+            return None;
+        }
+    }
+    // Nothing answers: a socket left by a run that crashed.
+    let _ = std::fs::remove_file(&path);
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let listener = match UnixListener::bind(&path) {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("no single-instance socket: {e}");
+            return Some(rx);
+        }
+    };
+    let spawned = std::thread::Builder::new()
+        .name("atlas-instance".into())
+        .spawn(move || {
+            for stream in listener.incoming().flatten() {
+                let mut line = String::new();
+                let _ = std::io::BufReader::new(stream).read_line(&mut line);
+                if line.trim() == "show" && tx.send_blocking(()).is_err() {
+                    break;
+                }
+            }
+        });
+    if let Err(e) = spawned {
+        eprintln!("no single-instance listener: {e}");
+    }
+    Some(rx)
+}
+
+/// Remove the instance socket (at quit), so the next launch does not try it first.
+pub fn release_instance() {
+    if let Some(path) = socket_path() {
+        let _ = std::fs::remove_file(path);
+    }
+}
+
+/// The window's last frame (`window.json`): size and position, and whether it was maximized.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct WindowState {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub maximized: bool,
+}
+
+pub const MIN_WIDTH: f32 = 720.;
+pub const MIN_HEIGHT: f32 = 480.;
+
+fn window_path() -> Option<PathBuf> {
+    crate::config_dir().map(|d| d.join("window.json"))
+}
+
+impl WindowState {
+    pub fn load() -> Option<Self> {
+        let v: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(window_path()?).ok()?).ok()?;
+        let f = |k: &str| v.get(k).and_then(|x| x.as_f64()).map(|x| x as f32);
+        Some(Self {
+            x: f("x").unwrap_or(0.),
+            y: f("y").unwrap_or(0.),
+            width: f("width")?.max(MIN_WIDTH),
+            height: f("height")?.max(MIN_HEIGHT),
+            maximized: v.get("maximized").and_then(|x| x.as_bool()) == Some(true),
+        })
+    }
+
+    pub fn save(&self) {
+        let Some(path) = window_path() else {
+            return;
+        };
+        let body = serde_json::json!({
+            "x": self.x, "y": self.y, "width": self.width, "height": self.height,
+            "maximized": self.maximized,
+        });
+        if let Err(e) = write_if_changed(&path, body.to_string().as_bytes()) {
+            eprintln!("could not save the window state: {e}");
+        }
+    }
+
+    /// Onto the displays there are now (`(x, y, width, height)` each): kept where it is when its
+    /// middle is on one, else centered on the first; never larger than the display it lands on.
+    pub fn clamp(mut self, displays: &[(f32, f32, f32, f32)]) -> Self {
+        let (mx, my) = (self.x + self.width / 2., self.y + self.height / 2.);
+        let on = displays
+            .iter()
+            .find(|(x, y, w, h)| mx >= *x && mx < x + w && my >= *y && my < y + h);
+        match (on, displays.first()) {
+            (Some(&(x, y, w, h)), _) => {
+                self.width = self.width.min(w);
+                self.height = self.height.min(h);
+                self.x = self.x.clamp(x, x + w - self.width);
+                self.y = self.y.clamp(y, y + h - self.height);
+            }
+            (None, Some(&(x, y, w, h))) => {
+                self.width = self.width.min(w);
+                self.height = self.height.min(h);
+                self.x = x + (w - self.width) / 2.;
+                self.y = y + (h - self.height) / 2.;
+            }
+            (None, None) => {}
+        }
+        self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::WindowState;
+
+    fn state(x: f32, y: f32, width: f32, height: f32) -> WindowState {
+        WindowState {
+            x,
+            y,
+            width,
+            height,
+            maximized: false,
+        }
+    }
+
+    #[test]
+    fn a_frame_on_a_display_stays() {
+        let s = state(100., 50., 1280., 800.);
+        assert_eq!(s.clamp(&[(0., 0., 1920., 1080.)]), s);
+    }
+
+    #[test]
+    fn a_frame_off_every_display_is_centered_on_the_first() {
+        let s = state(4000., 50., 1280., 800.).clamp(&[(0., 0., 1920., 1080.)]);
+        assert_eq!((s.x, s.y), (320., 140.));
+    }
+
+    #[test]
+    fn a_frame_larger_than_its_display_shrinks_onto_it() {
+        let s = state(-10., -10., 3000., 2000.).clamp(&[(0., 0., 1920., 1080.)]);
+        assert_eq!(s, state(0., 0., 1920., 1080.));
+    }
+}
