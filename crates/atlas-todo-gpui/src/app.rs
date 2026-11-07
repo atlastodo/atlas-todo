@@ -83,6 +83,21 @@ pub struct AtlasApp {
     pub pending: Option<Pending>,
     /// Draft view modes picked by the user per project, over the project's default.
     view_picked: HashMap<String, bool>,
+    /// The command palette or search, when open.
+    pub palette: Option<crate::palette::Palette>,
+    pub palette_input: Entity<TextInput>,
+    /// The keyboard shortcuts help is open.
+    pub help_open: bool,
+    /// Search lists completed tasks too.
+    pub search_completed: bool,
+    /// The window's root, focused when no field is: the shortcuts' key context.
+    pub focus: gpui::FocusHandle,
+    /// The theme last drawn is dark.
+    pub theme_dark: bool,
+    /// The fields' events are subscribed to (at the first render, which has the window).
+    wired: bool,
+    /// `--palette` / `--search` / `--quick-add` / `--shortcuts`, opened once the view is set.
+    pub start_overlay: Option<crate::palette::StartOverlay>,
 }
 
 impl AtlasApp {
@@ -149,6 +164,14 @@ impl AtlasApp {
             linger: HashSet::new(),
             pending: None,
             view_picked: HashMap::new(),
+            palette: None,
+            palette_input: cx.new(|cx| TextInput::new("Type a command or search tasks...", cx)),
+            help_open: false,
+            search_completed: false,
+            focus: cx.focus_handle(),
+            theme_dark: false,
+            wired: false,
+            start_overlay: None,
         }
     }
 
@@ -557,6 +580,17 @@ impl AtlasApp {
 impl Render for AtlasApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = self.theme(window);
+        self.theme_dark = t.dark;
+        if !self.wired {
+            self.wired = true;
+            self.wire(window, cx);
+        }
+        self.keep_focus(window, cx);
+        if self.pending.is_none() {
+            if let Some(o) = self.start_overlay.take() {
+                self.open_start_overlay(o, window, cx);
+            }
+        }
         let screen = self.screen(&t, window, cx);
         // Each screen (and a project's list and board) fades in, rising a little.
         let key = match &self.route {
@@ -573,7 +607,11 @@ impl Render for AtlasApp {
             .open_task
             .clone()
             .and_then(|id| detail::task_detail(self, &id, &t, cx));
-        div()
+        let palette = crate::palette::overlay(self, &t, cx);
+        let help = crate::shortcuts::help(self, &t, cx);
+        crate::shortcuts::handlers(div(), cx)
+            .track_focus(&self.focus)
+            .key_context("AtlasApp")
             .size_full()
             .relative()
             .flex()
@@ -607,5 +645,7 @@ impl Render for AtlasApp {
                 )
             })
             .when_some(modal, |d, m| d.child(m))
+            .when_some(palette, |d, m| d.child(m))
+            .when_some(help, |d, m| d.child(m))
     }
 }

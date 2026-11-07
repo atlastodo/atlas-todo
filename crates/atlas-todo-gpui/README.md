@@ -26,8 +26,13 @@ window's app id is `dev.atlastodo.gpui`), so panels and launchers show the Atlas
 session has a tray host (StatusNotifierItem: KDE, waybar, …) it adds a tray icon that opens the
 window and quits; closing the window then leaves the app in the tray.
 
+Quick add previews what its text sets as chips under the field and boxes the date phrase.
+Ctrl+K opens the command palette, `/` or a header's search icon searches tasks, `A`/`Q` open the
+view's quick add, `?` lists the shortcuts, Escape closes, Ctrl+Q quits.
+
 `--view` is `today`, `upcoming`, `inbox`, `assigned`, `all`, `completed`, `projects`, `calendar`,
-`habits`, `stats`, … or `project:NAME` / `board:NAME`; `--task TITLE` opens a task's dialog.
+`habits`, `stats`, … or `project:NAME` / `board:NAME`; `--task TITLE` opens a task's dialog; `--palette Q`, `--search Q`, `--quick-add TEXT` and
+`--shortcuts` open those at start (for screenshots).
 
 `devenv shell gpui:screenshot OUT.png --server … --token … [--view …] [--task …] [--dark]` renders one
 screen offscreen through GPUI's headless wgpu renderer (the `screenshots` feature) at the README
@@ -65,8 +70,8 @@ that server and token.
 
 ## Not there yet
 
-Editing beyond completing, quick add, priority and habit check-ins; drag and drop; keyboard
-shortcuts and the command palette; search and filters; sharing; notifications and the tray;
+Editing beyond completing, quick add, priority and habit check-ins; drag and drop; the list
+cursor shortcuts (J/K, complete, reschedule, delete) and multi-select; filters; sharing; notifications and the tray;
 passkey sign-in and local-only accounts (atlastodo/atlas#124); weekly and
 interval habit goals (streaks are daily); i18n (English strings); packaging, the updater and
 macOS/Windows (only Linux, Wayland, was tried).

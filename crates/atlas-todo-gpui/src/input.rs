@@ -40,6 +40,8 @@ pub fn bind_keys(cx: &mut App) {
 pub struct Submit(pub String);
 /// Escape was pressed.
 pub struct Cancel;
+/// The text changed by typing, pasting or cutting (not by [`TextInput::set_text`] / `clear`).
+pub struct Changed;
 
 pub struct TextInput {
     focus_handle: FocusHandle,
@@ -52,10 +54,13 @@ pub struct TextInput {
     pub placeholder_color: Option<Hsla>,
     /// A password: drawn as bullets, never copied.
     pub masked: bool,
+    /// A byte range of the text drawn on a tinted box (quick add's recognised date).
+    pub highlight: Option<(Range<usize>, Hsla)>,
 }
 
 impl EventEmitter<Submit> for TextInput {}
 impl EventEmitter<Cancel> for TextInput {}
+impl EventEmitter<Changed> for TextInput {}
 
 impl TextInput {
     pub fn new(placeholder: &str, cx: &mut Context<Self>) -> Self {
@@ -69,12 +74,18 @@ impl TextInput {
             last_bounds: None,
             placeholder_color: None,
             masked: false,
+            highlight: None,
         }
     }
 
     pub fn set_text(&mut self, text: &str, cx: &mut Context<Self>) {
         self.content = SharedString::from(text.to_owned());
         self.selected = text.len()..text.len();
+        cx.notify();
+    }
+
+    pub fn set_placeholder(&mut self, placeholder: &str, cx: &mut Context<Self>) {
+        self.placeholder = SharedString::from(placeholder.to_owned());
         cx.notify();
     }
 
@@ -86,6 +97,7 @@ impl TextInput {
         self.content = SharedString::default();
         self.selected = 0..0;
         self.marked = None;
+        self.highlight = None;
         cx.notify();
     }
 
@@ -328,6 +340,7 @@ impl EntityInputHandler for TextInput {
         .into();
         self.selected = r.start + text.len()..r.start + text.len();
         self.marked = None;
+        cx.emit(Changed);
         cx.notify();
     }
 
@@ -357,6 +370,7 @@ impl EntityInputHandler for TextInput {
         .into();
         self.marked = (!text.is_empty()).then(|| r.start..r.start + text.len());
         self.selected = r.start + text.len()..r.start + text.len();
+        cx.emit(Changed);
         cx.notify();
     }
 
@@ -453,18 +467,35 @@ impl Element for TextElement {
         } else {
             (input.content.clone(), style.color)
         };
-        let run = TextRun {
-            len: text.len(),
+        let run = |len: usize, background_color: Option<Hsla>| TextRun {
+            len,
             font: style.font(),
             color,
-            background_color: None,
+            background_color,
             underline: None,
             strikethrough: None,
+        };
+        let highlight = input
+            .highlight
+            .clone()
+            .filter(|_| !input.content.is_empty() && !input.masked)
+            .map(|(r, c)| (input.clamp_range(&r), c))
+            .filter(|(r, _)| !r.is_empty());
+        let runs = match highlight {
+            Some((r, c)) => [
+                run(r.start, None),
+                run(r.len(), Some(c)),
+                run(text.len() - r.end, None),
+            ]
+            .into_iter()
+            .filter(|r| r.len > 0)
+            .collect(),
+            None => vec![run(text.len(), None)],
         };
         let font_size = style.font_size.to_pixels(window.rem_size());
         let line = window
             .text_system()
-            .shape_line(text, font_size, &[run], None);
+            .shape_line(text, font_size, &runs, None);
         let sel = input.selected.clone();
         let (selection, cursor) = if sel.is_empty() {
             let x = if input.content.is_empty() {
@@ -527,6 +558,15 @@ impl Element for TextElement {
             window.paint_quad(s);
         }
         let line = pre.line.take().expect("prepaint shaped the line");
+        // The highlight's box, under the text.
+        let _ = line.paint_background(
+            bounds.origin,
+            window.line_height(),
+            gpui::TextAlign::Left,
+            None,
+            window,
+            cx,
+        );
         let _ = line.paint(
             bounds.origin,
             window.line_height(),

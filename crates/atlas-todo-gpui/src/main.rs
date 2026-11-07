@@ -6,7 +6,11 @@
 //! ```text
 //! atlas-todo-gpui [--server URL --token TOKEN] [--dark|--light] [--view VIEW] [--task TITLE]
 //! atlas-todo-gpui --screenshot out.png ...   (with the `screenshots` feature: render offscreen)
+//! atlas-todo-gpui ... --palette QUERY | --search QUERY | --quick-add TEXT | --shortcuts
 //! ```
+//!
+//! The last opens the command palette, search, the view's quick add (typed in) or the shortcuts
+//! help at start, so a screenshot can show them.
 //!
 //! VIEW is `today`, `upcoming`, `inbox`, `calendar`, `habits`, `stats`, … or `project:NAME` /
 //! `board:NAME`. The server and token also come from `ATLAS_SERVER` / `ATLAS_TOKEN`. Without a
@@ -24,7 +28,10 @@ mod input;
 mod list;
 mod model;
 mod motion;
+mod palette;
+mod quick_add;
 mod secrets;
+mod shortcuts;
 mod stats;
 mod sync;
 mod theme;
@@ -93,6 +100,7 @@ struct Args {
     view: Option<String>,
     task: Option<String>,
     screenshot: Option<PathBuf>,
+    overlay: Option<palette::StartOverlay>,
 }
 
 fn parse_args() -> Args {
@@ -107,9 +115,23 @@ fn parse_args() -> Args {
             "--view" => a.view = it.next(),
             "--task" => a.task = it.next(),
             "--screenshot" => a.screenshot = it.next().map(PathBuf::from),
+            "--palette" => {
+                a.overlay = Some(palette::StartOverlay::Palette(
+                    it.next().unwrap_or_default(),
+                ))
+            }
+            "--search" => {
+                a.overlay = Some(palette::StartOverlay::Search(it.next().unwrap_or_default()))
+            }
+            "--quick-add" => {
+                a.overlay = Some(palette::StartOverlay::QuickAdd(
+                    it.next().unwrap_or_default(),
+                ))
+            }
+            "--shortcuts" => a.overlay = Some(palette::StartOverlay::Shortcuts),
             "-h" | "--help" => {
                 println!(
-                    "atlas-todo-gpui [--server URL --token TOKEN] [--dark|--light] [--view VIEW] [--task TITLE] [--screenshot OUT.png]"
+                    "atlas-todo-gpui [--server URL --token TOKEN] [--dark|--light] [--view VIEW] [--task TITLE] [--palette Q|--search Q|--quick-add TEXT|--shortcuts] [--screenshot OUT.png]"
                 );
                 std::process::exit(0);
             }
@@ -198,6 +220,7 @@ fn route_for(view: &str, snap: &Snapshot) -> Option<(Route, Option<bool>)> {
 /// nothing is loaded yet.
 fn configure(app: &mut AtlasApp, args: &Args) {
     app.force_dark = args.dark;
+    app.start_overlay = args.overlay.clone();
     if app.snap.sync != SyncState::Live && (args.view.is_some() || args.task.is_some()) {
         let args = args.clone();
         app.pending = Some(Box::new(move |app| navigate(app, &args)));
@@ -502,6 +525,7 @@ fn main() {
         .run(move |cx: &mut App| {
             load_fonts(cx);
             input::bind_keys(cx);
+            shortcuts::bind_keys(cx);
             let account = initial_account(&args);
             let root = cx.new(|cx: &mut Context<Root>| {
                 let mut root = Root {
@@ -580,6 +604,7 @@ fn screenshot(account: &Account, args: &Args, out: &std::path::Path) -> Result<(
     cx.update(|cx| {
         load_fonts(cx);
         input::bind_keys(cx);
+        shortcuts::bind_keys(cx);
     });
     let window = cx
         .open_window(size(px(1280.), px(800.)), |_, cx| {

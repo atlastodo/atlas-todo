@@ -307,7 +307,20 @@ pub fn add_row(
         .text_color(t.faint)
         .child(icon("plus", 18., t.faint));
     if open {
-        row.child(div().flex_1().text_color(t.text).child(app.input.clone()))
+        // The field, and under it the chips of what its text sets (quick add's preview).
+        let preview = crate::quick_add::preview(app, &target, t, cx);
+        div()
+            .flex()
+            .flex_col()
+            .child(row.child(div().flex_1().text_color(t.text).child(app.input.clone())))
+            .child(
+                div()
+                    .pl(px(if big { 50. } else { 56. }))
+                    .pr(px(16.))
+                    .pb(px(10.))
+                    .mt(px(-6.))
+                    .child(preview),
+            )
             .into_any_element()
     } else {
         row.cursor_pointer()
@@ -611,12 +624,7 @@ pub fn upcoming(
         .flex()
         .flex_col()
         .size_full()
-        .child(app.header(
-            None,
-            "Upcoming",
-            icon("search", 22., t.muted).into_any_element(),
-            t,
-        ))
+        .child(app.header(None, "Upcoming", crate::palette::search_button(t, cx), t))
         .child(scroll_body("upcoming").child(col))
         .into_any_element()
 }
@@ -721,12 +729,7 @@ pub fn today(
         .flex()
         .flex_col()
         .size_full()
-        .child(app.header(
-            None,
-            "Today",
-            icon("search", 22., t.muted).into_any_element(),
-            t,
-        ))
+        .child(app.header(None, "Today", crate::palette::search_button(t, cx), t))
         .child(scroll_body("today").child(col))
         .into_any_element()
 }
@@ -789,12 +792,7 @@ pub fn simple(
         .flex()
         .flex_col()
         .size_full()
-        .child(app.header(
-            None,
-            title,
-            icon("search", 22., t.muted).into_any_element(),
-            t,
-        ))
+        .child(app.header(None, title, crate::palette::search_button(t, cx), t))
         .child(scroll_body("simple").child(col))
         .into_any_element()
 }
