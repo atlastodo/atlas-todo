@@ -18,7 +18,7 @@ use crate::sync::{Command, Update};
 use crate::theme::{project_color, Theme};
 use crate::ui::icon;
 use crate::ui::ts;
-use crate::{board, calendar, detail, habits, list, stats};
+use crate::{board, calendar, countdowns, detail, focus, habits, list, stats};
 
 /// How long a completed row stays before it leaves the list.
 pub const LINGER: std::time::Duration = std::time::Duration::from_millis(900);
@@ -83,6 +83,12 @@ pub struct AtlasApp {
     pub pending: Option<Pending>,
     /// Draft view modes picked by the user per project, over the project's default.
     view_picked: HashMap<String, bool>,
+    /// The focus timer's run (device-local, not synced).
+    pub focus: focus::FocusTimer,
+    /// The reminder notifications' scheduler.
+    pub reminders: crate::remind::Scheduler,
+    /// The countdowns screen's once-a-second re-render is running.
+    pub countdown_ticking: bool,
 }
 
 impl AtlasApp {
@@ -117,6 +123,8 @@ impl AtlasApp {
                                     }
                                 }
                                 this.error = None;
+                                focus::ensure_loaded(this, cx);
+                                crate::remind::run(this, cx);
                             }
                             Update::Error(e) => this.error = Some(e),
                             Update::SignedOut(why) => cx.emit(SignedOut(why)),
@@ -149,7 +157,15 @@ impl AtlasApp {
             linger: HashSet::new(),
             pending: None,
             view_picked: HashMap::new(),
+            focus: Default::default(),
+            reminders: Default::default(),
+            countdown_ticking: false,
         }
+    }
+
+    /// Signed in to a live account (not the screenshot mode): notifications and timers run.
+    pub fn is_live(&self) -> bool {
+        self.tx.is_some()
     }
 
     pub fn theme(&self, window: &Window) -> Theme {
@@ -536,20 +552,8 @@ impl AtlasApp {
                 "Notifications are not in the GPUI app yet.",
                 t,
             ),
-            Route::Focus => list::placeholder(
-                self,
-                "Focus",
-                "timer",
-                "The focus timer is not in the GPUI app yet.",
-                t,
-            ),
-            Route::Countdowns => list::placeholder(
-                self,
-                "Countdowns",
-                "clock",
-                "Countdowns are not in the GPUI app yet.",
-                t,
-            ),
+            Route::Focus => focus::screen(self, t, window, cx),
+            Route::Countdowns => countdowns::screen(self, t, cx),
         }
     }
 }
@@ -569,6 +573,7 @@ impl Render for AtlasApp {
             240,
             |el, v| el.opacity(v).mt(px((1. - v) * 10.)),
         );
+        let focus_bar = focus::bar(self, &t, cx);
         let modal = self
             .open_task
             .clone()
@@ -606,6 +611,7 @@ impl Render for AtlasApp {
                         .child(SharedString::from(e)),
                 )
             })
+            .when_some(focus_bar, |d, b| d.child(b))
             .when_some(modal, |d, m| d.child(m))
     }
 }

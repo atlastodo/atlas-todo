@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use atlas_client::store::Store;
 use atlas_todo_rules::client::{Label, Project};
+use atlas_todo_rules::rules::reminders::Reminder;
 use atlas_todo_rules::rules::task::{all_tasks, ms, Task};
 use jiff::civil::Date;
 use jiff::tz::TimeZone;
@@ -64,6 +65,8 @@ pub struct Snapshot {
     pub labels: Vec<Label>,
     /// Tasks with a reminder still to fire (the rows' bell).
     pub reminders: HashSet<String>,
+    /// Every live `reminder` entity, for the notification scheduler.
+    pub reminder_list: Vec<Reminder>,
     pub habits: Vec<Habit>,
     pub checkins: Vec<Checkin>,
     /// Focus session lengths in ms, with when each ended.
@@ -107,6 +110,7 @@ impl Snapshot {
             tasks: Vec::new(),
             labels: Vec::new(),
             reminders: HashSet::new(),
+            reminder_list: Vec::new(),
             habits: Vec::new(),
             checkins: Vec::new(),
             focus: Vec::new(),
@@ -156,6 +160,12 @@ impl Snapshot {
             .into_iter()
             .filter(|e| !trashed(&e.fields) && e.fields.get("fired_at").is_none_or(Value::is_null))
             .map(|e| str_field(&e.fields, "task_id"))
+            .collect();
+        let reminder_list = store
+            .list("reminder")
+            .into_iter()
+            .filter(|e| !trashed(&e.fields))
+            .map(|e| Reminder::from_fields(&e.id, &e.fields))
             .collect();
 
         let mut habits: Vec<Habit> = store
@@ -226,6 +236,7 @@ impl Snapshot {
             tasks,
             labels,
             reminders,
+            reminder_list,
             habits,
             checkins,
             focus,

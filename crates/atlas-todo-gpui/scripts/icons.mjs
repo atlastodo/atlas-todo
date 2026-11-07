@@ -49,6 +49,12 @@ const ICONS = [
   "user-round",
   "x",
   "calendar-range",
+  "play",
+  "pause",
+  "skip-forward",
+  "square",
+  "coffee",
+  "chevron-up",
 ];
 
 // The version apps/mobile resolves (the store may hold others).
