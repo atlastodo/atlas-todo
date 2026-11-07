@@ -57,6 +57,9 @@ const ICONS = [
   "square",
   "coffee",
   "chevron-up",
+  "monitor",
+  "palette",
+  "settings",
 ];
 
 // The version apps/mobile resolves (the store may hold others).

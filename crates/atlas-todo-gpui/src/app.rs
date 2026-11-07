@@ -18,7 +18,7 @@ use crate::sync::{Command, Update};
 use crate::theme::Theme;
 use crate::ui::icon;
 use crate::ui::ts;
-use crate::{board, calendar, countdowns, detail, focus, habits, list, stats};
+use crate::{board, calendar, countdowns, detail, focus, habits, list, settings, stats};
 
 /// How long a completed row stays before it leaves the list.
 pub const LINGER: std::time::Duration = std::time::Duration::from_millis(900);
@@ -40,6 +40,7 @@ pub enum Route {
     Stats,
     Countdowns,
     Project(String),
+    Settings,
 }
 
 /// The session ended: the window goes back to the sign-in screen, saying this (empty after a
@@ -110,6 +111,8 @@ pub struct AtlasApp {
     pub reminders: crate::remind::Scheduler,
     /// The countdowns screen's once-a-second re-render is running.
     pub countdown_ticking: bool,
+    /// The server and who is signed in (an email, or "API token"), for the settings.
+    pub account: Option<(String, String)>,
 }
 
 impl AtlasApp {
@@ -136,7 +139,8 @@ impl AtlasApp {
                                 this.today = s.date_of(crate::now_ms());
                                 let mut s = *s;
                                 s.linger = this.linger.clone();
-                                let synced = s.sync == SyncState::Live;
+                                // Live, or the cached account of an offline start.
+                                let synced = s.sync == SyncState::Live || !s.user_id.is_empty();
                                 this.snap = Rc::new(s);
                                 if synced {
                                     if let Some(apply) = this.pending.take() {
@@ -192,6 +196,7 @@ impl AtlasApp {
             focus_timer: Default::default(),
             reminders: Default::default(),
             countdown_ticking: false,
+            account: None,
         }
     }
 
@@ -215,10 +220,31 @@ impl AtlasApp {
                     Some("light") => false,
                     _ => system(),
                 });
-        if dark {
-            Theme::dark()
-        } else {
-            Theme::light()
+        let base = if dark { Theme::dark() } else { Theme::light() };
+        base.with_accent(self.pref("accent").and_then(|v| v.as_str()).unwrap_or(""))
+    }
+
+    /// A feature toggle (`focus_enabled`, `habits_enabled`, …): on unless set to `false`.
+    pub fn feature_on(&self, field: &str) -> bool {
+        self.pref(field).and_then(|v| v.as_bool()) != Some(false)
+    }
+
+    /// Whether a smart view has its sidebar row (`menu_smart_views`: on unless set to `false`).
+    pub fn smart_view_in_menu(&self, view: &str) -> bool {
+        self.pref("menu_smart_views")
+            .and_then(|m| m.get(view))
+            .and_then(|v| v.as_bool())
+            != Some(false)
+    }
+
+    /// Whether a screen is on: the features turned off in the settings have none.
+    pub fn route_enabled(&self, route: &Route) -> bool {
+        match route {
+            Route::Focus => self.feature_on("focus_enabled"),
+            Route::Habits => self.feature_on("habits_enabled"),
+            Route::Countdowns => self.feature_on("countdowns_enabled"),
+            Route::Stats => self.feature_on("stats_enabled"),
+            _ => true,
         }
     }
 
@@ -444,7 +470,9 @@ impl AtlasApp {
             ("all", "All tasks", "list-todo", Route::All),
         ];
         for (id, label, glyph, route) in top {
-            col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
+            if self.smart_view_in_menu(id) {
+                col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
+            }
         }
         col = col.child(divider());
         let favorites = self.sidebar_favorites(t, cx);
@@ -467,15 +495,26 @@ impl AtlasApp {
             ("countdowns", "Countdowns", "clock", Route::Countdowns),
         ];
         for (id, label, glyph, route) in views {
-            col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
+            if self.route_enabled(&route) {
+                col = col.child(self.nav_item((id, label, glyph), None, route, t, cx));
+            }
         }
         col = col.child(divider());
         col = col.children(self.sidebar_projects(t, cx));
         col.child(divider())
+            .when(self.smart_view_in_menu("completed"), |c| {
+                c.child(self.nav_item(
+                    ("completed", "Completed", "circle-check-big"),
+                    None,
+                    Route::Completed,
+                    t,
+                    cx,
+                ))
+            })
             .child(self.nav_item(
-                ("completed", "Completed", "circle-check-big"),
+                ("settings", "Settings", "settings"),
                 None,
-                Route::Completed,
+                Route::Settings,
                 t,
                 cx,
             ))
@@ -565,6 +604,7 @@ impl AtlasApp {
             Route::Calendar => calendar::calendar(self, t, cx),
             Route::Habits => habits::habits(self, t, cx),
             Route::Stats => stats::stats(self, t, cx),
+            Route::Settings => settings::settings(self, t, cx),
             Route::Filters => list::placeholder(
                 self,
                 "Filters",
@@ -600,6 +640,12 @@ impl Render for AtlasApp {
             }
         }
         self.settle_drag(cx);
+        let pref_str = |f: &str| self.pref(f).and_then(|v| v.as_str());
+        crate::format::set_prefs(pref_str("time_format"), pref_str("date_format"));
+        // A feature turned off (here or on another device) takes its screen with it.
+        if !self.route_enabled(&self.route) {
+            self.route = Route::Today;
+        }
         let screen = self.screen(&t, window, cx);
         // Each screen (and a project's list and board) fades in, rising a little.
         let key = match &self.route {
