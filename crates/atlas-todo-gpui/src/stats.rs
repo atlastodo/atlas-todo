@@ -8,6 +8,7 @@ use gpui::{
 };
 use jiff::ToSpan;
 
+use atlas_todo_rules::rules::habits::{total_checkins, Habit};
 use atlas_todo_rules::rules::task::ms;
 
 use crate::app::AtlasApp;
@@ -119,6 +120,9 @@ fn breakdown(
         .into_any_element()
 }
 
+/// A routine (or a lone habit), its done days, and its members with theirs.
+type HabitBlock<'a> = (Option<&'a Habit>, usize, Vec<(&'a Habit, usize)>);
+
 pub fn stats(app: &mut AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> AnyElement {
     let snap = app.snap.clone();
     let today = app.today;
@@ -216,26 +220,54 @@ pub fn stats(app: &mut AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> AnyEl
     by_project.sort_by_key(|p| std::cmp::Reverse(p.1));
     let project_max = by_project.first().map_or(0, |p| p.1);
 
-    let mut habit_counts: Vec<(String, usize, gpui::Rgba)> = snap
-        .habits
-        .iter()
-        .enumerate()
-        .map(|(i, h)| {
-            let n = snap
-                .checkins
-                .iter()
-                .filter(|c| c.habit_id == h.id && c.done && c.date >= from && c.date <= today)
-                .count();
-            let color = if h.color.is_empty() {
-                rgb(PROJECT_COLORS[i % PROJECT_COLORS.len()])
-            } else {
-                hex(&h.color, PROJECT_COLORS[0])
-            };
-            (h.name.clone(), n, color)
-        })
-        .collect();
-    habit_counts.sort_by_key(|h| std::cmp::Reverse(h.1));
-    let habit_max = habit_counts.first().map_or(0, |h| h.1);
+    // Done days in the range, from each habit's recorded days (duplicate rows count once), grouped
+    // under their routine as `StatsScreen` does: routines and members by count, an empty routine
+    // dropped. Each row is (key, name, count, colour, indented).
+    let habit_count = |h: &Habit| {
+        let states = snap.states_of(&h.id);
+        total_checkins(&states.range(from..=today).map(|(d, s)| (*d, *s)).collect()) as usize
+    };
+    let mut singles: Vec<(&Habit, usize)> =
+        snap.habits.iter().map(|h| (h, habit_count(h))).collect();
+    singles.sort_by_key(|h| std::cmp::Reverse(h.1));
+    let mut blocks: Vec<HabitBlock> = Vec::new();
+    for g in &snap.habit_groups {
+        let rows: Vec<(&Habit, usize)> = singles
+            .iter()
+            .filter(|(h, _)| h.parent_id.as_deref() == Some(&g.id))
+            .copied()
+            .collect();
+        if !rows.is_empty() {
+            blocks.push((Some(g), rows.iter().map(|r| r.1).sum(), rows));
+        }
+    }
+    for (h, n) in &singles {
+        let grouped = h
+            .parent_id
+            .as_deref()
+            .is_some_and(|p| snap.habit_groups.iter().any(|g| g.id == p));
+        if !grouped {
+            blocks.push((None, *n, vec![(h, *n)]));
+        }
+    }
+    blocks.sort_by_key(|b| std::cmp::Reverse(b.1));
+    let habit_max = blocks.iter().map(|b| b.1).max().unwrap_or(0).max(1);
+    let color_of = |h: &Habit| hex(&h.color, PROJECT_COLORS[0]);
+    let mut habit_counts: Vec<(String, String, usize, gpui::Rgba, bool)> = Vec::new();
+    for (group, n, rows) in &blocks {
+        if let Some(g) = group {
+            habit_counts.push((g.id.clone(), g.name.clone(), *n, color_of(g), false));
+        }
+        for (h, n) in rows {
+            habit_counts.push((
+                h.id.clone(),
+                h.name.clone(),
+                *n,
+                color_of(h),
+                group.is_some(),
+            ));
+        }
+    }
 
     let mut col = div()
         .flex()
@@ -310,15 +342,15 @@ pub fn stats(app: &mut AtlasApp, t: &Theme, cx: &mut Context<AtlasApp>) -> AnyEl
     if !habit_counts.is_empty() {
         col = col.child(div().mt(px(10.)).child(caps("Habits", t)));
         let mut habits = div().flex().flex_col();
-        for (name, n, color) in &habit_counts {
-            habits = habits.child(breakdown(
-                format!("h-{days}-{name}"),
+        for (id, name, n, color, indent) in &habit_counts {
+            habits = habits.child(div().when(*indent, |d| d.pl(px(16.))).child(breakdown(
+                format!("h-{days}-{id}"),
                 name,
                 *n,
                 habit_max,
                 *color,
                 t,
-            ));
+            )));
         }
         col = col.child(habits);
     }
