@@ -3,9 +3,14 @@
 
 pub mod dates;
 pub mod filter;
+pub mod habit_groups;
+pub mod habits;
+pub mod ids;
 pub mod quick_add;
 pub mod recurrence;
 pub mod task;
 
+#[cfg(test)]
+mod habit_vectors;
 #[cfg(test)]
 mod vectors;
