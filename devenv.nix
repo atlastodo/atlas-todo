@@ -66,7 +66,7 @@ in
   languages.javascript = {
     enable = true;
     # Node 26, matching `engines` and CI. Node is the runtime; Bun is the package manager. Bun is
-    # pinned to 1.4.2 through this lock's nixpkgs, in lockstep with .bun-version (CI).
+    # pinned to 1.4.4 through this lock's nixpkgs, in lockstep with .bun-version (CI).
     package = pkgs.nodejs_26;
     bun.enable = true;
   };
@@ -141,7 +141,7 @@ in
     cd "$DEVENV_ROOT"
     command -v docker >/dev/null && docker info >/dev/null 2>&1 || { echo "!! screenshots needs a running Docker daemon." >&2; exit 1; }
     # The core release the app pins.
-    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas:0.1.15}"
+    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas:0.1.16}"
     work="$(mktemp -d)"
     net="atlas-screenshots-$$"
     cleanup() {
