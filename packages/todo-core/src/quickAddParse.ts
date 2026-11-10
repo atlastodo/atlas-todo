@@ -503,32 +503,39 @@ export function parseQuickAdd(
       continue;
     }
     if (w.startsWith("#") && w.length > 1) {
-      const name = w.slice(1);
-      const isUnlinked =
-        ctx.ignoreProjects?.includes(w.toLowerCase()) ||
-        ctx.ignoreProjects?.includes(name.toLowerCase()) ||
-        ctx.ignoreProjects?.includes(w) ||
-        ctx.ignoreProjects?.includes(name);
-      if (!isUnlinked) {
-        const resolvedId = ctx.projectIdByName ? ctx.projectIdByName(name) : undefined;
-        if (ctx.projectIdByName === undefined || resolvedId) {
-          projectName = name;
-          projectTokenSpan = {
-            start: wordStarts[i]!,
-            end: wordStarts[i]! + w.length,
-            text: w,
-            value: projectName,
-          };
-          consumedWords.add(i);
-          if (resolvedId) {
-            resolvedProjectId = resolvedId;
-            projectMatch = projectTokenSpan;
-          } else if (ctx.projectIdByName === undefined) {
-            projectMatch = projectTokenSpan;
+      // A project name may span words ("#Signal - TT"): with a lookup, the longest run of
+      // words naming an existing project wins; without one, the single word is taken.
+      const nameOf = (n: number) =>
+        words
+          .slice(i, i + n)
+          .join(" ")
+          .slice(1);
+      let count = 1;
+      let resolvedId: string | null | undefined;
+      if (ctx.projectIdByName) {
+        for (let n = words.length - i; n >= 1; n--) {
+          const id = ctx.projectIdByName(nameOf(n));
+          if (id) {
+            count = n;
+            resolvedId = id;
+            break;
           }
         }
       }
-      i += 1;
+      const end = wordStarts[i + count - 1]! + words[i + count - 1]!.length;
+      const tokenText = text.slice(wordStarts[i]!, end);
+      const name = nameOf(count);
+      const isUnlinked = [tokenText, `#${name}`, name].some(
+        (x) => ctx.ignoreProjects?.includes(x) || ctx.ignoreProjects?.includes(x.toLowerCase()),
+      );
+      if (!isUnlinked && (ctx.projectIdByName === undefined || resolvedId)) {
+        projectName = name;
+        projectTokenSpan = { start: wordStarts[i]!, end, text: tokenText, value: projectName };
+        projectMatch = projectTokenSpan;
+        if (resolvedId) resolvedProjectId = resolvedId;
+        for (let k = i; k < i + count; k++) consumedWords.add(k);
+      }
+      i += count;
       continue;
     }
     if (w.startsWith("@") && w.length > 1) {

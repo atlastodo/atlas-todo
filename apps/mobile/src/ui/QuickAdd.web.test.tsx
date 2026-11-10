@@ -274,6 +274,59 @@ describe("QuickAdd description field on web", () => {
       );
     });
 
+    it("Enter on a project whose name has spaces files the task under it", async () => {
+      const onAdd = jest.fn();
+      await render(
+        <QuickAdd
+          onAdd={onAdd}
+          now={NOW}
+          projects={[
+            { id: "p1", name: "Signal - TT" },
+            { id: "p2", name: "Work" },
+          ]}
+        />,
+      );
+      const input = screen.getByLabelText("Add a task");
+      await fireEvent(input, "focus");
+      await fireEvent.changeText(input, "research about delayed message #Sig");
+
+      await fireEvent(input, "submitEditing");
+      const text = "research about delayed message #Signal - TT ";
+      expect(input.props.value).toBe(text);
+      // The whole name is the project's chip, not just the first word.
+      expect(screen.getByText("#Signal - TT")).toBeTruthy();
+
+      await fireEvent(input, "submitEditing");
+      expect(onAdd).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "research about delayed message", project_id: "p1" }),
+      );
+    });
+
+    it("Backspace after a project name with spaces unlinks the whole name", async () => {
+      const onAdd = jest.fn();
+      await render(
+        <QuickAdd onAdd={onAdd} now={NOW} projects={[{ id: "p1", name: "Signal - TT" }]} />,
+      );
+      const input = screen.getByLabelText("Add a task");
+      await fireEvent(input, "focus");
+      const text = "research #Signal - TT";
+      await fireEvent.changeText(input, text);
+      expect(screen.getByText("#Signal - TT")).toBeTruthy();
+
+      await fireEvent(input, "selectionChange", {
+        nativeEvent: { selection: { start: text.length, end: text.length } },
+      });
+      await fireEvent(input, "keyPress", {
+        nativeEvent: { key: "Backspace" },
+        preventDefault: jest.fn(),
+      });
+      expect(screen.queryByText("#Signal - TT")).toBeNull();
+
+      await fireEvent(input, "submitEditing");
+      expect(onAdd).toHaveBeenCalledWith(expect.objectContaining({ title: text }));
+      expect(onAdd.mock.calls[0][0].project_id).toBeUndefined();
+    });
+
     it("arrowing down to the Create row and pressing Enter creates the typed mention", async () => {
       const onCreateLabel = jest.fn((name: string) => `lbl_${name}`);
       const onAdd = jest.fn();

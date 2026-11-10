@@ -1,10 +1,7 @@
-## v0.1.18
+## v0.1.19
 
 ### Fixes
-- Build the flake's web-dist and desktop with packages/todo-core
-
-### Documentation
-- The audit findings left after node-forge 1.4.2
+- Match project names that contain spaces
 
 ### Maintenance
-- 4 dependency updates ([full list](https://github.com/atlastodo/atlas-todo/compare/v0.1.17...v0.1.18))
+- 6 dependency updates ([full list](https://github.com/atlastodo/atlas-todo/compare/v0.1.18...v0.1.19))

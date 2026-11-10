@@ -1543,6 +1543,94 @@
           "text": "tomorrow 5pm"
         }
       }
+    },
+    {
+      "name": "project name with spaces",
+      "text": "research about delayed message #Signal - TT",
+      "now": 1672653600000,
+      "tz": "UTC",
+      "projects": {
+        "Signal": "p-signal",
+        "Signal - TT": "p-signal-tt",
+        "Work": "p-work"
+      },
+      "labels": ["errand"],
+      "expected": {
+        "title": "research about delayed message",
+        "priority": null,
+        "due_at": null,
+        "recurrence": null,
+        "project_id": "p-signal-tt",
+        "labels": [],
+        "date_match": null
+      }
+    },
+    {
+      "name": "project name with spaces, then a date",
+      "text": "Read article #Signal - TT tomorrow",
+      "now": 1672653600000,
+      "tz": "UTC",
+      "projects": {
+        "Signal": "p-signal",
+        "Signal - TT": "p-signal-tt",
+        "Work": "p-work"
+      },
+      "labels": ["errand"],
+      "expected": {
+        "title": "Read article",
+        "priority": null,
+        "due_at": 1672790340000,
+        "recurrence": null,
+        "project_id": "p-signal-tt",
+        "labels": [],
+        "date_match": {
+          "start": 26,
+          "end": 34,
+          "text": "tomorrow"
+        }
+      }
+    },
+    {
+      "name": "project name with spaces, case-insensitive",
+      "text": "Read article #signal - tt",
+      "now": 1672653600000,
+      "tz": "UTC",
+      "projects": {
+        "Signal": "p-signal",
+        "Signal - TT": "p-signal-tt",
+        "Work": "p-work"
+      },
+      "labels": ["errand"],
+      "expected": {
+        "title": "Read article",
+        "priority": null,
+        "due_at": null,
+        "recurrence": null,
+        "project_id": "p-signal-tt",
+        "labels": [],
+        "date_match": null
+      }
+    },
+    {
+      "name": "shorter project when the longer name does not follow",
+      "text": "Ping #Signal team",
+      "now": 1672653600000,
+      "tz": "UTC",
+      "projects": {
+        "Signal": "p-signal",
+        "Signal - TT": "p-signal-tt",
+        "Work": "p-work"
+      },
+      "labels": ["errand"],
+      "expected": {
+        "title": "Ping team",
+        "priority": null,
+        "due_at": null,
+        "recurrence": null,
+        "project_id": "p-signal",
+        "labels": [],
+        "date_match": null
+      }
     }
   ]
 }

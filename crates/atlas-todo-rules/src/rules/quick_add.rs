@@ -658,6 +658,7 @@ pub fn parse_quick_add(
         words.push(w);
     }
     let utf16_len = |w: &str| w.encode_utf16().count();
+    let utf16: Vec<u16> = text.encode_utf16().collect();
     let lower: Vec<String> = words.iter().map(|w| w.to_lowercase()).collect();
     let folded: Vec<String> = words.iter().map(|w| fold(w)).collect();
 
@@ -692,18 +693,35 @@ pub fn parse_quick_add(
             i += 1;
             continue;
         }
-        if let Some(name) = w.strip_prefix('#').filter(|n| !n.is_empty()) {
-            if !unlinked(&ctx.ignore_projects, w, name) {
-                let resolved = ctx.project_id_by_name.and_then(|f| f(name));
-                if ctx.project_id_by_name.is_none() || resolved.is_some() {
-                    project_name = Some(name.to_owned());
-                    consumed_words.insert(i);
-                    if resolved.is_some() {
-                        resolved_project = resolved;
+        if w.len() > 1 && w.starts_with('#') {
+            // A project name may span words ("#Signal - TT"): with a lookup, the longest run of
+            // words naming an existing project wins; without one, the single word is taken.
+            let mut count = 1;
+            let mut resolved = None;
+            if let Some(lookup) = ctx.project_id_by_name {
+                for n in (1..=words.len() - i).rev() {
+                    let joined = words[i..i + n].join(" ");
+                    if let Some(id) = lookup(&joined[1..]) {
+                        count = n;
+                        resolved = Some(id);
+                        break;
                     }
                 }
             }
-            i += 1;
+            let joined = words[i..i + count].join(" ");
+            let name = &joined[1..];
+            let token_end = starts[i + count - 1] + utf16_len(&words[i + count - 1]);
+            let token_text = String::from_utf16_lossy(&utf16[starts[i]..token_end]);
+            let is_unlinked = unlinked(&ctx.ignore_projects, &token_text, name)
+                || unlinked(&ctx.ignore_projects, &joined, name);
+            if !is_unlinked && (ctx.project_id_by_name.is_none() || resolved.is_some()) {
+                project_name = Some(name.to_owned());
+                consumed_words.extend(i..i + count);
+                if resolved.is_some() {
+                    resolved_project = resolved;
+                }
+            }
+            i += count;
             continue;
         }
         if let Some(name) = w.strip_prefix('@').filter(|n| !n.is_empty()) {
@@ -764,7 +782,6 @@ pub fn parse_quick_add(
     let mut due_time = None;
     let mut date_match = None;
     let ignored = |p: &str| ctx.ignore_dates.iter().any(|x| x == p);
-    let utf16: Vec<u16> = text.encode_utf16().collect();
     match (&matched_date, &matched_time) {
         (Some(d), Some(t)) => {
             let adjacent = d.start_word + d.consumed == t.start_word

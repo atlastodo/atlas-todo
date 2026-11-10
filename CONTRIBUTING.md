@@ -49,7 +49,7 @@ the app picks it up with the next core release (see [Core packages](#core-packag
 
 ## Development environment
 
-The environment is defined with [devenv](https://devenv.sh) (Nix). It pins Node 26, Bun 1.4.2
+The environment is defined with [devenv](https://devenv.sh) (Nix). It pins Node 26, Bun 1.4.4
 and Electron, and the Android SDK when you turn it on.
 
 ```sh
@@ -71,7 +71,7 @@ has a _Server URL_ field.
 
 ### Without Nix
 
-devenv is the supported setup, but nothing requires it. You need Node 26 and Bun 1.4.2.
+devenv is the supported setup, but nothing requires it. You need Node 26 and Bun 1.4.4.
 
 ```sh
 bun install
