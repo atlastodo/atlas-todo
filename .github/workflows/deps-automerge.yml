@@ -2,6 +2,7 @@
 # (deps-refresh.yml, branch `chore/deps-refresh`) and Dependabot's grouped minor/patch updates
 # (branches `dependabot/*-minor-patch-*`). Dependabot's majors arrive one package per PR and wait for
 # review. Security updates target `main` and are not touched.
+# A Dependabot PR that conflicts with `dev` is asked to recreate itself (see the second step).
 #
 # It runs after each CI run, and hourly: a run that Dependabot triggered gets a read-only token, so
 # its PRs are merged by the hourly sweep. A merge made with GITHUB_TOKEN starts no `push` runs,
@@ -62,3 +63,35 @@ jobs:
           if [ "$merged" -eq 1 ] && gh workflow view dev-image.yml >/dev/null 2>&1; then
             gh workflow run dev-image.yml --ref dev
           fi
+      # A Dependabot PR that conflicts with `dev` (the weekly refresh touches the same manifests and
+      # bun.lock) never gets a passing CI run, so the step above skips it for good: Dependabot stops
+      # rebasing a PR once another author has committed to it, and dependabot-bun-nix.yml commits to
+      # every Bun PR. Ask Dependabot to recreate it, once per head commit; it then rebuilds the PR on
+      # `dev`, dependabot-bun-nix.yml regenerates nix/bun.nix, and the PR merges as usual. If the PR
+      # still conflicts on the same head commit two hours later, Dependabot ignored the request (it
+      # may not take commands posted with GITHUB_TOKEN: then set a DEPENDABOT_COMMAND_TOKEN secret, a
+      # token that can comment on the repo's pull requests) and the job fails so somebody looks.
+      - name: Recreate conflicting Dependabot PRs
+        env:
+          COMMAND_TOKEN: ${{ secrets.DEPENDABOT_COMMAND_TOKEN || github.token }}
+        run: |
+          stale=0
+          now="$(date +%s)"
+          while read -r number sha mergeable; do
+            [ "$mergeable" = CONFLICTING ] || continue
+            # The sha is hex from the API, safe to splice into the jq filter.
+            asked="$(gh pr view "$number" --json comments \
+              --jq ".comments[] | select(.body | contains(\"deps-automerge recreate $sha\")) | .createdAt" | head -n1)"
+            if [ -z "$asked" ]; then
+              echo "#$number conflicts with dev on $sha, asking Dependabot to recreate it"
+              GH_TOKEN="$COMMAND_TOKEN" gh pr comment "$number" \
+                --body "$(printf '@dependabot recreate\n\n<!-- deps-automerge recreate %s -->' "$sha")"
+            elif [ $((now - $(date -d "$asked" +%s))) -gt 7200 ]; then
+              echo "::error::#$number still conflicts with dev on $sha, two hours after asking Dependabot to recreate it"
+              stale=1
+            else
+              echo "#$number: recreate requested at $asked, waiting"
+            fi
+          done < <(gh pr list --base dev --state open --author app/dependabot --json number,headRefOid,mergeable \
+            --jq '.[] | "\(.number) \(.headRefOid) \(.mergeable)"')
+          exit "$stale"
