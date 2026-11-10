@@ -32,7 +32,7 @@
     "postcss-selector-parser": "^7.1.6"
   },
   "devDependencies": {
-    "oxlint": "1.90.0",
+    "oxlint": "1.91.0",
     "playwright-core": "^1.65.0",
     "prettier": "3.9.10",
     "typescript": "7.0.2"
