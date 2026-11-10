@@ -13,7 +13,7 @@
     },
     "apps/electron": {
       "name": "@atlastodo/electron",
-      "version": "0.1.18",
+      "version": "0.1.19",
       "devDependencies": {
         "@types/node": "^26.6.6",
         "electron": "^43.8.7",
@@ -23,7 +23,7 @@
     },
     "apps/mobile": {
       "name": "@atlastodo/mobile",
-      "version": "0.1.18",
+      "version": "0.1.19",
       "dependencies": {
         "@atlastodo/client-core": "0.1.16",
         "@atlastodo/todo-core": "workspace:*",
@@ -96,7 +96,7 @@
     },
     "packages/todo-core": {
       "name": "@atlastodo/todo-core",
-      "version": "0.1.18",
+      "version": "0.1.19",
       "dependencies": {
         "@atlastodo/client-core": "0.1.16",
         "@atlastodo/sdk": "0.1.16",
