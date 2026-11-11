@@ -305,6 +305,21 @@ in
     scripts/web-release-tarball.sh "$@"
   '';
 
+  # `docker:build` -- the server image (docker/Dockerfile) as atlas-todo:local: this checkout's web
+  # release tarball and third-party notices on the pinned core server image (ATLAS_IMAGE picks
+  # another base). Needs Docker.
+  scripts."docker:build".exec = ''
+    set -euo pipefail
+    cd "$DEVENV_ROOT"
+    context="$(mktemp -d)"
+    trap 'rm -rf "$context"' EXIT
+    scripts/web-release-tarball.sh "$context"
+    rm -f "$context"/*.sha256
+    node scripts/third-party-licenses.mjs --notices "$context/THIRD_PARTY_NOTICES.txt" --rust
+    docker build -f docker/Dockerfile ''${ATLAS_IMAGE:+--build-arg "ATLAS_IMAGE=$ATLAS_IMAGE"} \
+      -t atlas-todo:local "$context"
+  '';
+
   # Android Emulator workflow scripts
   scripts."emulator:create".exec = requireAndroid + ''
     echo ">> Checking/creating Android Virtual Device (pixel-11-pro)..."

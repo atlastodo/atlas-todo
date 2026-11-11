@@ -3,12 +3,10 @@
 # Builds the web app (the Expo web export of apps/mobile) as the release asset
 # atlas-todo-web-X.Y.Z.tar.gz, plus atlas-todo-web-X.Y.Z.tar.gz.sha256 (`sha256sum` format), in
 # OUT_DIR (default: dist-web/). The tarball holds one directory, atlas-todo-web-X.Y.Z/, whose
-# contents are a server's static dir: what a pinned server image (docker/Dockerfile,
-# TODO_WEB_URL/TODO_WEB_SHA256) or the flake's web-dist (apps.lock.json) downloads instead of
-# building the app. The release attaches both files; the todo app's own repository will release the
-# same asset shape once the app lives there.
+# contents are a server's static dir: what the server image (docker/Dockerfile) serves, and what a
+# self-hoster can point STATIC_DIR at. The release attaches both files.
 #
-# Built as the server image builds it: the API at /api on the page's origin
+# Built for a server that serves it: the API at /api on the page's origin
 # (EXPO_PUBLIC_API_URL=/api) and the About screen's source link at EXPO_PUBLIC_REPO_URL. The archive
 # is reproducible for a given export (sorted entries, fixed owner and mtime, no gzip timestamp).
 #

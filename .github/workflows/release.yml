@@ -1,7 +1,8 @@
 # Release on a v* tag (pushed after `version:bump` + the `chore(release): vX.Y.Z` commit):
 # full CI, then the signed Android APK + AAB (uploaded to Google Play when its service account is
-# set), the atlas-todo CLI binaries (atlas-todo-X.Y.Z-<target>), the desktop tarball, the web app tarball (atlas-todo-web-X.Y.Z.tar.gz + .sha256, the asset a
-# core server image or flake pinned to this release downloads) and the third-party notices, then a
+# set), the atlas-todo CLI binaries (atlas-todo-X.Y.Z-<target>), the desktop tarball, the web app
+# tarball (atlas-todo-web-X.Y.Z.tar.gz + .sha256) and the third-party notices, the server image
+# ghcr.io/atlastodo/atlas-todo (the pinned core server image plus that web build), then a
 # GitHub Release "Atlas Todo vX.Y.Z" carrying the tag's RELEASE_NOTES.md section, every artifact,
 # their build provenance attestations and SHA256SUMS.txt (which the desktop updater verifies).
 # A tag with a "-" (vX.Y.Z-rc.N, tagged by hand on the dev branch) is a pre-release: a GitHub
@@ -325,9 +326,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # The web app as atlas-todo-web-X.Y.Z.tar.gz (+ .sha256): the static files a core server image or
-  # flake pinned to this release serves (the core repository's apps.lock.json), built for a server
-  # that serves its API at /api on the page's origin.
+  # The web app as atlas-todo-web-X.Y.Z.tar.gz (+ .sha256): the static files the server image below
+  # serves (and any server's STATIC_DIR can), built for a server that serves its API at /api on the
+  # page's origin.
   web:
     name: Web app tarball
     needs: [ci, prepare]
@@ -395,6 +396,88 @@ jobs:
           path: THIRD_PARTY_NOTICES.txt
           if-no-files-found: error
           retention-days: 7
+
+  # The server image, ghcr.io/atlastodo/atlas-todo: the pinned core server image
+  # (docker/Dockerfile's ATLAS_IMAGE) plus this release's web tarball and notices. Tags X.Y.Z and
+  # X.Y, plus `latest` for a stable tag; a pre-release gets only X.Y.Z-rc.N. Nothing is compiled
+  # (the Dockerfile has no RUN), so one job builds both architectures the base image has.
+  image:
+    name: Docker image
+    needs: [prepare, web, notices]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      # GitHub's build provenance attestation for the image (the last step).
+      id-token: write
+      attestations: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      IMAGE_METADATA: |
+        org.opencontainers.image.title=Atlas Todo
+        org.opencontainers.image.description=Self-hosted Atlas Todo: the Atlas sync server and the Atlas Todo web app
+        org.opencontainers.image.licenses=AGPL-3.0-only
+        org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        org.opencontainers.image.documentation=${{ github.server_url }}/${{ github.repository }}/blob/main/docs/self-hosting.md
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The build context: the web tarball and the notices, nothing else.
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: "{web,third-party-notices}"
+          path: context
+          merge-multiple: true
+      - name: Image name and base
+        id: image
+        # GHCR names must be lowercase; a fork publishes under its own owner.
+        run: |
+          rm -f context/*.sha256
+          base="$(sed -nE 's/^ARG ATLAS_IMAGE=(.+)$/\1/p' docker/Dockerfile)"
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          echo "Server image: $base with the web app $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          printf 'IMAGE_METADATA<<EOF\n%sorg.opencontainers.image.base.name=%s\nEOF\n' "$IMAGE_METADATA" "$base" >> "$GITHUB_ENV"
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          flavor: latest=auto
+          labels: ${{ env.IMAGE_METADATA }}
+          annotations: ${{ env.IMAGE_METADATA }}
+      - id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          # Its build-record artifact would otherwise be swept into the release assets.
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
+        with:
+          context: context
+          file: docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          push: true
+          # BuildKit's SLSA provenance and an SBOM, attached to the image.
+          provenance: mode=max
+          sbom: true
+      # Verify with: gh attestation verify oci://ghcr.io/atlastodo/atlas-todo:<tag> --repo atlastodo/atlas-todo
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ steps.image.outputs.name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
 
   publish:
     name: GitHub Release

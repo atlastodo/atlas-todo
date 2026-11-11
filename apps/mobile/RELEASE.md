@@ -183,11 +183,16 @@ the track), so let one finish first.
   `scripts/upload-play-store.mjs`.
 - Desktop tarball: `scripts/package-desktop.sh X.Y.Z`.
 - Web app tarball: `scripts/web-release-tarball.sh` exports the web app for a server that serves
-  its API at `/api` on the page's origin (`EXPO_PUBLIC_API_URL=/api`, as the core server image
-  does) and attaches `atlas-todo-web-X.Y.Z.tar.gz`, one top-level directory of static files, with
-  `atlas-todo-web-X.Y.Z.tar.gz.sha256`. It is the asset the core repository's server image and
-  flake download when they pin an app release (its `apps.lock.json`, written by its
-  `scripts/pin-app-web.mjs`).
+  its API at `/api` on the page's origin (`EXPO_PUBLIC_API_URL=/api`) and attaches
+  `atlas-todo-web-X.Y.Z.tar.gz`, one top-level directory of static files, with
+  `atlas-todo-web-X.Y.Z.tar.gz.sha256`.
+- Docker image: `docker/Dockerfile` adds that tarball and the notices to the core server image this
+  app pins (its `ATLAS_IMAGE`, moved with the core pin) and pushes `ghcr.io/atlastodo/atlas-todo`
+  (`X.Y.Z`; a stable release also `X.Y` and `latest`) for linux/amd64 and linux/arm64, with
+  BuildKit provenance, an SBOM and a build provenance attestation. The workflow's `GITHUB_TOKEN`
+  needs write access to the package: under the package's settings, Manage Actions access, this
+  repository has the Write role. CI's `Docker image` job builds it on a stub web build and checks
+  it serves the page and the API.
 - Third-party notices: `scripts/third-party-licenses.mjs` lists the licences of every shipped
   JavaScript package. The release attaches it as `THIRD_PARTY_NOTICES.txt`, the desktop tarball
   carries it, and the app's About → Licenses links to that asset. `lint` and CI fail when a
@@ -199,7 +204,7 @@ the track), so let one finish first.
   APK, the AAB and the tarballs. The desktop updater reads `releases/latest` of this repository
   and verifies the tarball against `SHA256SUMS.txt`.
 
-The server image, the `atlas` CLI and the core packages are released from the core repository.
+The core server image and packages are released from the core repository.
 
 ### Secrets
 
@@ -216,7 +221,7 @@ any workflow can read those. A ruleset keeps `v*` tags from being moved or delet
 | `ANDROID_KEY_PASSWORD`             | yes      | the key password                                                        |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | no       | a Play service-account JSON key; when unset, the Play upload is skipped |
 
-`GITHUB_TOKEN` is provided automatically and is used for the release.
+`GITHUB_TOKEN` is provided automatically and is used for the release and the image.
 
 ### Variables
 
