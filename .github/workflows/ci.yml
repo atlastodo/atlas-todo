@@ -47,6 +47,7 @@ jobs:
       test_ts: ${{ steps.filter.outputs.test_ts }}
       mobile: ${{ steps.filter.outputs.mobile }}
       deps: ${{ steps.filter.outputs.deps }}
+      docker: ${{ steps.filter.outputs.docker }}
     steps:
       - id: filter
         env:
@@ -59,7 +60,7 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           HEAD_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          set_all() { for k in rust nix lint_ts test_ts mobile deps; do echo "$k=$1" >>"$GITHUB_OUTPUT"; done; }
+          set_all() { for k in rust nix lint_ts test_ts mobile deps docker; do echo "$k=$1" >>"$GITHUB_OUTPUT"; done; }
           case "$EVENT" in
             schedule)
               set_all false
@@ -96,6 +97,7 @@ jobs:
             echo "test_ts=$(has "$shared|^apps/electron/|^packages/|^test-vectors/")"
             echo "mobile=$(has "$shared|^apps/mobile/|^packages/")"
             echo "deps=$(has "$deps")"
+            echo "docker=$(has "^docker/|$ci")"
           } >>"$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
@@ -142,6 +144,40 @@ jobs:
         with:
           tool: cargo-nextest@0.9.143
       - run: cargo nextest run --workspace --locked
+
+  # The server image's Dockerfile (release.yml builds and pushes it), on a stub web build: the image
+  # must start on the pinned core base, serve the stub at / and answer the API.
+  docker:
+    name: Docker image
+    needs: changes
+    if: ${{ needs.changes.outputs.docker == 'true' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Stub build context
+        run: |
+          mkdir -p "$RUNNER_TEMP/context/stage/atlas-todo-web-0.0.0"
+          echo '<!doctype html><title>atlas-todo-stub</title>' > "$RUNNER_TEMP/context/stage/atlas-todo-web-0.0.0/index.html"
+          tar -C "$RUNNER_TEMP/context/stage" -czf "$RUNNER_TEMP/context/atlas-todo-web-0.0.0.tar.gz" atlas-todo-web-0.0.0
+          rm -r "$RUNNER_TEMP/context/stage"
+          echo stub > "$RUNNER_TEMP/context/THIRD_PARTY_NOTICES.txt"
+      - name: Build
+        run: docker build -f docker/Dockerfile -t atlas-todo:ci "$RUNNER_TEMP/context"
+      - name: Serves the web build and the API
+        run: |
+          docker network create ci
+          docker run -d --name db --network ci -e POSTGRES_USER=atlas -e POSTGRES_PASSWORD=atlas -e POSTGRES_DB=atlas postgres:16-alpine
+          until docker exec db pg_isready -U atlas -d atlas -q; do sleep 1; done
+          docker run -d --name server --network ci -p 127.0.0.1:8080:8080 \
+            -e DATABASE_URL=postgres://atlas:atlas@db:5432/atlas -e JWT_SECRET="$(openssl rand -hex 32)" atlas-todo:ci
+          for _ in $(seq 60); do curl -fs http://localhost:8080/api/health >/dev/null && break; sleep 1; done
+          curl -fsS http://localhost:8080/api/health
+          curl -fsS http://localhost:8080/ | grep -q atlas-todo-stub
+          docker exec server test -f /usr/share/doc/atlas-todo-web/THIRD_PARTY_NOTICES.txt
+      - if: failure()
+        run: docker logs server || true
 
   # The flake's web-dist and atlas-desktop, as a NixOS or Home Manager configuration builds them
   # (nix/packages/js-source.nix must list every workspace, nix/bun.nix match bun.lock). A tag runs

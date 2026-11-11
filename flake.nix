@@ -1,8 +1,9 @@
 {
   description = "Atlas Todo app: the desktop app, the web app build, and the desktop NixOS & Home Manager modules";
 
-  # The sync server and its NixOS module (services.atlas-todo) are in the core repository:
-  # use `github:atlastodo/atlas` as the input for those. This flake re-exports nothing of it.
+  # The sync server and its NixOS module (services.atlas) are in the core repository: use
+  # `github:atlastodo/atlas` as the input for those. This flake re-exports nothing of it; its
+  # web-dist is what a services.atlas.staticDir points at (docs/self-hosting.md).
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -68,7 +69,8 @@
         {
           inherit (pkgs) atlas-desktop;
           # The web app built from source with no API URL baked in: users type their server on the
-          # sign-in screen. A core server serves it as services.atlas-todo.staticDir.
+          # sign-in screen; in a browser it uses the page's origin, so a core server serves it as
+          # services.atlas.staticDir.
           web-dist = pkgs.atlas-web-dist;
           default = pkgs.atlas-desktop;
         }
