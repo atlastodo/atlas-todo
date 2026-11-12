@@ -75,6 +75,7 @@
     "emptyTasks": "Ingen opgaver her — nyd roen.",
     "overdue": "Forfaldne",
     "rescheduleAllToday": "Flyt alle til i dag",
+    "dropToToday": "Slip her for at gøre det i dag",
     "emptyCompleted": "Ingen fuldførte opgaver endnu.",
     "allProjects": "Alle projekter",
     "projectFilter": "Projekt",
@@ -162,6 +163,8 @@
     "emptyHint": "Slettede elementer bliver her i 30 dage, så du kan gendanne dem, og fjernes derefter for altid."
   },
   "toast": {
+    "created": "Tilføjet til {{place}}",
+    "createdDue": "Tilføjet til {{place}} · {{due}}",
     "completed": "Opgave fuldført",
     "completedCount_one": "Gennemførte {{count}} opgave",
     "completedCount_other": "Gennemførte {{count}} opgaver",

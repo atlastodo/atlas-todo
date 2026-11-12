@@ -75,6 +75,7 @@
     "emptyTasks": "No tasks here — enjoy the calm.",
     "overdue": "Overdue",
     "rescheduleAllToday": "Reschedule all to today",
+    "dropToToday": "Drop here to do today",
     "emptyCompleted": "No completed tasks yet.",
     "allProjects": "All projects",
     "projectFilter": "Project",
@@ -162,6 +163,8 @@
     "emptyHint": "Deleted items stay here for 30 days so you can restore them, then they are removed for good."
   },
   "toast": {
+    "created": "Added to {{place}}",
+    "createdDue": "Added to {{place}} · {{due}}",
     "completed": "Task completed",
     "completedCount_one": "Completed {{count}} task",
     "completedCount_other": "Completed {{count}} tasks",

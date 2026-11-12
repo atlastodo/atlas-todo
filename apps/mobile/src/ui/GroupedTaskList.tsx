@@ -1,5 +1,13 @@
 import { type CreateTaskInput, type Priority, type Task } from "@atlastodo/todo-core";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import {
   Keyboard,
   Platform,
@@ -8,6 +16,7 @@ import {
   Text,
   View,
   type FlatList,
+  type ViewInstance,
 } from "react-native";
 import ReorderableList from "react-native-reorderable-list";
 import { scheduleOnRN } from "react-native-worklets";
@@ -39,6 +48,7 @@ import { useOutsidePressExit } from "../hooks/useOutsidePressExit";
 import { useIsWide } from "../hooks/useIsWide";
 import { useKeyboardHeight } from "../hooks/useKeyboardHeight";
 import { useDragPan } from "../hooks/useDragPan";
+import { useDropTarget } from "../hooks/useCardDnd";
 import { useLabels } from "../hooks/useLabels";
 import { useProjects } from "../hooks/useProjects";
 import { useAllSections } from "../hooks/useAllSections";
@@ -136,6 +146,11 @@ export interface GroupedTaskListProps {
   /** Today's "Plan day" entry point; the screen owns the sheet. */
   onPlanDay?: () => void;
   /**
+   * Today's drag-to-reschedule (web, date grouping only): an Overdue row's grip dropped on the
+   * Today group, a row or its header, calls this instead of nesting the task under the row.
+   */
+  onDropOnToday?: (task: Task) => void;
+  /**
    * Persist a reordered task's new sort_order. When given AND the list is flat + manually sorted
    * (`group: none`, `sort: manual`), rows become drag-reorderable via a whole-row long-press.
    */
@@ -169,6 +184,47 @@ interface Section {
 
 /** The group key of the reorderable (ungrouped) list, whose rows' siblings are `visible`. */
 const FLAT_GROUP = "\0flat";
+
+/** Date-grouping keys (`groupTasks`) for Today's drag-to-reschedule. */
+const OVERDUE = "overdue";
+const TODAY = "today";
+
+/**
+ * A group header that, while `active`, is a drop target for a dragged row (web; `useDropTarget` is
+ * a no-op on native) and is tinted as part of the target group. An `empty` group (Today's stand-in
+ * when everything is overdue) adds a drop strip with `hint` under the title. A component because
+ * `renderSectionHeader` cannot hold the hook.
+ */
+function SectionHeaderDropZone({
+  active,
+  empty,
+  hint,
+  onDrop,
+  children,
+}: {
+  active: boolean;
+  empty: boolean;
+  hint: string;
+  onDrop: (draggedId: string) => void;
+  children: ReactNode;
+}) {
+  const ref = useRef<ViewInstance>(null);
+  const over = useDropTarget(ref, (draggedId) => {
+    if (active) onDrop(draggedId);
+  });
+  // Always mounted: the drop listener binds to this node once, so it must not come and go with `active`.
+  const tint = active ? (over ? "bg-accent-500/20" : "bg-accent-500/10") : "";
+  return (
+    <View ref={ref} className={tint}>
+      {children}
+      {active && empty && (
+        <View className="mx-4 mb-2 items-center rounded border-2 border-dashed border-accent-500 py-3">
+          <Text className="text-sm text-accent-600 dark:text-accent-400">{hint}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 /** A row's handlers that depend on its group (see `handlersFor`). */
 interface GroupRowHandlers {
@@ -220,6 +276,7 @@ export function GroupedTaskList({
   onChangeListPref,
   onRescheduleOverdue,
   onPlanDay,
+  onDropOnToday,
   onReorder,
   onReparent,
   onUpdateTask,
@@ -368,6 +425,37 @@ export function GroupedTaskList({
     return m;
   }, [shownFlat]);
   const hasSubtasks = useMemo(() => visibleRows.some((r) => r.hasChildren), [visibleRows]);
+
+  // Today's drag-to-reschedule: the row whose grip is mid-drag (web only; native never starts one).
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const dropOnTodayActive = groupBy === "date" && !!onDropOnToday;
+  const isOverdueTask = useCallback(
+    (id: string) =>
+      sections.find((s) => s.key === OVERDUE)?.matched.some((task) => task.id === id) ?? false,
+    [sections],
+  );
+  const dragFromOverdue = dropOnTodayActive && draggingId !== null && isOverdueTask(draggingId);
+  // A row moved by its own drop can unmount before its `dragend`; the window sees every drop/end.
+  useEffect(() => {
+    if (draggingId === null || Platform.OS !== "web") return;
+    const reset = () => setDraggingId(null);
+    window.addEventListener("drop", reset, true);
+    window.addEventListener("dragend", reset, true);
+    return () => {
+      window.removeEventListener("drop", reset, true);
+      window.removeEventListener("dragend", reset, true);
+    };
+  }, [draggingId]);
+  const dragStartRow = useCallback((id: string) => setDraggingId(id), []);
+  const dragEndRow = useCallback(() => setDraggingId(null), []);
+  // Decided at drop time from the data, not from `draggingId`: the window reset may run first.
+  const dropOnToday = useStableCallback((draggedId: string): boolean => {
+    if (!dropOnTodayActive || !isOverdueTask(draggedId)) return false;
+    const task = tasks.find((tk) => tk.id === draggedId);
+    if (!task || task.locked) return false;
+    onDropOnToday!(task);
+    return true;
+  });
 
   // Deduped: `label` grouping shows a task twice, and a bulk toggle per occurrence would complete then reopen it.
   const visible = useMemo(() => uniqueTasks(visibleRows.map((r) => r.task)), [visibleRows]);
@@ -521,10 +609,21 @@ export function GroupedTaskList({
   const dragDisabled = Platform.OS === "web" && !isWide;
   const canReorder = groupBy === "none" && sortBy === "manual" && !!onReorder && !dragDisabled;
 
-  const sectionListData = useMemo(
-    () => shownFlat.map(({ rows, ...s }) => ({ ...s, data: rows.map((r) => r.task) })),
-    [shownFlat],
-  );
+  const sectionListData = useMemo(() => {
+    const data = shownFlat.map(({ rows, ...s }) => ({ ...s, data: rows.map((r) => r.task) }));
+    // Everything is overdue, so there is no Today group to drop on: show an empty one for the drag.
+    // Appended below Overdue, so nothing above the dragged row moves.
+    if (dragFromOverdue && !data.some((s) => s.key === TODAY)) {
+      data.push({
+        key: TODAY,
+        title: groupTitle("date", TODAY),
+        danger: false,
+        matched: [],
+        data: [],
+      });
+    }
+    return data;
+  }, [shownFlat, dragFromOverdue, groupTitle]);
 
   const scrollRaf = useRef<number | null>(null);
 
@@ -760,8 +859,19 @@ export function GroupedTaskList({
       />
     );
     if (item.locked) return row;
+    const inToday = dropOnTodayActive && groupKey === TODAY;
     return (
-      <DraggableTaskRow task={item} onReparentDrop={reparentOnto}>
+      <DraggableTaskRow
+        task={item}
+        onRowDrop={(draggedId, target) => {
+          // On Today, an Overdue row dropped on a Today row is moved to today, not nested.
+          if (inToday && dropOnToday(draggedId)) return;
+          reparentOnto(draggedId, target);
+        }}
+        onDragStart={dropOnTodayActive ? dragStartRow : undefined}
+        onDragEnd={dropOnTodayActive ? dragEndRow : undefined}
+        dropHint={inToday && dragFromOverdue ? "reschedule" : undefined}
+      >
         {row}
       </DraggableTaskRow>
     );
@@ -851,48 +961,55 @@ export function GroupedTaskList({
             const showReschedule = s.danger && onRescheduleOverdue && groupTasksData.length > 0;
             const chevronClass = s.danger ? "text-red-500" : "text-neutral-500";
             return (
-              <View className="flex-row items-center justify-between px-4 pb-1 pt-4">
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: !isCollapsed }}
-                  accessibilityLabel={label}
-                  onPress={() =>
-                    setCollapsed((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(s.key)) next.delete(s.key);
-                      else next.add(s.key);
-                      return next;
-                    })
-                  }
-                  className="flex-1 flex-row items-center gap-1.5"
-                >
-                  {isCollapsed ? (
-                    <ChevronRight size={14} className={chevronClass} />
-                  ) : (
-                    <ChevronDown size={14} className={chevronClass} />
-                  )}
-                  <Text
-                    className={
-                      "text-xs font-medium uppercase " +
-                      (s.danger ? "text-red-500" : "text-neutral-500")
-                    }
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-                {showReschedule && (
+              <SectionHeaderDropZone
+                active={dragFromOverdue && s.key === TODAY}
+                empty={s.data.length === 0 && !isCollapsed}
+                hint={t("workspace.dropToToday")}
+                onDrop={(draggedId) => void dropOnToday(draggedId)}
+              >
+                <View className="flex-row items-center justify-between px-4 pb-1 pt-4">
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={t("workspace.rescheduleAllToday")}
-                    onPress={() => onRescheduleOverdue(groupTasksData)}
-                    className="rounded px-2 py-0.5 web:cursor-pointer web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800"
+                    accessibilityState={{ expanded: !isCollapsed }}
+                    accessibilityLabel={label}
+                    onPress={() =>
+                      setCollapsed((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(s.key)) next.delete(s.key);
+                        else next.add(s.key);
+                        return next;
+                      })
+                    }
+                    className="flex-1 flex-row items-center gap-1.5"
                   >
-                    <Text className="text-xs font-medium text-accent-600 dark:text-accent-400">
-                      {t("workspace.rescheduleAllToday")}
+                    {isCollapsed ? (
+                      <ChevronRight size={14} className={chevronClass} />
+                    ) : (
+                      <ChevronDown size={14} className={chevronClass} />
+                    )}
+                    <Text
+                      className={
+                        "text-xs font-medium uppercase " +
+                        (s.danger ? "text-red-500" : "text-neutral-500")
+                      }
+                    >
+                      {label}
                     </Text>
                   </Pressable>
-                )}
-              </View>
+                  {showReschedule && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t("workspace.rescheduleAllToday")}
+                      onPress={() => onRescheduleOverdue(groupTasksData)}
+                      className="rounded px-2 py-0.5 web:cursor-pointer web:hover:bg-neutral-100 dark:web:hover:bg-neutral-800"
+                    >
+                      <Text className="text-xs font-medium text-accent-600 dark:text-accent-400">
+                        {t("workspace.rescheduleAllToday")}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              </SectionHeaderDropZone>
             );
           }}
           // Entering-only: on return from the detail screen every row re-measures and a `layout`

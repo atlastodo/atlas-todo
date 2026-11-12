@@ -75,6 +75,7 @@
     "emptyTasks": "Aucune tâche ici — profitez du calme.",
     "overdue": "En retard",
     "rescheduleAllToday": "Tout reporter à aujourd’hui",
+    "dropToToday": "Déposer ici pour aujourd’hui",
     "emptyCompleted": "Aucune tâche terminée pour l’instant.",
     "allProjects": "Tous les projets",
     "projectFilter": "Projet",
@@ -164,6 +165,8 @@
     "emptyHint": "Les éléments supprimés restent ici 30 jours pour que vous puissiez les restaurer, puis ils sont définitivement effacés."
   },
   "toast": {
+    "created": "Ajoutée à {{place}}",
+    "createdDue": "Ajoutée à {{place}} · {{due}}",
     "completed": "Tâche terminée",
     "completedCount_one": "{{count}} tâche terminée",
     "completedCount_other": "{{count}} tâches terminées",

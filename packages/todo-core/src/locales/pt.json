@@ -75,6 +75,7 @@
     "emptyTasks": "Nenhuma tarefa aqui — aproveite a calma.",
     "overdue": "Atrasadas",
     "rescheduleAllToday": "Reagendar tudo para hoje",
+    "dropToToday": "Solte aqui para fazer hoje",
     "emptyCompleted": "Nenhuma tarefa concluída ainda.",
     "allProjects": "Todos os projetos",
     "projectFilter": "Projeto",
@@ -164,6 +165,8 @@
     "emptyHint": "Os itens excluídos ficam aqui por 30 dias para você poder restaurá-los e depois são removidos de vez."
   },
   "toast": {
+    "created": "Adicionada a {{place}}",
+    "createdDue": "Adicionada a {{place}} · {{due}}",
     "completed": "Tarefa concluída",
     "completedCount_one": "{{count}} tarefa concluída",
     "completedCount_many": "{{count}} de tarefas concluídas",

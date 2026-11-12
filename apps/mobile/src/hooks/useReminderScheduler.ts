@@ -10,6 +10,7 @@ import {
 import {
   bookedNotificationIds,
   clearLaunchReminderResponse,
+  dismissNotification,
   ensureNotificationSetup,
   launchReminderResponse,
   notificationGeneration,
@@ -20,6 +21,7 @@ import {
 import { planReminderResponse, type ReminderResponse } from "../lib/reminderActions";
 import { useStore } from "../data/StoreProvider";
 import { useLocalTasks } from "./useLocalTasks";
+import { useToast } from "../data/ToastProvider";
 import { usePreferences } from "./usePreferences";
 import { useExactAlarms, useNotifyPermission, useReminders } from "./useReminders";
 
@@ -50,7 +52,8 @@ export function useReminderScheduler(actorId?: string): void {
   // "" follows the device; all-day reminders resolve their 09:00 in this zone.
   const timeZone = timezone || undefined;
   const { reminders, markFired, snoozeReminder } = useReminders();
-  const { tasks, toggle } = useLocalTasks(actorId);
+  const { tasks, toggle, discard } = useLocalTasks(actorId);
+  const toast = useToast();
   // Native only: reminderId -> the fire instant scheduled with the OS.
   const scheduledRef = useRef<Map<string, number>>(new Map());
   // What an earlier launch left booked with the OS, read and adopted once per mount.
@@ -180,18 +183,30 @@ export function useReminderScheduler(actorId?: string): void {
       if (lastResponseKeyRef.current === key) return;
       lastResponseKeyRef.current = key;
 
+      // An action that opens the app leaves its banner in the Android shade; the press is handled
+      // (or moot, for a stale banner), so clear it whatever the plan.
+      void dismissNotification(response.notificationId);
+
       const plan = planReminderResponse(response, { reminders, tasks, now: Date.now() });
       if (plan.kind === "complete") {
-        // Same write path as completing from a list. Stamping the reminder fired keeps the
-        // scheduler, or a later reopen of the task, from re-firing the old notification.
-        toggle(plan.task);
+        // Same write path as completing from a list, and the same undo toast. Stamping the reminder
+        // fired keeps the scheduler, or a later reopen of the task, from re-firing the old notification.
+        const task = plan.task;
+        const spawnedId = toggle(task);
         markFired(response.reminderId, Date.now());
+        toast.show(t("toast.completed"), {
+          label: t("common.undo"),
+          run: () => {
+            if (spawnedId != null) discard(spawnedId);
+            toggle({ ...task, is_completed: true });
+          },
+        });
       } else if (plan.kind === "snooze") {
         // The reconcile effect picks up the moved fire time and reschedules the OS notification.
         snoozeReminder(plan.reminderId, plan.at);
       }
     },
-    [reminders, tasks, toggle, markFired, snoozeReminder],
+    [reminders, tasks, toggle, discard, markFired, snoozeReminder, toast, t],
   );
   responseHandlerRef.current = handleResponse;
 

@@ -18,7 +18,9 @@ import { QuickAddTaskList } from "./ViewTaskList";
  * Today: what is due today, with anything overdue called out above it. Defaults to date grouping
  * (`groupTasks(tasks, "date")`, which supplies the red "Overdue" accent) over `todayTasks`. The
  * timezone is the synced `timezone` preference. The Plan day review ({@link PlanDaySheet}) writes
- * through the same store path as the overdue header's "reschedule all to today".
+ * through the same store path as the overdue header's "reschedule all to today". On the web an
+ * overdue row's grip can be dragged onto the Today group to move just that task to today (end of
+ * day, like "reschedule all"), with an undo toast.
  */
 
 export interface TodayScreenProps {
@@ -57,6 +59,7 @@ export function TodayScreen({ onOpenTask }: TodayScreenProps = {}) {
           view.rescheduleMany(overdue, endOfDay(view.now, view.timeZone))
         }
         onPlanDay={() => setPlanOpen(true)}
+        onDropOnToday={(task) => view.reschedule(task, endOfDay(view.now, view.timeZone))}
         quickAddDefaults={{ due_at: endOfDay(view.now, view.timeZone) }}
       />
       <PlanDaySheet
