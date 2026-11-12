@@ -167,6 +167,8 @@
     "emptyHint": "Usunięte elementy zostają tutaj przez 30 dni, aby można je było przywrócić, a potem są usuwane na dobre."
   },
   "toast": {
+    "created": "Dodano do: {{place}}",
+    "createdDue": "Dodano do: {{place}} · {{due}}",
     "completed": "Zadanie ukończone",
     "completedCount_one": "Ukończono {{count}} zadanie",
     "completedCount_few": "Ukończono {{count}} zadania",

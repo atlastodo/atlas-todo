@@ -163,6 +163,8 @@
     "emptyHint": "Verwijderde items blijven hier 30 dagen staan zodat je ze kunt herstellen. Daarna worden ze definitief verwijderd."
   },
   "toast": {
+    "created": "Toegevoegd aan {{place}}",
+    "createdDue": "Toegevoegd aan {{place}} · {{due}}",
     "completed": "Taak voltooid",
     "completedCount_one": "{{count}} taak voltooid",
     "completedCount_other": "{{count}} taken voltooid",

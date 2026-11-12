@@ -12,6 +12,8 @@ export interface Toast {
   id: string;
   message: string;
   action?: ToastAction;
+  /** A second action, shown before `action` (e.g. Open beside Undo). */
+  secondaryAction?: ToastAction;
 }
 
 export type ToastState = Toast[];

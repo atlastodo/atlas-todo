@@ -36,8 +36,11 @@ import { useStoreOptional } from "./StoreProvider";
  */
 
 export interface ToastApi {
-  /** Show a transient toast with an optional action (e.g. Undo). Auto-dismisses after a timeout. */
-  show: (message: string, action?: ToastAction) => void;
+  /**
+   * Show a transient toast with an optional action (e.g. Undo) and an optional second one shown
+   * before it (e.g. Open). Auto-dismisses after a timeout.
+   */
+  show: (message: string, action?: ToastAction, secondaryAction?: ToastAction) => void;
 }
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -64,9 +67,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     typeof rawDuration === "number" && rawDuration > 0 ? rawDuration * 1000 : TOAST_TTL_MS;
 
   const show = useCallback(
-    (message: string, action?: ToastAction) => {
+    (message: string, action?: ToastAction, secondaryAction?: ToastAction) => {
       const id = `t${seq.current++}`;
-      dispatch({ type: "add", toast: { id, message, action } });
+      dispatch({ type: "add", toast: { id, message, action, secondaryAction } });
       timers.current.set(
         id,
         setTimeout(() => dismiss(id), ttlMs),
@@ -162,20 +165,10 @@ function ToastItem({
             {toast.message}
           </Text>
           <View className="flex-row items-center gap-1">
-            {toast.action && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={toast.action.label}
-                onPress={() => {
-                  toast.action?.run();
-                  onDismiss();
-                }}
-                hitSlop={8}
-                className="rounded px-2 py-1 web:cursor-pointer"
-              >
-                <Text className="text-xs font-semibold text-accent-300">{toast.action.label}</Text>
-              </Pressable>
+            {toast.secondaryAction && (
+              <ToastButton action={toast.secondaryAction} onDismiss={onDismiss} />
             )}
+            {toast.action && <ToastButton action={toast.action} onDismiss={onDismiss} />}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={closeLabel}
@@ -195,6 +188,24 @@ function ToastItem({
         </View>
       </View>
     </Reanimated.View>
+  );
+}
+
+/** A toast action button: runs the action, then dismisses the toast. */
+function ToastButton({ action, onDismiss }: { action: ToastAction; onDismiss: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={action.label}
+      onPress={() => {
+        action.run();
+        onDismiss();
+      }}
+      hitSlop={8}
+      className="rounded px-2 py-1 web:cursor-pointer"
+    >
+      <Text className="text-xs font-semibold text-accent-300">{action.label}</Text>
+    </Pressable>
   );
 }
 

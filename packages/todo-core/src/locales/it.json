@@ -165,6 +165,8 @@
     "emptyHint": "Gli elementi eliminati restano qui per 30 giorni, così puoi ripristinarli, poi vengono rimossi per sempre."
   },
   "toast": {
+    "created": "Aggiunta a {{place}}",
+    "createdDue": "Aggiunta a {{place}} · {{due}}",
     "completed": "Attività completata",
     "completedCount_one": "{{count}} attività completata",
     "completedCount_many": "{{count}} di attività completate",

@@ -163,6 +163,8 @@
     "emptyHint": "Gelöschte Elemente bleiben hier 30 Tage, damit du sie wiederherstellen kannst, und werden dann endgültig entfernt."
   },
   "toast": {
+    "created": "Zu {{place}} hinzugefügt",
+    "createdDue": "Zu {{place}} hinzugefügt · {{due}}",
     "completed": "Aufgabe erledigt",
     "completedCount_one": "{{count}} Aufgabe erledigt",
     "completedCount_other": "{{count}} Aufgaben erledigt",

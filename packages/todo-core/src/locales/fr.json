@@ -165,6 +165,8 @@
     "emptyHint": "Les éléments supprimés restent ici 30 jours pour que vous puissiez les restaurer, puis ils sont définitivement effacés."
   },
   "toast": {
+    "created": "Ajoutée à {{place}}",
+    "createdDue": "Ajoutée à {{place}} · {{due}}",
     "completed": "Tâche terminée",
     "completedCount_one": "{{count}} tâche terminée",
     "completedCount_other": "{{count}} tâches terminées",
