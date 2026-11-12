@@ -5,7 +5,7 @@
  * deleted task, and a duplicated delivery of the same press, are no-ops. The notify seam is mocked
  * (native-only expo calls), and the tests drive it through the listener it hands the seam.
  */
-import { act, renderHook, waitFor } from "@testing-library/react-native";
+import { act, renderHook, screen, waitFor } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
 import {
   PREFERENCES_ID,
@@ -51,6 +51,7 @@ jest.mock("../lib/notify", () => {
     onReminderResponse: jest.fn(() => () => {}),
     launchReminderResponse: jest.fn(() => null),
     clearLaunchReminderResponse: jest.fn(),
+    dismissNotification: jest.fn(async () => {}),
     notificationGeneration: () => 0,
     bookedNotificationIds: jest.fn(async () => []),
   };
@@ -68,6 +69,7 @@ const seam = () =>
     onReminderResponse: jest.Mock;
     launchReminderResponse: jest.Mock;
     clearLaunchReminderResponse: jest.Mock;
+    dismissNotification: jest.Mock;
   };
 
 const REMINDER_BODY = "";
@@ -117,6 +119,7 @@ describe("Complete press", () => {
         reminderId: "r1",
         actionIdentifier: REMINDER_COMPLETE_ACTION,
         notificationDate: 1,
+        notificationId: "n1",
       }),
     );
 
@@ -124,6 +127,9 @@ describe("Complete press", () => {
     expect(taskFields(store, taskId).completed_at).not.toBeNull();
     // The dedupe stamp: the reconciliation must not re-fire the old notification.
     expect(reminderFields(store).fired_at).not.toBeNull();
+    // Android leaves an action's banner in the shade when it opens the app: it is cleared.
+    expect(seam().dismissNotification).toHaveBeenCalledWith("n1");
+    expect(screen.getByText("Task completed")).toBeTruthy();
   });
 
   it("rolls a recurring task forward to its next occurrence", async () => {
@@ -138,6 +144,7 @@ describe("Complete press", () => {
         reminderId: "r1",
         actionIdentifier: REMINDER_COMPLETE_ACTION,
         notificationDate: 1,
+        notificationId: "n1",
       }),
     );
 
@@ -170,6 +177,7 @@ describe("Snooze press", () => {
           reminderId: "r1",
           actionIdentifier: REMINDER_SNOOZE_ACTION,
           notificationDate: 1,
+          notificationId: "n1",
         }),
       );
       expect(reminderFields(store).at).toBe(at);
@@ -202,11 +210,13 @@ describe("stale presses", () => {
         reminderId: "r1",
         actionIdentifier: REMINDER_COMPLETE_ACTION,
         notificationDate: 1,
+        notificationId: "n1",
       });
       listener()({
         reminderId: "r1",
         actionIdentifier: REMINDER_SNOOZE_ACTION,
         notificationDate: 2,
+        notificationId: "n2",
       });
     });
 
@@ -225,6 +235,7 @@ describe("delivery paths", () => {
       reminderId: "r1",
       actionIdentifier: REMINDER_COMPLETE_ACTION,
       notificationDate: 1,
+      notificationId: "n1",
     });
 
     await mount(store); // the launch response is consumed at mount, before any listener exists
@@ -247,6 +258,7 @@ describe("delivery paths", () => {
       reminderId: "r1",
       actionIdentifier: REMINDER_SNOOZE_ACTION,
       notificationDate: 1,
+      notificationId: "n1",
     };
     try {
       await act(async () => listener()(press));
