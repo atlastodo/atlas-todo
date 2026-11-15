@@ -739,8 +739,6 @@
   },
   "notify": {
     "reminderTitle": "Rappel",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Rappels",
     "lockedTitle": "Tâche chiffrée"
   },

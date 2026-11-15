@@ -126,7 +126,8 @@ export function useReminderScheduler(actorId?: string): void {
       lockedTitle: t("notify.lockedTitle"),
       fallbackTitle: t("notify.reminderTitle"),
     };
-    const body = t("notify.reminderBody");
+    // The body for a task without notes; one with notes shows their first line (`reminderBody`).
+    const body = "";
     void (async () => {
       await ensureNotificationSetup();
       bookedRef.current ??= bookedNotificationIds("reminder");

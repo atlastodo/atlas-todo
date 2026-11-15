@@ -422,7 +422,7 @@ describe("notification text", () => {
       await waitFor(() =>
         expect(seam().reminderScheduleIO.schedule).toHaveBeenCalledWith(
           "Task",
-          i18n.t("notify.reminderBody", { lng: "da" }),
+          REMINDER_BODY,
           at,
           "r1",
         ),

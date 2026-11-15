@@ -719,8 +719,6 @@
   },
   "notify": {
     "reminderTitle": "Påmindelse",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Påmindelser",
     "lockedTitle": "Krypteret opgave"
   },

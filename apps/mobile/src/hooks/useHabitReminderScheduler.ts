@@ -25,7 +25,7 @@ import { useExactAlarms, useNotifyPermission } from "./useReminders";
  * period's nudges. Switching either gate off cancels every nudge booked.
  */
 export function useHabitReminderScheduler(): void {
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const language = i18n.language;
   const { initialSyncDone } = useStore();
   const { remindersEnabled, habitsEnabled, weekStartsOn } = usePreferences();
@@ -63,7 +63,8 @@ export function useHabitReminderScheduler(): void {
     }
     if (!initialSyncDone || !canNotify) return;
     const generation = notificationGeneration();
-    const body = t("notify.habitBody");
+    // A nudge says all it needs in its title.
+    const body = "";
     void (async () => {
       await ensureNotificationSetup();
       bookedRef.current ??= bookedNotificationIds("habit");
@@ -93,7 +94,6 @@ export function useHabitReminderScheduler(): void {
     habits,
     statesFor,
     weekStartsOn,
-    t,
     language,
     exact,
   ]);

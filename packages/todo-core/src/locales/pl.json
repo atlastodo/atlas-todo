@@ -759,8 +759,6 @@
   },
   "notify": {
     "reminderTitle": "Przypomnienie",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Przypomnienia",
     "lockedTitle": "Zaszyfrowane zadanie"
   },

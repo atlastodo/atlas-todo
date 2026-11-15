@@ -739,8 +739,6 @@
   },
   "notify": {
     "reminderTitle": "Promemoria",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Promemoria",
     "lockedTitle": "Attività crittografata"
   },
