@@ -283,7 +283,7 @@ jobs:
           rustup toolchain install --no-self-update
           rustup target add "$TARGET"
       - if: ${{ matrix.zig }}
-        uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
           tool: cargo-zigbuild@0.23.4
           fallback: none
@@ -439,7 +439,7 @@ jobs:
           echo "Server image: $base with the web app $VERSION" >> "$GITHUB_STEP_SUMMARY"
           printf 'IMAGE_METADATA<<EOF\n%sorg.opencontainers.image.base.name=%s\nEOF\n' "$IMAGE_METADATA" "$base" >> "$GITHUB_ENV"
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
