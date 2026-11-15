@@ -61,7 +61,7 @@
     "nativewind": "^4.2.7",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "react-i18next": "^17.1.12",
+    "react-i18next": "^18.0.1",
     "react-native": "0.88.1",
     "react-native-css-interop": "0.2.7",
     "react-native-gesture-handler": "~3.3.0",
