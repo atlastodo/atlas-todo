@@ -719,8 +719,6 @@
   },
   "notify": {
     "reminderTitle": "Herinnering",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Herinneringen",
     "lockedTitle": "Versleutelde taak"
   },

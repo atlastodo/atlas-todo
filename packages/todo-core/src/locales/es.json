@@ -739,8 +739,6 @@
   },
   "notify": {
     "reminderTitle": "Recordatorio",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Recordatorios",
     "lockedTitle": "Tarea cifrada"
   },

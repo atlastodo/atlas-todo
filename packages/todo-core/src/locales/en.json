@@ -719,8 +719,6 @@
   },
   "notify": {
     "reminderTitle": "Reminder",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Reminders",
     "lockedTitle": "Encrypted task"
   },

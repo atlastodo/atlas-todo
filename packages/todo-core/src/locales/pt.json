@@ -739,8 +739,6 @@
   },
   "notify": {
     "reminderTitle": "Lembrete",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Lembretes",
     "lockedTitle": "Tarefa criptografada"
   },
