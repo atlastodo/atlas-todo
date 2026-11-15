@@ -2616,9 +2616,9 @@
     url = "https://registry.npmjs.org/hyphenate-style-name/-/hyphenate-style-name-1.1.0.tgz";
     hash = "sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==";
   };
-  "i18next@26.7.2" = fetchurl {
-    url = "https://registry.npmjs.org/i18next/-/i18next-26.7.2.tgz";
-    hash = "sha512-RsOY3BeaCDdkk52NeJSFAXELQ2rQXBO/tOub6L8ue2ICPfR/FRDWDOfEDg4xMPd1SqO5goVYQ6i72qWEUB/PPw==";
+  "i18next@27.1.1" = fetchurl {
+    url = "https://registry.npmjs.org/i18next/-/i18next-27.1.1.tgz";
+    hash = "sha512-Qq3aJizS3RXQ30crhx9BKQLrHoa6GKpgrOJjVZ9vgj3EBxAddrmVfDNUrAMxSUimw5Jc+ld4SSZUAzf1q4nGyQ==";
   };
   "iconv-lite@0.6.3" = fetchurl {
     url = "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.6.3.tgz";
