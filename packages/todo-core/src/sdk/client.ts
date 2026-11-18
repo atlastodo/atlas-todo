@@ -5,6 +5,7 @@ import { allTasks, createTask, softDeleteTask, toggleTask, updateTask } from "..
 import { evaluate, parse as parseFilter } from "../filterQuery";
 import { parseQuickAdd } from "../quickAddParse";
 import { toProject } from "../projectMapper";
+import { resolveProjectName } from "../projectTree";
 import { toTask } from "../taskMapper";
 import "../register";
 
@@ -135,12 +136,18 @@ export class AtlasClient {
   }
 
   private projectId(ref: string): string {
-    const lower = ref.toLowerCase();
-    const project =
-      this.projects().find((p) => p.id === ref) ??
-      this.projects().find((p) => p.name.toLowerCase() === lower);
-    if (!project) throw new AtlasError("unknown_project", `no project "${ref}"`);
-    return project.id;
+    const projects = this.projects();
+    const byId = projects.find((p) => p.id === ref);
+    if (byId) return byId.id;
+    const match = resolveProjectName(projects, ref, this.userId);
+    if (match === "ambiguous") {
+      throw new AtlasError(
+        "ambiguous_project",
+        `more than one project is named "${ref}"; use its id`,
+      );
+    }
+    if (!match) throw new AtlasError("unknown_project", `no project "${ref}"`);
+    return match.id;
   }
 
   private labelId(ref: string): string {
@@ -246,8 +253,10 @@ export class AtlasClient {
     const labels = this.labels();
     const parsed = parseQuickAdd(text, Date.now(), {
       timeZone: this.timeZone,
-      projectIdByName: (name) =>
-        projects.find((p) => p.name.toLowerCase() === name.toLowerCase())?.id ?? null,
+      projectIdByName: (name) => {
+        const match = resolveProjectName(projects, name, this.userId);
+        return match && match !== "ambiguous" ? match.id : null;
+      },
       isKnownLabel: (name) => labels.some((l) => l.name.toLowerCase() === name.toLowerCase()),
     });
     return this.createTask({ ...parsed.input, labels: parsed.labels });

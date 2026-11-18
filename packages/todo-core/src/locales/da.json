@@ -75,6 +75,7 @@
     "emptyTasks": "Ingen opgaver her — nyd roen.",
     "overdue": "Forfaldne",
     "rescheduleAllToday": "Flyt alle til i dag",
+    "dropToToday": "Slip her for at gøre det i dag",
     "emptyCompleted": "Ingen fuldførte opgaver endnu.",
     "allProjects": "Alle projekter",
     "projectFilter": "Projekt",
@@ -162,6 +163,8 @@
     "emptyHint": "Slettede elementer bliver her i 30 dage, så du kan gendanne dem, og fjernes derefter for altid."
   },
   "toast": {
+    "created": "Tilføjet til {{place}}",
+    "createdDue": "Tilføjet til {{place}} · {{due}}",
     "completed": "Opgave fuldført",
     "completedCount_one": "Gennemførte {{count}} opgave",
     "completedCount_other": "Gennemførte {{count}} opgaver",
@@ -406,6 +409,7 @@
     "apiTokensCreateConfirm": "Opret",
     "apiTokensNamePlaceholder": "f.eks. n8n derhjemme",
     "apiTokensCreateFailed": "Kunne ikke oprette tokenet.",
+    "apiTokensNeedsRecovery": "Opret først din gendannelsessætning: et token bærer en nøgle, der ellers kunne bruges til at gendanne din konto.",
     "apiTokensCreatedTitle": "Dit nye token",
     "apiTokensShownOnce": "Kopiér det nu: det vises kun én gang. Alle med dette token kan læse og ændre alle dine opgaver, så pas på det som på din adgangskode.",
     "apiTokensCopy": "Kopiér token",
@@ -716,8 +720,6 @@
   },
   "notify": {
     "reminderTitle": "Påmindelse",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Påmindelser",
     "lockedTitle": "Krypteret opgave"
   },

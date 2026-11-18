@@ -121,6 +121,7 @@ All of these run inside `devenv shell` (without it, see [Without Nix](#without-n
 | `desktop:start`                    | export the web bundle and run Electron against it                          |
 | `desktop:package`                  | build the desktop tarball                                                  |
 | `web:release-tarball`              | build the release's web app tarball                                        |
+| `docker:build`                     | build the server image (`atlas-todo:local`) from this checkout (Docker)    |
 | `nix:bun-lock`                     | regenerate `nix/bun.nix` after a `bun.lock` change                         |
 | `deps:update`                      | refresh what Dependabot can't (locks, Bun, Expo SDK packages, core pin)    |
 | `test:all`                         | every test suite (see below)                                               |

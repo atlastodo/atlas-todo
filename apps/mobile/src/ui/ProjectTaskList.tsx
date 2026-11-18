@@ -743,7 +743,7 @@ export function ProjectTaskList({
     );
     if (task.locked) return row;
     return (
-      <DraggableTaskRow task={task} onReparentDrop={reparentOnto}>
+      <DraggableTaskRow task={task} onRowDrop={reparentOnto}>
         {row}
       </DraggableTaskRow>
     );

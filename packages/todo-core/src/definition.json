@@ -6,7 +6,7 @@
     "task": { "scope": [{ "field": "project_id" }] },
     "section": { "scope": [{ "field": "project_id" }] },
     "label": {},
-    "comment": { "scope": [{ "field": "task_id", "kind": "task" }] },
+    "comment": { "scope": [{ "field": "task_id", "kind": "task" }], "actor_field": "author_id" },
     "preference": {},
     "saved_filter": {},
     "reminder": {},

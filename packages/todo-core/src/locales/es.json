@@ -75,6 +75,7 @@
     "emptyTasks": "No hay tareas aquí: disfruta de la calma.",
     "overdue": "Vencidas",
     "rescheduleAllToday": "Reprogramar todas para hoy",
+    "dropToToday": "Suelta aquí para hacerla hoy",
     "emptyCompleted": "Aún no hay tareas completadas.",
     "allProjects": "Todos los proyectos",
     "projectFilter": "Proyecto",
@@ -164,6 +165,8 @@
     "emptyHint": "Los elementos eliminados se quedan aquí 30 días para que puedas restaurarlos; después se borran para siempre."
   },
   "toast": {
+    "created": "Añadida a {{place}}",
+    "createdDue": "Añadida a {{place}} · {{due}}",
     "completed": "Tarea completada",
     "completedCount_one": "{{count}} tarea completada",
     "completedCount_other": "{{count}} tareas completadas",
@@ -421,6 +424,7 @@
     "apiTokensCreateConfirm": "Crear",
     "apiTokensNamePlaceholder": "p. ej., n8n en casa",
     "apiTokensCreateFailed": "No se pudo crear el token.",
+    "apiTokensNeedsRecovery": "Configura primero tu frase de recuperación: un token lleva una clave que, si no, podría usarse para recuperar tu cuenta.",
     "apiTokensCreatedTitle": "Tu nuevo token",
     "apiTokensShownOnce": "Cópialo ahora: solo se muestra una vez. Cualquiera con este token puede leer y cambiar todas tus tareas, así que guárdalo tan bien como tu contraseña.",
     "apiTokensCopy": "Copiar token",
@@ -736,8 +740,6 @@
   },
   "notify": {
     "reminderTitle": "Recordatorio",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Recordatorios",
     "lockedTitle": "Tarea cifrada"
   },

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
+  ApiError,
   deriveApiTokenKeys,
   formatApiToken,
   generateApiToken,
@@ -76,8 +77,14 @@ export function ApiTokensSection() {
       setName("");
       setCreated(formatApiToken(parts));
       await load();
-    } catch {
-      toast.show(t("settings.apiTokensCreateFailed"));
+    } catch (err) {
+      // An account without a recovery phrase cannot make a token (it carries the key that would
+      // otherwise recover the account): say so, rather than a generic failure.
+      const needsRecovery =
+        err instanceof ApiError && err.status === 400 && /recovery phrase/i.test(err.message);
+      toast.show(
+        t(needsRecovery ? "settings.apiTokensNeedsRecovery" : "settings.apiTokensCreateFailed"),
+      );
     } finally {
       setBusy(false);
     }

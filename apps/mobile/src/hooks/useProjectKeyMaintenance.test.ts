@@ -11,6 +11,7 @@ import {
   projectKeyId,
   readKeyTrust,
   recordFirstKeyMembers,
+  recordKeyTrustBaseline,
   unsealKey,
   verifyDelivery,
   type ApiClient,
@@ -19,6 +20,7 @@ import {
 } from "@atlastodo/client-core";
 import { fakeAuth, withApp } from "../testutil";
 import {
+  dropDepartedPins,
   memberKeyChanges,
   mintFirstSharedKeys,
   requestProjectKeyMaintenance,
@@ -270,6 +272,7 @@ describe("first keys for projects shared before project keys existed", () => {
     keyring.setProjectKey("p2", generatePek());
     member(store, "p3", "u-bob", "owner", "active");
     member(store, "p3", "me", "editor", "active");
+    recordKeyTrustBaseline(store, keyring, "me");
     const api = putApi();
 
     expect(await mintFirstSharedKeys(api, keyring, store, "me")).toEqual(["p1"]);
@@ -288,6 +291,7 @@ describe("first keys for projects shared before project keys existed", () => {
     const keyring = newKeyring();
     member(store, "p1", "me", "owner", "active");
     member(store, "p1", "u-bob", "editor", "active");
+    recordKeyTrustBaseline(store, keyring, "me");
     const api = putApi(async () => {
       throw new ApiError(409, "this shared project already has a key");
     });
@@ -300,6 +304,31 @@ describe("first keys for projects shared before project keys existed", () => {
     expect(keyring.getProjectKey("p1")).toBeUndefined();
     expect(readKeyTrust(store).minted.has("p1")).toBe(false);
     expect(readKeyTrust(store).firstKeyMembers.has("p1")).toBe(false);
+  });
+
+  it("never keys a project the server calls shared after the account recorded its shares", async () => {
+    const store = new LocalStore("owner-device");
+    const keyring = newKeyring();
+    recordKeyTrustBaseline(store, keyring, "me");
+    const api = putApi();
+    // The first run records the account's waiting shares: none.
+    expect(await mintFirstSharedKeys(api, keyring, store, "me")).toEqual([]);
+    // The server then shows the user's private project as shared with an account of its choosing.
+    member(store, "mine", "me", "owner", "active");
+    member(store, "mine", "u-mallory", "editor", "active");
+
+    expect(await mintFirstSharedKeys(api, keyring, store, "me")).toEqual([]);
+    expect(api.putProjectKey).not.toHaveBeenCalled();
+    expect(readKeyTrust(store).firstKeyMembers.has("mine")).toBe(false);
+  });
+
+  it("keys nothing before the account's trust state is there", async () => {
+    const store = new LocalStore("fresh-device");
+    member(store, "p1", "me", "owner", "active");
+    member(store, "p1", "u-bob", "editor", "active");
+    const api = putApi();
+    expect(await mintFirstSharedKeys(api, newKeyring(), store, "me")).toEqual([]);
+    expect(api.putProjectKey).not.toHaveBeenCalled();
   });
 
   it("pins a recorded member on the first delivery, and nobody the server adds later", async () => {
@@ -326,5 +355,24 @@ describe("first keys for projects shared before project keys existed", () => {
     expect(unsealKey(sealed, alice.secretKey)).toEqual(pek);
     // Pinned now: a later change of that public key is reported, as for an invited member.
     expect(readKeyTrust(store).pins.get("p1:u-alice")).toBe(alice.publicKey);
+  });
+});
+
+describe("pins of departed members", () => {
+  it("are dropped once the membership ends, and only then", () => {
+    const store = new LocalStore("owner-device");
+    member(store, "p1", "me", "owner", "active");
+    member(store, "p1", "u-bob", "editor", "active");
+    member(store, "p1", "u-carol", "commenter", "pending");
+    member(store, "p1", "u-dave", "editor", "active");
+    for (const id of ["u-bob", "u-carol", "u-dave"]) pinMemberKey(store, "p1", id, alice.publicKey);
+    // A project this store holds no membership rows of yet (still syncing): left alone.
+    pinMemberKey(store, "p2", "u-erin", alice.publicKey);
+    // Dave leaves.
+    store.remove("project_member", "p1:u-dave");
+
+    expect(dropDepartedPins(store)).toBe(1);
+    const pins = readKeyTrust(store).pins;
+    expect([...pins.keys()].sort()).toEqual(["p1:u-bob", "p1:u-carol", "p2:u-erin"]);
   });
 });

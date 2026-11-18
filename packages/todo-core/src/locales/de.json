@@ -75,6 +75,7 @@
     "emptyTasks": "Keine Aufgaben hier – genieß die Ruhe.",
     "overdue": "Überfällig",
     "rescheduleAllToday": "Alle auf heute verschieben",
+    "dropToToday": "Hier ablegen, um es heute zu erledigen",
     "emptyCompleted": "Noch keine erledigten Aufgaben.",
     "allProjects": "Alle Projekte",
     "projectFilter": "Projekt",
@@ -162,6 +163,8 @@
     "emptyHint": "Gelöschte Elemente bleiben hier 30 Tage, damit du sie wiederherstellen kannst, und werden dann endgültig entfernt."
   },
   "toast": {
+    "created": "Zu {{place}} hinzugefügt",
+    "createdDue": "Zu {{place}} hinzugefügt · {{due}}",
     "completed": "Aufgabe erledigt",
     "completedCount_one": "{{count}} Aufgabe erledigt",
     "completedCount_other": "{{count}} Aufgaben erledigt",
@@ -406,6 +409,7 @@
     "apiTokensCreateConfirm": "Erstellen",
     "apiTokensNamePlaceholder": "z. B. n8n zu Hause",
     "apiTokensCreateFailed": "Das Token konnte nicht erstellt werden.",
+    "apiTokensNeedsRecovery": "Richte zuerst deine Wiederherstellungsphrase ein: Ein Token enthält einen Schlüssel, mit dem sich dein Konto sonst wiederherstellen ließe.",
     "apiTokensCreatedTitle": "Dein neues Token",
     "apiTokensShownOnce": "Kopiere es jetzt: Es wird nur einmal angezeigt. Wer dieses Token hat, kann alle deine Aufgaben lesen und ändern – bewahre es so sicher auf wie dein Passwort.",
     "apiTokensCopy": "Token kopieren",
@@ -716,8 +720,6 @@
   },
   "notify": {
     "reminderTitle": "Erinnerung",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Erinnerungen",
     "lockedTitle": "Verschlüsselte Aufgabe"
   },

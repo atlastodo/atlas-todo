@@ -49,6 +49,9 @@ jest.mock("expo-notifications/build/cancelAllScheduledNotificationsAsync", () =>
 jest.mock("expo-notifications/build/dismissAllNotificationsAsync", () => ({
   dismissAllNotificationsAsync: jest.fn(async () => {}),
 }));
+jest.mock("expo-notifications/build/dismissNotificationAsync", () => ({
+  dismissNotificationAsync: jest.fn(async () => {}),
+}));
 jest.mock("expo-notifications/build/getAllScheduledNotificationsAsync", () => ({
   getAllScheduledNotificationsAsync: jest.fn(async () => []),
 }));
@@ -206,6 +209,7 @@ describe("response surface", () => {
       reminderId: "r1",
       actionIdentifier: REMINDER_SNOOZE_ACTION,
       notificationDate: 123,
+      notificationId: "r1",
     });
   });
 
@@ -231,6 +235,7 @@ describe("response surface", () => {
       reminderId: "r1",
       actionIdentifier: REMINDER_COMPLETE_ACTION,
       notificationDate: 123,
+      notificationId: "r1",
     });
   });
 
@@ -252,6 +257,7 @@ describe("response surface", () => {
       reminderId: "r1",
       actionIdentifier: REMINDER_COMPLETE_ACTION,
       notificationDate: 123,
+      notificationId: "r1",
     });
     expect(launchReminderResponse()).toBeNull(); // nothing cached again
     clearLaunchReminderResponse();

@@ -137,11 +137,16 @@ sync, the clock and the key hierarchy, and its
 
 ## Self-hosting
 
-The server is in the core repository: follow its
-[README](https://github.com/atlastodo/atlas#readme) and
-[self-hosting guide](https://github.com/atlastodo/atlas/blob/main/docs/self-hosting.md) (Docker
-Compose, or the NixOS module). Its image serves this app's web build at the server's root URL,
-so there is nothing to install here for the web app.
+Each release publishes `ghcr.io/atlastodo/atlas-todo`, the sync server with this app's web build:
+
+```sh
+cp .env.example .env    # set POSTGRES_PASSWORD and JWT_SECRET
+docker compose up -d
+```
+
+[docs/self-hosting.md](./docs/self-hosting.md) covers the image and NixOS; the server itself
+(settings, reverse proxy, backups, upgrades) is in the core repository's
+[self-hosting guide](https://github.com/atlastodo/atlas/blob/main/docs/self-hosting.md).
 
 ## Help test it on Android
 
@@ -162,8 +167,8 @@ Release builds start out pointed at the test server, app.atlastodo.dev. To use y
 change the _Server URL_ field on the sign-in screen.
 
 - Web: your server serves the web app at its root URL. There is nothing to configure. Each
-  release here also carries it as `atlas-todo-web-X.Y.Z.tar.gz`, the static files a server image
-  or flake pins.
+  release here also carries it as `atlas-todo-web-X.Y.Z.tar.gz`, the static files the server
+  image serves.
 - Android: join the closed test on Google Play ([above](#help-test-it-on-android)), or download
   `atlas-todo-X.Y.Z.apk` from [GitHub Releases](https://github.com/atlastodo/atlas-todo/releases)
   and install it. [docs/android-permissions.md](./docs/android-permissions.md) lists the

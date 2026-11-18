@@ -1,0 +1,60 @@
+# Self-hosting Atlas Todo: Postgres and the Atlas Todo image (ghcr.io/atlastodo/atlas-todo: core's
+# sync server with this app's web build), which serves the API and the web app on one port.
+#
+#   cp .env.example .env      # set POSTGRES_PASSWORD and JWT_SECRET
+#   docker compose up -d
+#
+# This is core's stack (atlastodo/atlas, docker/docker-compose.yml) with the Atlas Todo image: the
+# same project, service and volume names, so an install started from core's compose moves here
+# without losing data. Every server setting goes in .env and is documented in core's
+# docs/self-hosting.md; see docs/self-hosting.md here.
+name: atlas-todo
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-atlas}
+      # UTF-8, so non-ASCII content is stored safely. Only applied when the volume is created.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    volumes:
+      - atlas_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    # Pin a version in production: ATLAS_TODO_IMAGE=ghcr.io/atlastodo/atlas-todo:X.Y.Z.
+    image: ${ATLAS_TODO_IMAGE:-ghcr.io/atlastodo/atlas-todo:latest}
+    restart: unless-stopped
+    # tini as PID 1: forwards SIGTERM to the server and reaps zombies.
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Built from the POSTGRES_* values so the password lives in one place.
+      DATABASE_URL: postgres://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-atlas}
+      PORT: "8080"
+      BIND_ADDR: "0.0.0.0"
+    ports:
+      # Localhost only by default, for a reverse proxy on the same host; 8080 for every interface.
+      - "${PORT_BIND:-127.0.0.1:8080}:8080"
+    volumes:
+      # Attachment blobs (BLOB_DIR defaults to /app/data/blobs).
+      - atlas_data:/app/data
+
+volumes:
+  atlas_db:
+    # The name core's compose gives it. A deployment with its own project name (`-p <name>`) sets
+    # ATLAS_DB_VOLUME=<name>_atlas_db.
+    name: ${ATLAS_DB_VOLUME:-docker_atlas_db}
+  atlas_data:

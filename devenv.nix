@@ -141,7 +141,7 @@ in
     cd "$DEVENV_ROOT"
     command -v docker >/dev/null && docker info >/dev/null 2>&1 || { echo "!! screenshots needs a running Docker daemon." >&2; exit 1; }
     # The core release the app pins.
-    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas:0.1.16}"
+    image="''${ATLAS_SERVER_IMAGE:-ghcr.io/atlastodo/atlas:0.1.20}"
     work="$(mktemp -d)"
     net="atlas-screenshots-$$"
     cleanup() {
@@ -303,6 +303,21 @@ in
     set -euo pipefail
     cd "$DEVENV_ROOT"
     scripts/web-release-tarball.sh "$@"
+  '';
+
+  # `docker:build` -- the server image (docker/Dockerfile) as atlas-todo:local: this checkout's web
+  # release tarball and third-party notices on the pinned core server image (ATLAS_IMAGE picks
+  # another base). Needs Docker.
+  scripts."docker:build".exec = ''
+    set -euo pipefail
+    cd "$DEVENV_ROOT"
+    context="$(mktemp -d)"
+    trap 'rm -rf "$context"' EXIT
+    scripts/web-release-tarball.sh "$context"
+    rm -f "$context"/*.sha256
+    node scripts/third-party-licenses.mjs --notices "$context/THIRD_PARTY_NOTICES.txt" --rust
+    docker build -f docker/Dockerfile ''${ATLAS_IMAGE:+--build-arg "ATLAS_IMAGE=$ATLAS_IMAGE"} \
+      -t atlas-todo:local "$context"
   '';
 
   # Android Emulator workflow scripts

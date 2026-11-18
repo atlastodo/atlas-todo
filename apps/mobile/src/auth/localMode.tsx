@@ -28,7 +28,7 @@ import { useAuth } from "./AuthContext";
  */
 
 /** The scope `createPersistence` names the local-only database by (`atlas-local`). */
-export const LOCAL_SCOPE = "local";
+export { LOCAL_SCOPE } from "./accountId";
 
 const DEVICE_ID_KEY = "@atlas_local_device_id";
 /** Set when an account's session ends, cleared by "Continue without an account" or a sign-in. */

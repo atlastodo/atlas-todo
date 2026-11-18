@@ -1,4 +1,5 @@
 import {
+  type CreateTaskInput,
   type Label,
   type Priority,
   type Project,
@@ -18,6 +19,7 @@ import { useNow } from "./useNow";
 import { usePreferences, type ListPref } from "./usePreferences";
 import { useFormat } from "./useFormat";
 import { useToast } from "../data/ToastProvider";
+import { useOpenTask } from "../data/OpenTaskContext";
 
 /**
  * Everything a smart-list screen shares: the tasks, the clock, the group/sort preference, the
@@ -104,7 +106,7 @@ export function useTaskListView(
   const { session } = useAuth();
   const {
     tasks,
-    create,
+    create: createBase,
     toggle: toggleBase,
     update,
     move,
@@ -122,6 +124,7 @@ export function useTaskListView(
   const allSections = useAllSections();
   const toast = useToast();
   const format = useFormat();
+  const openTask = useOpenTask();
   const now = useNow();
 
   const resolveLabels = useCallback(
@@ -310,6 +313,30 @@ export function useTaskListView(
       }
     },
     [toggleBase, discard, toast, t],
+  );
+
+  // A titled create (quick-add, the FAB) says where the task went: from Today a task dated tomorrow
+  // vanishes into Upcoming with nothing on screen changing. A blank draft row (Enter-to-add-below)
+  // is not announced; it is visible and being typed into.
+  const create = useCallback(
+    (input: CreateTaskInput) => {
+      const id = createBase(input);
+      if (!input.title.trim()) return id;
+      const place =
+        (input.project_id && projects.find((p) => p.id === input.project_id)?.name) ||
+        t("nav.inbox");
+      const message =
+        input.due_at != null
+          ? t("toast.createdDue", { place, due: format.dueChip(input.due_at) })
+          : t("toast.created", { place });
+      toast.show(
+        message,
+        { label: t("common.undo"), run: () => discard(id) },
+        openTask ? { label: t("common.open"), run: () => openTask(id) } : undefined,
+      );
+      return id;
+    },
+    [createBase, projects, format, toast, t, discard, openTask],
   );
 
   const reschedule = useCallback(

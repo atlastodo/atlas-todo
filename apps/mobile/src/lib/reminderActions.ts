@@ -32,6 +32,11 @@ export interface ReminderResponse {
   actionIdentifier: string;
   /** The tapped notification's fire time (Unix ms): the dedupe key across delivery paths. */
   notificationDate: number;
+  /**
+   * The OS notification's request id, to dismiss it once handled: on Android an action that opens
+   * the app leaves the banner in the shade.
+   */
+  notificationId: string;
 }
 
 /**

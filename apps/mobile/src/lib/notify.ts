@@ -9,6 +9,7 @@ import { scheduleNotificationAsync } from "expo-notifications/build/scheduleNoti
 import { cancelScheduledNotificationAsync } from "expo-notifications/build/cancelScheduledNotificationAsync";
 import { cancelAllScheduledNotificationsAsync } from "expo-notifications/build/cancelAllScheduledNotificationsAsync";
 import { dismissAllNotificationsAsync } from "expo-notifications/build/dismissAllNotificationsAsync";
+import { dismissNotificationAsync } from "expo-notifications/build/dismissNotificationAsync";
 import { getAllScheduledNotificationsAsync } from "expo-notifications/build/getAllScheduledNotificationsAsync";
 import { AndroidImportance } from "expo-notifications/build/NotificationChannelManager.types";
 import {
@@ -376,6 +377,7 @@ function toReminderResponse(response: NotificationResponse): ReminderResponse | 
     reminderId,
     actionIdentifier: response.actionIdentifier,
     notificationDate: response.notification.date,
+    notificationId: response.notification.request.identifier,
   };
 }
 
@@ -403,6 +405,15 @@ export function launchReminderResponse(): ReminderResponse | null {
     return response ? toReminderResponse(response) : null;
   } catch {
     return null;
+  }
+}
+
+/** Remove one delivered notification from the shade (a handled Complete / Snooze). Best-effort. */
+export async function dismissNotification(id: string): Promise<void> {
+  try {
+    await dismissNotificationAsync(id);
+  } catch {
+    // Best-effort.
   }
 }
 

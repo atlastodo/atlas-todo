@@ -2,6 +2,13 @@
 # locks, the Bun pins, the whole bun.lock, the Expo SDK's packages, Cargo.lock, nix/bun.nix),
 # opened as one PR to `dev` from the `chore/deps-refresh` branch, which each run rebuilds.
 #
+# The refresh runs code no reviewed lock pins yet (the packages and tools it just resolved), so:
+# - It runs on `dev`, never in the default branch's cache scope: a schedule starts on `main`, and
+#   only dispatches the run on `dev`. A tag run (the signed release) can read caches of `main` and
+#   its own ref only, so nothing the refresh's processes might save can reach the release.
+# - That job has a read-only token and no persisted git credentials. It hands its changes on as a
+#   patch; the job that pushes, opens the PR and dispatches CI runs none of the refreshed code.
+#
 # A PR opened with GITHUB_TOKEN starts no workflow runs, so CI is dispatched on the branch by hand;
 # its checks land on the PR's head commit. Opening the PR needs the repository setting "Allow
 # GitHub Actions to create and approve pull requests".
@@ -15,26 +22,41 @@ on:
 permissions: {}
 
 concurrency:
-  group: deps-refresh
+  group: deps-refresh-${{ github.ref }}
   cancel-in-progress: false
 
 env:
   BRANCH: chore/deps-refresh
 
 jobs:
-  refresh:
-    name: Refresh dependencies
+  # Started anywhere but `dev` (the schedule runs on `main`): run again on `dev`.
+  dispatch:
+    name: Run on dev
+    if: github.ref != 'refs/heads/dev'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
       actions: write
-      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deps-refresh.yml --ref dev --repo "$GITHUB_REPOSITORY"
+
+  refresh:
+    name: Refresh dependencies
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.patch.outputs.changed }}
+      expo-current: ${{ steps.expo.outputs.current }}
+      expo-latest: ${{ steps.expo.outputs.latest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: dev
-      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+          persist-credentials: false
+      - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version-file: .bun-version
@@ -43,16 +65,61 @@ jobs:
         run: rustup toolchain install --no-self-update
       - name: Update
         env:
+          # Read-only: for GitHub API rate limits (flake inputs), never for writing.
           GH_TOKEN: ${{ github.token }}
         run: scripts/update-deps.sh
+      - id: patch
+        name: Save the changes
+        run: |
+          git add -A
+          git diff --cached --binary >"$RUNNER_TEMP/refresh.patch"
+          if [ -s "$RUNNER_TEMP/refresh.patch" ]; then
+            echo "changed=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "Everything is current"
+            echo "changed=false" >>"$GITHUB_OUTPUT"
+          fi
+      - if: steps.patch.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: refresh-patch
+          path: ${{ runner.temp }}/refresh.patch
+          retention-days: 3
+      # A new Expo SDK major is a migration (React Native, React and the native modules move
+      # together), so it is flagged as an issue rather than applied (by the next job).
+      - id: expo
+        name: Check for a new Expo SDK
+        run: |
+          current="$(bun -e "console.log(require('./apps/mobile/node_modules/expo/package.json').version.split('.')[0])" 2>/dev/null)" || exit 0
+          latest="$(npm view expo version | cut -d. -f1)"
+          echo "current=$current" >>"$GITHUB_OUTPUT"
+          echo "latest=$latest" >>"$GITHUB_OUTPUT"
+
+  publish:
+    name: Open the PR
+    needs: refresh
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+      issues: write
+    steps:
+      - if: needs.refresh.outputs.changed == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: dev
+      - if: needs.refresh.outputs.changed == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: refresh-patch
+          path: ${{ runner.temp }}
       - name: Open or update the PR
+        if: needs.refresh.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet; then
-            echo "Everything is current"
-            exit 0
-          fi
+          git apply --binary "$RUNNER_TEMP/refresh.patch"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -C "$BRANCH"
@@ -72,20 +139,18 @@ jobs:
               --body-file "$RUNNER_TEMP/body.md"
           fi
           gh workflow run ci.yml --ref "$BRANCH"
-      # A new Expo SDK major is a migration (React Native, React and the native modules move
-      # together), so it is flagged as an issue rather than applied.
       - name: Flag a new Expo SDK
         env:
           GH_TOKEN: ${{ github.token }}
+          CURRENT: ${{ needs.refresh.outputs.expo-current }}
+          LATEST: ${{ needs.refresh.outputs.expo-latest }}
         run: |
-          for app in apps/*/; do
-            [ -f "${app}app.json" ] || continue
-            current="$(bun -e "console.log(require('./${app}node_modules/expo/package.json').version.split('.')[0])" 2>/dev/null)" || continue
-            latest="$(npm view expo version | cut -d. -f1)"
-            [ "$latest" -gt "$current" ] || continue
-            title="Upgrade to Expo SDK $latest"
-            if [ -z "$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[].number')" ]; then
-              gh issue create --title "$title" \
-                --body "Expo SDK $latest is out; \`${app%/}\` is on SDK $current. Upgrade with \`bunx expo install expo@^$latest --fix\` and follow the SDK's upgrade guide."
-            fi
-          done
+          # Both are major versions the previous job read; anything else is skipped.
+          case "$CURRENT" in "" | *[!0-9]*) exit 0 ;; esac
+          case "$LATEST" in "" | *[!0-9]*) exit 0 ;; esac
+          [ "$LATEST" -gt "$CURRENT" ] || exit 0
+          title="Upgrade to Expo SDK $LATEST"
+          if [ -z "$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[].number')" ]; then
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" \
+              --body "Expo SDK $LATEST is out; \`apps/mobile\` is on SDK $CURRENT. Upgrade with \`bunx expo install expo@^$LATEST --fix\` and follow the SDK's upgrade guide."
+          fi

@@ -59,7 +59,7 @@ function press(
   reminderId = "r1",
   notificationDate = 1,
 ): ReminderResponse {
-  return { actionIdentifier, reminderId, notificationDate };
+  return { actionIdentifier, reminderId, notificationDate, notificationId: reminderId };
 }
 
 function plan(response: ReminderResponse, tasks: Task[] = [task()], reminders = [reminder()]) {

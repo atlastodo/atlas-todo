@@ -143,7 +143,7 @@ describe("notification text", () => {
       await waitFor(() => expect(seam().scheduleIO.schedule).toHaveBeenCalledTimes(booked.length));
       const rebooked = seam().scheduleIO.schedule.mock.calls;
       expect(rebooked.map((c) => c[3] as string).sort()).toEqual([...booked].sort());
-      for (const call of rebooked) expect(call[1]).toBe(i18n.t("notify.habitBody", { lng: "da" }));
+      for (const call of rebooked) expect(call[1]).toBe("");
       expect(seam().scheduleIO.cancel).not.toHaveBeenCalled();
     } finally {
       await act(async () => {

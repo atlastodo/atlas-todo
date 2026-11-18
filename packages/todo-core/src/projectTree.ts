@@ -49,16 +49,20 @@ export function buildProjectTree(projects: Project[]): ProjectTreeNode[] {
     else childrenOf.set(parent, [project]);
   }
 
-  // Each id is consumed once; a cycle has no root and is never visited.
-  const toNode = (project: Project, depth: number): ProjectTreeNode => {
-    const kids = childrenOf.get(project.id);
-    return {
-      project,
-      depth,
-      children: kids ? kids.sort(bySortOrder).map((c) => toNode(c, depth + 1)) : [],
-    };
-  };
-  return roots.sort(bySortOrder).map((r) => toNode(r, 0));
+  // Each id is consumed once; a cycle has no root and is never visited. Iterative, as `parent_id`
+  // is synced and a chain can be as deep as a member makes it.
+  const out = roots
+    .sort(bySortOrder)
+    .map((project): ProjectTreeNode => ({ project, depth: 0, children: [] }));
+  const stack = [...out];
+  for (let node = stack.pop(); node; node = stack.pop()) {
+    const kids = childrenOf.get(node.project.id);
+    if (!kids) continue;
+    const depth = node.depth + 1;
+    node.children = kids.sort(bySortOrder).map((project) => ({ project, depth, children: [] }));
+    for (const child of node.children) stack.push(child);
+  }
+  return out;
 }
 
 // Pre-order; a `collapsed` folder emits its own row but none of its descendants.
@@ -67,18 +71,18 @@ export function flattenProjectTree(
   collapsed?: ReadonlySet<string>,
 ): FlatProjectRow[] {
   const rows: FlatProjectRow[] = [];
-  const walk = (nodes: ProjectTreeNode[]): void => {
-    for (const node of nodes) {
-      rows.push({
-        project: node.project,
-        depth: node.depth,
-        hasChildren: node.children.length > 0,
-        childCount: node.children.length,
-      });
-      if (node.children.length > 0 && !collapsed?.has(node.project.id)) walk(node.children);
+  const stack = buildProjectTree(projects).reverse();
+  for (let node = stack.pop(); node; node = stack.pop()) {
+    rows.push({
+      project: node.project,
+      depth: node.depth,
+      hasChildren: node.children.length > 0,
+      childCount: node.children.length,
+    });
+    if (node.children.length > 0 && !collapsed?.has(node.project.id)) {
+      for (let i = node.children.length - 1; i >= 0; i--) stack.push(node.children[i]!);
     }
-  };
-  walk(buildProjectTree(projects));
+  }
   return rows;
 }
 
@@ -215,4 +219,24 @@ export function pinnedProjectTree(
     visible.filter((p) => keep.has(p.id)),
     collapsed,
   );
+}
+
+/**
+ * The project a name names (case-insensitive), for filing a task by name. The account's own
+ * projects come first: a shared project's name is set by its owner, so a member's project of the
+ * same name must not capture tasks meant for the user's own. `"ambiguous"` when more than one
+ * project matches at that level; `null` when none does.
+ */
+export function resolveProjectName(
+  projects: readonly (Pick<Project, "id" | "name"> & { owner_id?: string })[],
+  name: string,
+  userId: string | undefined,
+): { id: string } | "ambiguous" | null {
+  const lower = name.toLowerCase();
+  const matches = projects.filter((p) => p.name.toLowerCase() === lower);
+  const own = matches.filter((p) => userId !== undefined && p.owner_id === userId);
+  const pick = own.length > 0 ? own : matches;
+  if (pick.length === 0) return null;
+  if (pick.length > 1) return "ambiguous";
+  return { id: pick[0]!.id };
 }

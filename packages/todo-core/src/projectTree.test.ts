@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildProjectTree,
   flattenProjectTree,
+  resolveProjectName,
   hiddenProjectIds,
   moveProjectTarget,
   pinnedProjectTree,
@@ -246,5 +247,44 @@ describe("pinnedProjectTree", () => {
       p("inbox", { sort_order: 2 }),
     ];
     expect(ids(pinnedProjectTree(set, allPinned, new Set(["work"])))).toEqual(["work", "inbox"]);
+  });
+});
+
+describe("deep chains", () => {
+  it("flattens a 100,000-deep folder chain without overflowing the stack", () => {
+    const n = 100_000;
+    const chain = Array.from({ length: n }, (_, i) =>
+      p(`p${i}`, { parent_id: i === 0 ? null : `p${i - 1}` }),
+    );
+    const rows = flattenProjectTree(chain);
+    expect(rows).toHaveLength(n);
+    expect(rows[n - 1]!.depth).toBe(n - 1);
+  });
+});
+
+describe("resolveProjectName", () => {
+  const projects = [
+    p("mine", { name: "Work", owner_id: "me" }),
+    p("theirs", { name: "work", owner_id: "mallory" }),
+    p("shared-a", { name: "Ideas", owner_id: "a" }),
+    p("shared-b", { name: "ideas", owner_id: "b" }),
+    p("only", { name: "Garden", owner_id: "c" }),
+  ];
+
+  it("prefers the account's own project over a shared one of the same name", () => {
+    expect(resolveProjectName(projects, "WORK", "me")).toEqual({ id: "mine" });
+  });
+
+  it("finds a shared project when the account has none of that name", () => {
+    expect(resolveProjectName(projects, "garden", "me")).toEqual({ id: "only" });
+  });
+
+  it("reports names that match more than one project", () => {
+    expect(resolveProjectName(projects, "ideas", "me")).toBe("ambiguous");
+    expect(resolveProjectName(projects, "work", undefined)).toBe("ambiguous");
+  });
+
+  it("finds nothing for an unknown name", () => {
+    expect(resolveProjectName(projects, "nope", "me")).toBeNull();
   });
 });

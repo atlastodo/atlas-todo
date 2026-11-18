@@ -8,30 +8,46 @@ import { useCanHover } from "../hooks/useCanHover";
 import { GripVertical } from "./icons";
 
 /**
- * The web drag-to-subtask wrapper: drag one row's grip onto another to make it a subtask (HTML5
- * drag via `useCardDnd`, like the board's `DraggableCard`). The drag source is a dedicated grip,
- * not the row: native HTML5 drag starts immediately and would fight the reorder pan. The whole row
- * is a drop target with a "nest here" ring. The reparent and cycle guard are the caller's
- * `onReparentDrop` -> `reparentTask`. Native uses the no-op `DraggableTaskRow.tsx`.
+ * The web row drag wrapper: drag one row's grip onto another (HTML5 drag via `useCardDnd`, like the
+ * board's `DraggableCard`). The drag source is a dedicated grip, not the row: native HTML5 drag
+ * starts immediately and would fight the reorder pan. The whole row is a drop target.
+ *
+ * What a drop means is the caller's `onRowDrop`: usually nesting (`reparentTask`, cycle-guarded),
+ * shown with a "nest here" ring; on Today, an Overdue row dropped on a Today row reschedules it,
+ * and the caller marks those rows with `dropHint="reschedule"`, a section-wide tint instead of the
+ * ring. Native uses the no-op `DraggableTaskRow.tsx`.
  */
 export function DraggableTaskRow({
   task,
-  onReparentDrop,
+  onRowDrop,
+  onDragStart,
+  onDragEnd,
+  dropHint,
   children,
 }: {
   task: Task;
-  onReparentDrop: (draggedId: string, target: Task) => void;
+  onRowDrop: (draggedId: string, target: Task) => void;
+  /** This row's grip started a drag. */
+  onDragStart?: (taskId: string) => void;
+  /** This row's drag ended, dropped or cancelled. */
+  onDragEnd?: () => void;
+  /** A drop here reschedules rather than nests: tint the row as part of the target section. */
+  dropHint?: "reschedule";
   children: ReactNode;
 }) {
   const { t } = useTranslation();
   const rowRef = useRef<ViewInstance>(null);
   const handleRef = useRef<ViewInstance>(null);
   const over = useDropTarget(rowRef, (draggedId) => {
-    if (draggedId !== task.id) onReparentDrop(draggedId, task);
+    if (draggedId !== task.id) onRowDrop(draggedId, task);
   });
   const canHover = useCanHover();
   // `enabled` re-binds the grip when it mounts (a mouse attached after load).
-  const dragging = useDragSource(handleRef, () => task.id, { enabled: canHover });
+  const dragging = useDragSource(handleRef, () => task.id, {
+    enabled: canHover,
+    onDragStart: () => onDragStart?.(task.id),
+    onDragEnd,
+  });
 
   return (
     <View ref={rowRef} className="group relative">
@@ -52,11 +68,19 @@ export function DraggableTaskRow({
         </View>
       )}
 
-      {over && !dragging && (
+      {dropHint === "reschedule" ? (
         <View
           style={{ pointerEvents: "none" }}
-          className="absolute inset-0 rounded border-2 border-accent-500 bg-accent-50 dark:bg-accent-950"
+          className={"absolute inset-0 " + (over ? "bg-accent-500/20" : "bg-accent-500/10")}
         />
+      ) : (
+        over &&
+        !dragging && (
+          <View
+            style={{ pointerEvents: "none" }}
+            className="absolute inset-0 rounded border-2 border-accent-500 bg-accent-50 dark:bg-accent-950"
+          />
+        )
       )}
     </View>
   );

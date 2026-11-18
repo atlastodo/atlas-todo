@@ -5,6 +5,7 @@ import {
   type IndexedDbEvents,
   type Persistence,
 } from "@atlastodo/client-core";
+import { assertStorageScope } from "../auth/accountId";
 import { closeAll, trackOpen } from "./openDatabases";
 
 /**
@@ -38,5 +39,7 @@ export async function deleteDatabase(userId: string): Promise<void> {
 
 /** Per-user SQLite filename; the user id is a UUID, so it is filename-safe as-is. */
 function dbName(userId: string): string {
+  // An account id (a UUID) or the local-only scope, nothing else: see `accountId.ts`.
+  assertStorageScope(userId);
   return `atlas-${userId}.db`;
 }

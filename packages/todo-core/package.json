@@ -1,6 +1,6 @@
 {
   "name": "@atlastodo/todo-core",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "private": true,
   "description": "Atlas Todo's domain on Atlas core: its app definition, entity models, task rules, recurrence, quick add, filters, i18n catalogs and the headless SDK client",
   "license": "AGPL-3.0-only",
@@ -17,8 +17,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@atlastodo/client-core": "0.1.16",
-    "@atlastodo/sdk": "0.1.16",
+    "@atlastodo/client-core": "0.1.20",
+    "@atlastodo/sdk": "0.1.20",
     "@noble/hashes": "^2.4.0",
     "fflate": "^0.8.3"
   },

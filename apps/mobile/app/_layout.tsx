@@ -79,6 +79,7 @@ import { useCrashReporter } from "../src/hooks/useCrashReporter";
 import { setRoute } from "../src/lib/crashReporter";
 import { rememberRoute } from "../src/lib/devRoute";
 import { installGlobalErrorHandler } from "../src/lib/globalErrorHandler";
+import { OpenTaskContext } from "../src/data/OpenTaskContext";
 import "../src/i18n";
 import "../global.css";
 
@@ -171,6 +172,9 @@ function ReminderScheduler() {
   return null;
 }
 
+/** What a toast's Open action does (`OpenTaskContext`): push the task's detail. Stable, module-level. */
+const openTaskRoute = (taskId: string) => router.push(`/task/${taskId}`);
+
 /** Books the per-habit nudges with the OS (native only). */
 function HabitReminderScheduler() {
   useHabitReminderScheduler();
@@ -256,7 +260,6 @@ function Gate() {
           <TrashSweep />
           <ActivityPrune />
           <ProjectKeyMaintenance />
-          <ReminderScheduler />
           <HabitReminderScheduler />
           <TimezoneChangePrompt />
           {/* Inside the store, so theme/accent follow the synced preference. */}
@@ -265,46 +268,50 @@ function Gate() {
             <SyncedTheme>
               <FocusProvider>
                 <ToastProvider>
-                  {/* Wraps the whole navigator so multi-select also works on pushed routes. */}
-                  <SelectionProvider>
-                    <SelectionActionsProvider>
-                      <CursorProvider>
-                        <SidebarProvider>
-                          {/* Tells the root-level focus pill how much bottom edge the phone nav takes. */}
-                          <BottomChromeProvider>
-                            <OnboardingProvider>
-                              <CommandPaletteProvider>
-                                <View className="flex-1 bg-white dark:bg-zinc-950">
-                                  <UpdateBanner />
-                                  {/* Theming the header here also covers the pushed task detail. */}
-                                  <Stack
-                                    screenOptions={{
-                                      headerTitleAlign: "left",
-                                      ...headerThemeOptions(scheme),
-                                      contentStyle: { backgroundColor: sceneBackground(scheme) },
-                                    }}
-                                  >
-                                    <Stack.Screen
-                                      name="(drawer)"
-                                      options={{ headerShown: false }}
-                                    />
-                                  </Stack>
-                                  <FocusBar onOpen={() => router.push("/focus")} />
-                                  <GlobalCommandPalette />
-                                  <RouteBreadcrumbs />
-                                  <OnboardingModal />
-                                  {/* After the wizard, so its explainer draws over it. */}
-                                  <PermissionExplainerHost />
-                                  <PersistentStorageExplainer />
-                                  <PermissionsSheetHost />
-                                </View>
-                              </CommandPaletteProvider>
-                            </OnboardingProvider>
-                          </BottomChromeProvider>
-                        </SidebarProvider>
-                      </CursorProvider>
-                    </SelectionActionsProvider>
-                  </SelectionProvider>
+                  {/* Inside the toasts: a Complete pressed on a reminder confirms with an undo toast. */}
+                  <ReminderScheduler />
+                  <OpenTaskContext.Provider value={openTaskRoute}>
+                    {/* Wraps the whole navigator so multi-select also works on pushed routes. */}
+                    <SelectionProvider>
+                      <SelectionActionsProvider>
+                        <CursorProvider>
+                          <SidebarProvider>
+                            {/* Tells the root-level focus pill how much bottom edge the phone nav takes. */}
+                            <BottomChromeProvider>
+                              <OnboardingProvider>
+                                <CommandPaletteProvider>
+                                  <View className="flex-1 bg-white dark:bg-zinc-950">
+                                    <UpdateBanner />
+                                    {/* Theming the header here also covers the pushed task detail. */}
+                                    <Stack
+                                      screenOptions={{
+                                        headerTitleAlign: "left",
+                                        ...headerThemeOptions(scheme),
+                                        contentStyle: { backgroundColor: sceneBackground(scheme) },
+                                      }}
+                                    >
+                                      <Stack.Screen
+                                        name="(drawer)"
+                                        options={{ headerShown: false }}
+                                      />
+                                    </Stack>
+                                    <FocusBar onOpen={() => router.push("/focus")} />
+                                    <GlobalCommandPalette />
+                                    <RouteBreadcrumbs />
+                                    <OnboardingModal />
+                                    {/* After the wizard, so its explainer draws over it. */}
+                                    <PermissionExplainerHost />
+                                    <PersistentStorageExplainer />
+                                    <PermissionsSheetHost />
+                                  </View>
+                                </CommandPaletteProvider>
+                              </OnboardingProvider>
+                            </BottomChromeProvider>
+                          </SidebarProvider>
+                        </CursorProvider>
+                      </SelectionActionsProvider>
+                    </SelectionProvider>
+                  </OpenTaskContext.Provider>
                 </ToastProvider>
               </FocusProvider>
             </SyncedTheme>

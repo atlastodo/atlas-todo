@@ -432,6 +432,9 @@ export function AuthProvider({
   // anything that awaited must merge into the session as it is now; a stale closure would write
   // old tokens back.
   const sessionRef = useRef<Session | null>(null);
+  // The auth hash of the sign-in or unlock that just happened, held only until the signing key is
+  // in place: the server takes an account's first signing key from an older session only with it.
+  const signingProofRef = useRef<string | null>(null);
   const keyringRef = useRef<Keyring | null>(null);
 
   // The client too, so auth methods see a rebuilt one before React re-renders.
@@ -725,14 +728,21 @@ export function AuthProvider({
   // Load the identity signing key: from the session's wrapped copy, else fetched, else created and
   // uploaded once. Retried with the next keyring if it fails (offline, say).
   useEffect(() => {
-    if (!api || !keyring?.hasKeys() || keyring.getSigningKey()) return;
+    if (!api || !keyring?.hasKeys() || keyring.getSigningKey()) {
+      signingProofRef.current = null;
+      return;
+    }
     let cancelled = false;
     const current = sessionRef.current;
-    void ensureSigningKey(api, keyring, {
-      publicKey: current?.signingPublicKey,
-      wrapped: current?.encryptedSigningKey,
-    })
+    const proof = signingProofRef.current;
+    void ensureSigningKey(
+      api,
+      keyring,
+      { publicKey: current?.signingPublicKey, wrapped: current?.encryptedSigningKey },
+      proof ? { currentPassword: proof } : undefined,
+    )
       .then(async ({ publicKey, secretKey }) => {
+        signingProofRef.current = null;
         const prev = sessionRef.current;
         if (cancelled || !prev || keyringRef.current !== keyring) return;
         const next: Session = {
@@ -791,6 +801,7 @@ export function AuthProvider({
       await writeSession(next);
 
       client.setTokens(next.accessToken, next.refreshToken);
+      signingProofRef.current = credential.authHash;
       commitKeyring(keyringOf(keys, auth.public_key));
       commitSession(next);
 
@@ -1196,6 +1207,7 @@ export function AuthProvider({
         // Unlocked for this run regardless; the next cold start asks again.
         console.warn("[atlas] could not persist the unlocked keys:", err);
       }
+      signingProofRef.current = credential.authHash;
       commitKeyring(new Keyring({ dek, privateKey, publicKey }));
       commitSession(next);
       // Migrate (or repair) the root key in the background: an unlock may well be offline.

@@ -75,6 +75,7 @@
     "emptyTasks": "Aucune tâche ici — profitez du calme.",
     "overdue": "En retard",
     "rescheduleAllToday": "Tout reporter à aujourd’hui",
+    "dropToToday": "Déposer ici pour aujourd’hui",
     "emptyCompleted": "Aucune tâche terminée pour l’instant.",
     "allProjects": "Tous les projets",
     "projectFilter": "Projet",
@@ -164,6 +165,8 @@
     "emptyHint": "Les éléments supprimés restent ici 30 jours pour que vous puissiez les restaurer, puis ils sont définitivement effacés."
   },
   "toast": {
+    "created": "Ajoutée à {{place}}",
+    "createdDue": "Ajoutée à {{place}} · {{due}}",
     "completed": "Tâche terminée",
     "completedCount_one": "{{count}} tâche terminée",
     "completedCount_other": "{{count}} tâches terminées",
@@ -421,6 +424,7 @@
     "apiTokensCreateConfirm": "Créer",
     "apiTokensNamePlaceholder": "p. ex. n8n à la maison",
     "apiTokensCreateFailed": "Impossible de créer le jeton.",
+    "apiTokensNeedsRecovery": "Configurez d'abord votre phrase de récupération : un jeton contient une clé qui pourrait sinon servir à récupérer votre compte.",
     "apiTokensCreatedTitle": "Votre nouveau jeton",
     "apiTokensShownOnce": "Copiez-le maintenant : il n'est affiché qu'une seule fois. Quiconque possède ce jeton peut lire et modifier toutes vos tâches, gardez-le donc aussi précieusement que votre mot de passe.",
     "apiTokensCopy": "Copier le jeton",
@@ -736,8 +740,6 @@
   },
   "notify": {
     "reminderTitle": "Rappel",
-    "reminderBody": "",
-    "habitBody": "",
     "channelName": "Rappels",
     "lockedTitle": "Tâche chiffrée"
   },

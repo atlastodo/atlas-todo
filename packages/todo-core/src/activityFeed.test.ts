@@ -333,3 +333,27 @@ describe("reversals and the review's fixes", () => {
     expect(entries().map((a) => a.kind)).toEqual(["created"]);
   });
 });
+
+describe("section entries", () => {
+  it("are not undone for a section of another project", () => {
+    const { store, entries } = setup();
+    store.set("project", "p", "name", "Shared");
+    store.set("project", "q", "name", "Mine");
+    store.set("section", "s", "project_id", "q");
+    store.set("section", "s", "name", "Renamed");
+    // A member of `p` names `q`'s section in an entry of `p`.
+    writeProjectActivity(
+      store,
+      BO,
+      { projectId: "p", sectionId: "s" },
+      "section_renamed",
+      "Original",
+      "Renamed",
+      T0,
+    );
+    const entry = entries().find((a) => a.kind === "section_renamed")!;
+    expect(canUndoActivity(store, entry, entries(), "owner")).toBe(false);
+    expect(undoActivity(store, ME, entry, entries(), T0 + 1)).toBe(false);
+    expect(store.get("section", "s")?.name).toBe("Renamed");
+  });
+});
