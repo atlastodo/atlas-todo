@@ -409,6 +409,7 @@
     "apiTokensCreateConfirm": "Opret",
     "apiTokensNamePlaceholder": "f.eks. n8n derhjemme",
     "apiTokensCreateFailed": "Kunne ikke oprette tokenet.",
+    "apiTokensNeedsRecovery": "Opret først din gendannelsessætning: et token bærer en nøgle, der ellers kunne bruges til at gendanne din konto.",
     "apiTokensCreatedTitle": "Dit nye token",
     "apiTokensShownOnce": "Kopiér det nu: det vises kun én gang. Alle med dette token kan læse og ændre alle dine opgaver, så pas på det som på din adgangskode.",
     "apiTokensCopy": "Kopiér token",

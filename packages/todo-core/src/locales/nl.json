@@ -409,6 +409,7 @@
     "apiTokensCreateConfirm": "Maken",
     "apiTokensNamePlaceholder": "bijv. n8n thuis",
     "apiTokensCreateFailed": "Het token kon niet worden gemaakt.",
+    "apiTokensNeedsRecovery": "Stel eerst je herstelzin in: een token bevat een sleutel waarmee je account anders hersteld zou kunnen worden.",
     "apiTokensCreatedTitle": "Je nieuwe token",
     "apiTokensShownOnce": "Kopieer het nu: het wordt maar één keer getoond. Iedereen met dit token kan al je taken lezen en wijzigen, dus bewaar het net zo zorgvuldig als je wachtwoord.",
     "apiTokensCopy": "Token kopiëren",

@@ -409,6 +409,7 @@
     "apiTokensCreateConfirm": "Create",
     "apiTokensNamePlaceholder": "e.g. n8n at home",
     "apiTokensCreateFailed": "Could not create the token.",
+    "apiTokensNeedsRecovery": "Set up your recovery phrase first: a token carries a key that could otherwise be used to recover your account.",
     "apiTokensCreatedTitle": "Your new token",
     "apiTokensShownOnce": "Copy it now: it is shown only once. Anyone with this token can read and change all your tasks, so keep it as safe as your password.",
     "apiTokensCopy": "Copy token",

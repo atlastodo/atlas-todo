@@ -439,6 +439,7 @@
     "apiTokensCreateConfirm": "Utwórz",
     "apiTokensNamePlaceholder": "np. n8n w domu",
     "apiTokensCreateFailed": "Nie udało się utworzyć tokenu.",
+    "apiTokensNeedsRecovery": "Najpierw ustaw frazę odzyskiwania: token zawiera klucz, którym w przeciwnym razie można by odzyskać Twoje konto.",
     "apiTokensCreatedTitle": "Twój nowy token",
     "apiTokensShownOnce": "Skopiuj go teraz: jest wyświetlany tylko raz. Każdy, kto ma ten token, może czytać i zmieniać wszystkie Twoje zadania, więc chroń go jak hasło.",
     "apiTokensCopy": "Kopiuj token",
