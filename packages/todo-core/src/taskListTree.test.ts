@@ -247,3 +247,13 @@ describe("taskListSections: ordering", () => {
     expect(sections[0]!.rows[0]!.matched).toBe(true);
   });
 });
+
+describe("deep chains", () => {
+  it("collects a 100,000-deep open subtree without overflowing the stack", () => {
+    const n = 100_000;
+    const chain = Array.from({ length: n }, (_, i) =>
+      task(`t${i}`, { parent_id: i === 0 ? null : `t${i - 1}` }),
+    );
+    expect(taskContextClosure([chain[0]!], chain, new Set(["t0"]))).toHaveLength(n);
+  });
+});

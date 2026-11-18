@@ -48,15 +48,20 @@ export function buildTaskTree(tasks: Task[], order?: TaskTreeOrder): TaskTreeNod
     }
   }
 
-  const toNode = (task: Task, depth: number): TaskTreeNode => {
-    const kids = childrenOf.get(task.id);
-    return {
-      task,
-      depth,
-      children: kids ? kids.sort(compareSiblings).map((c) => toNode(c, depth + 1)) : [],
-    };
-  };
-  return roots.sort(compareRoots).map((r) => toNode(r, 0));
+  // Iterative: `parent_id` is synced, so a member can make a chain as deep as they like, and a
+  // recursive walk would overflow the stack on every member's device.
+  const out = roots
+    .sort(compareRoots)
+    .map((task): TaskTreeNode => ({ task, depth: 0, children: [] }));
+  const stack = [...out];
+  for (let node = stack.pop(); node; node = stack.pop()) {
+    const kids = childrenOf.get(node.task.id);
+    if (!kids) continue;
+    const depth = node.depth + 1;
+    node.children = kids.sort(compareSiblings).map((task) => ({ task, depth, children: [] }));
+    for (const child of node.children) stack.push(child);
+  }
+  return out;
 }
 
 // Pre-order. A `collapsed` task emits its own row but none of its descendants.
@@ -66,20 +71,21 @@ export function flattenTree(
   order?: TaskTreeOrder,
 ): FlatTaskRow[] {
   const rows: FlatTaskRow[] = [];
-  const walk = (nodes: TaskTreeNode[]): void => {
-    for (const node of nodes) {
-      const children = node.children.map((c) => c.task);
-      rows.push({
-        task: node.task,
-        depth: node.depth,
-        hasChildren: children.length > 0,
-        childCount: children.filter((c) => !c.is_completed).length,
-        completedChildCount: children.filter((c) => c.is_completed).length,
-      });
-      if (children.length > 0 && !collapsed?.has(node.task.id)) walk(node.children);
+  // Iterative pre-order (see `buildTaskTree`): children pushed in reverse come off in order.
+  const stack = buildTaskTree(tasks, order).reverse();
+  for (let node = stack.pop(); node; node = stack.pop()) {
+    const children = node.children.map((c) => c.task);
+    rows.push({
+      task: node.task,
+      depth: node.depth,
+      hasChildren: children.length > 0,
+      childCount: children.filter((c) => !c.is_completed).length,
+      completedChildCount: children.filter((c) => c.is_completed).length,
+    });
+    if (children.length > 0 && !collapsed?.has(node.task.id)) {
+      for (let i = node.children.length - 1; i >= 0; i--) stack.push(node.children[i]!);
     }
-  };
-  walk(buildTaskTree(tasks, order));
+  }
   return rows;
 }
 
@@ -149,12 +155,11 @@ export function outdentTarget(
 export function subtreeProgress(node: TaskTreeNode): { done: number; total: number } {
   let done = 0;
   let total = 0;
-  for (const child of node.children) {
+  const stack = [...node.children];
+  for (let child = stack.pop(); child; child = stack.pop()) {
     total += 1;
     if (child.task.is_completed) done += 1;
-    const deep = subtreeProgress(child);
-    done += deep.done;
-    total += deep.total;
+    for (const grandchild of child.children) stack.push(grandchild);
   }
   return { done, total };
 }

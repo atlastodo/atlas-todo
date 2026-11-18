@@ -248,3 +248,15 @@ describe("pinnedProjectTree", () => {
     expect(ids(pinnedProjectTree(set, allPinned, new Set(["work"])))).toEqual(["work", "inbox"]);
   });
 });
+
+describe("deep chains", () => {
+  it("flattens a 100,000-deep folder chain without overflowing the stack", () => {
+    const n = 100_000;
+    const chain = Array.from({ length: n }, (_, i) =>
+      p(`p${i}`, { parent_id: i === 0 ? null : `p${i - 1}` }),
+    );
+    const rows = flattenProjectTree(chain);
+    expect(rows).toHaveLength(n);
+    expect(rows[n - 1]!.depth).toBe(n - 1);
+  });
+});
