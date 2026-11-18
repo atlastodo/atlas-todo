@@ -51,8 +51,8 @@ dependencies = [
 
 [[package]]
 name = "atlas-client"
-version = "0.1.18"
-source = "git+https://github.com/atlastodo/atlas?tag=v0.1.18#1b0375a641adbfa114d9cbb627598f5764fd4819"
+version = "0.1.20"
+source = "git+https://github.com/atlastodo/atlas?tag=v0.1.20#a21744897468d9df965ba16049fe11f6412a7c39"
 dependencies = [
  "aes-gcm",
  "argon2",
@@ -77,8 +77,8 @@ dependencies = [
 
 [[package]]
 name = "atlas-core"
-version = "0.1.18"
-source = "git+https://github.com/atlastodo/atlas?tag=v0.1.18#1b0375a641adbfa114d9cbb627598f5764fd4819"
+version = "0.1.20"
+source = "git+https://github.com/atlastodo/atlas?tag=v0.1.20#a21744897468d9df965ba16049fe11f6412a7c39"
 dependencies = [
  "serde",
  "serde_json",
