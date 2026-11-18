@@ -61,7 +61,11 @@ const cancelAllScheduled = () =>
   jest.requireMock("expo-notifications/build/cancelAllScheduledNotificationsAsync")
     .cancelAllScheduledNotificationsAsync as jest.Mock;
 
-const USER: AuthUser = { id: "u-1", email: "ada@example.com", display_name: "Ada" };
+const USER: AuthUser = {
+  id: "0190a6f0-0000-7000-8000-0000000000a1",
+  email: "ada@example.com",
+  display_name: "Ada",
+};
 const PASSWORD = "correct horse battery";
 
 type Route = (init: RequestInit & { headers: Record<string, string> }) => [number, unknown];

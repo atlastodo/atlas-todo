@@ -1,4 +1,9 @@
-import { type Session, type TokenStore, sessionFromAuth } from "@atlastodo/client-core";
+import {
+  type Session,
+  type TokenStore,
+  sessionFromAuth as sessionFromAuthResponse,
+} from "@atlastodo/client-core";
+import { assertAccountId } from "./accountId";
 import {
   isPreferredSeal,
   openSessionKeys,
@@ -24,7 +29,13 @@ import {
 const KEY = "atlas.session";
 const REFRESH_LOCK = "atlas.session.refresh";
 
-export { type Session, sessionFromAuth };
+export { type Session };
+
+/** The session an auth response opens, refused when its account id could not name storage. */
+export function sessionFromAuth(auth: Parameters<typeof sessionFromAuthResponse>[0]): Session {
+  assertAccountId(auth.user.id);
+  return sessionFromAuthResponse(auth);
+}
 
 /** The session as stored: the unwrapped keys replaced by `sealedKeys` (or absent). */
 type StoredSession = Omit<Session, "dek" | "privateKey" | "signingKey"> & {
