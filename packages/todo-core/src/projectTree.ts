@@ -220,3 +220,23 @@ export function pinnedProjectTree(
     collapsed,
   );
 }
+
+/**
+ * The project a name names (case-insensitive), for filing a task by name. The account's own
+ * projects come first: a shared project's name is set by its owner, so a member's project of the
+ * same name must not capture tasks meant for the user's own. `"ambiguous"` when more than one
+ * project matches at that level; `null` when none does.
+ */
+export function resolveProjectName(
+  projects: readonly (Pick<Project, "id" | "name"> & { owner_id?: string })[],
+  name: string,
+  userId: string | undefined,
+): { id: string } | "ambiguous" | null {
+  const lower = name.toLowerCase();
+  const matches = projects.filter((p) => p.name.toLowerCase() === lower);
+  const own = matches.filter((p) => userId !== undefined && p.owner_id === userId);
+  const pick = own.length > 0 ? own : matches;
+  if (pick.length === 0) return null;
+  if (pick.length > 1) return "ambiguous";
+  return { id: pick[0]!.id };
+}

@@ -1,5 +1,5 @@
 import { type CreateTaskInput } from "@atlastodo/todo-core";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Platform,
   Pressable,
@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 
-import { parseQuickAdd } from "@atlastodo/todo-core";
+import { parseQuickAdd, resolveProjectName } from "@atlastodo/todo-core";
+import { AuthContext } from "../auth/AuthContext";
 import { ArrowUp, Check, Hash, Plus, Tag } from "./icons";
 import { chipColors } from "./chips";
 import { TaskComposeBar } from "./TaskComposeBar";
@@ -151,7 +152,7 @@ export interface QuickAddProps {
   now?: number;
   timeZone?: string;
   smartDates?: boolean;
-  projects?: { id: string; name: string }[];
+  projects?: { id: string; name: string; owner_id?: string }[];
   sections?: { id: string; project_id: string; name: string }[];
   labels?: { id: string; name: string; color?: string }[];
   onCreateProject?: (name: string) => string;
@@ -212,6 +213,7 @@ export function QuickAdd(props: QuickAddProps) {
     isModal = false,
   } = props;
   const { t, i18n } = useTranslation();
+  const userId = useContext(AuthContext)?.session?.user.id;
   const effectiveLabel = accessibilityLabel ?? t("quickAdd.label");
   const effectivePlaceholder = placeholder ?? t("quickAdd.placeholder");
   const attachMorningReminder = useQuickAddMorningReminder();
@@ -311,7 +313,9 @@ export function QuickAdd(props: QuickAddProps) {
             const res = resolveProject(name);
             if (res) return res;
           }
-          const found = projects.find((p) => p.name.toLowerCase() === name.toLowerCase());
+          // The account's own projects first: a shared project's owner names it.
+          const found = resolveProjectName(projects, name, userId);
+          if (found === "ambiguous") return null;
           if (found) return found.id;
           if (draft.project_id) {
             const draftProject = projects.find((p) => p.id === draft.project_id);
@@ -348,6 +352,7 @@ export function QuickAdd(props: QuickAddProps) {
     [
       text,
       now,
+      userId,
       timeZone,
       resolveProject,
       projects,
