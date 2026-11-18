@@ -62,7 +62,11 @@ if (process.env.NODE_ENV !== "production") {
   }
 }
 
-/** Resolve an icon name to its component, falling back to the default hash (also used for saved filters). */
+/**
+ * Resolve an icon name to its component, falling back to the default hash (also used for saved
+ * filters). The name is synced, so any member of a shared project can set it: only the map's own
+ * entries count, never an inherited property such as `constructor`.
+ */
 export function projectIconFor(name: string | undefined): LucideIcon {
-  return (name ? PROJECT_ICONS[name] : undefined) ?? Hash;
+  return name && Object.hasOwn(PROJECT_ICONS, name) ? PROJECT_ICONS[name]! : Hash;
 }
