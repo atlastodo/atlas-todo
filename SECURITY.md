@@ -68,7 +68,11 @@ works in its [architecture notes](https://github.com/atlastodo/atlas/blob/main/d
   browser runs and could steal keys from web users. The Android and desktop apps bundle their
   own code.
 - Android builds with Expo Updates enabled fetch JavaScript updates from the Expo project named
-  by `ATLAS_EAS_PROJECT_ID`. Builds made with `ATLAS_EAS_PROJECT_ID=none` never do.
+  by `ATLAS_EAS_PROJECT_ID`. Builds made with `ATLAS_EAS_PROJECT_ID=none` never do. The updates
+  are not code-signed yet, so anyone who can publish to that Expo project (or the update service
+  itself) decides the code those builds run, outside the signed release; keep publish rights to
+  the project's maintainers. Signing them (`codeSigningCertificate` in the app config, the private
+  key held for publishing) is planned.
 - The app does not encrypt data on your devices. Each client keeps synced data unencrypted in its
   local database (SQLite on Android and iOS, IndexedDB in the browser and desktop app) and
   relies on the app sandbox and device encryption. Signing out deletes the database, after
