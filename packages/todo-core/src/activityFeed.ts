@@ -238,6 +238,10 @@ function stillCurrent(store: LocalStore, a: Activity): boolean {
   if (!id) return false;
   const fields = store.get(isSection ? "section" : "project", id);
   if (!fields) return false;
+  // An entry is scoped by its project, and any member can write one: a section entry counts only
+  // for a section of that project, or undoing it would write into another project (where the
+  // role checked for the entry says nothing).
+  if (isSection && fields.project_id !== a.project_id) return false;
   const deleted = typeof fields.deleted_at === "number";
   const archived = typeof fields.archived_at === "number";
   switch (a.kind) {
@@ -361,6 +365,12 @@ function applyUndo(
   }
   const projectId = a.project_id!;
   const sectionId = a.section_id;
+  // As in `stillCurrent`: never write a section outside the entry's project.
+  if (
+    a.kind.startsWith("section_") &&
+    store.get("section", sectionId ?? "")?.project_id !== projectId
+  )
+    return false;
   const target = { projectId, sectionId };
   switch (a.kind) {
     case "project_renamed":
