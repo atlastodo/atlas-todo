@@ -27,3 +27,19 @@ pub fn register_todo_app() {
         register_app(def).expect("the todo definition registers");
     });
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn writer_fields_bind_activity_actors_and_comment_authors() {
+        super::register_todo_app();
+        assert_eq!(
+            atlas_client::apps::actor_field_of("activity").as_deref(),
+            Some("actor_id")
+        );
+        assert_eq!(
+            atlas_client::apps::actor_field_of("comment").as_deref(),
+            Some("author_id")
+        );
+    }
+}
