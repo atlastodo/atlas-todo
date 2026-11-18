@@ -5,6 +5,7 @@ import {
   generatePek,
   hydrateProjectKeys,
   isProjectCreator,
+  KEY_TRUST_ID,
   performKeyRotations,
   pinMemberKey,
   pinnedMemberKey,
@@ -14,6 +15,7 @@ import {
   recordMintedKey,
   reviveLockedValues,
   sealDelivery,
+  unpinMemberKey,
   wrapProjectKey,
   type ApiClient,
   type KeyTrust,
@@ -78,6 +80,61 @@ function reportKeyChange(projectId: string, userId: string): void {
   for (const listener of changedListeners) listener();
 }
 
+const LEGACY_SHARED = "legacy_shared:";
+const LEGACY_SHARED_RECORDED = "legacy_shared_recorded";
+
+/**
+ * The owned projects recorded as shared before project keys existed: on the first call for the
+ * account, `candidates` (the owned, shared projects without a key then), afterwards what was
+ * recorded. Stored as fields of the key-trust entity (encrypted under the DEK, synced), so the
+ * server can neither add to nor read the list.
+ */
+export function recordLegacyShares(store: LocalStore, candidates: readonly string[]): Set<string> {
+  const fields = store.get("preference", KEY_TRUST_ID) ?? {};
+  if (fields[LEGACY_SHARED_RECORDED] !== true) {
+    for (const projectId of candidates) {
+      store.set("preference", KEY_TRUST_ID, `${LEGACY_SHARED}${projectId}`, true);
+    }
+    store.set("preference", KEY_TRUST_ID, LEGACY_SHARED_RECORDED, true);
+    return new Set(candidates);
+  }
+  const recorded = new Set<string>();
+  for (const [field, value] of Object.entries(fields)) {
+    if (field.startsWith(LEGACY_SHARED) && value === true) {
+      recorded.add(field.slice(LEGACY_SHARED.length));
+    }
+  }
+  return recorded;
+}
+
+/**
+ * Drop the pin of every member whose membership has ended: no active or pending row for that
+ * project any more (removed, left, declined). A pin authorises key deliveries, rotated keys
+ * included, so a former member's pin must not outlive the membership. Only projects whose
+ * membership rows this store holds are looked at, so a store still syncing unpins nobody. Dropping
+ * a pin only narrows who gets keys. Returns how many were dropped.
+ */
+export function dropDepartedPins(store: LocalStore): number {
+  const rows = store.list("project_member");
+  const known = new Set<string>();
+  const current = new Set<string>();
+  for (const e of rows) {
+    const { project_id: projectId, user_id: memberId, state } = e.fields;
+    if (typeof projectId !== "string" || typeof memberId !== "string") continue;
+    known.add(projectId);
+    if (state === "active" || state === "pending") current.add(`${projectId}:${memberId}`);
+  }
+  let dropped = 0;
+  for (const slot of readKeyTrust(store).pins.keys()) {
+    const at = slot.indexOf(":");
+    const projectId = slot.slice(0, at);
+    if (!known.has(projectId) || current.has(slot)) continue;
+    unpinMemberKey(store, projectId, slot.slice(at + 1));
+    dropped++;
+  }
+  return dropped;
+}
+
 /**
  * Give every owned, shared project without a key its first one, stored on the server before this
  * device uses it. The server accepts a key for a shared project only while nobody holds one, so a
@@ -91,6 +148,8 @@ export async function mintFirstSharedKeys(
   userId: string,
 ): Promise<string[]> {
   const trust = readKeyTrust(store);
+  // Before the baseline the store may not hold the account's trust state yet.
+  if (!trust.initialized) return [];
   const members = store.list("project_member");
   const owned = new Set<string>();
   for (const e of members) {
@@ -99,9 +158,20 @@ export async function mintFirstSharedKeys(
     }
     if (typeof e.fields.project_id === "string") owned.add(e.fields.project_id);
   }
+  const waiting = [...owned].filter(
+    (projectId) =>
+      !keyring.getProjectKey(projectId) &&
+      !trust.minted.has(projectId) &&
+      // A project the user joined is never keyed here, whatever owner row the server shows.
+      !trust.accepted.has(projectId),
+  );
+  // The membership rows are the server's: they alone cannot say a project was shared before
+  // project keys existed. Which ones were is recorded once, in the account's own trust state, and
+  // only those are keyed here; a project the server calls shared later is not.
+  const legacy = recordLegacyShares(store, waiting);
   const minted: string[] = [];
-  for (const projectId of owned) {
-    if (keyring.getProjectKey(projectId) || trust.minted.has(projectId)) continue;
+  for (const projectId of waiting) {
+    if (!legacy.has(projectId)) continue;
     const pek = generatePek();
     const keyId = projectKeyId(pek);
     try {
@@ -202,6 +272,7 @@ async function maintainProjectKeys(
   store: LocalStore,
   userId: string,
 ): Promise<{ minted: string[]; rotated: string[]; delivered: MaintenanceResult }> {
+  dropDepartedPins(store);
   const minted = await mintFirstSharedKeys(api, keyring, store, userId);
   if (minted.length > 0) {
     reviveLockedValues(store, keyring, userId, !(api.isLegacyMigrated?.() ?? false));
