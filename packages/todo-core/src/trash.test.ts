@@ -348,3 +348,26 @@ describe("restoring an item another device purged meanwhile", () => {
     }
   });
 });
+
+describe("purging a folder", () => {
+  it("takes its owner's nested projects and moves another owner's to the root", () => {
+    const store = new LocalStore("test");
+    // A shared folder of Mallory's, deleted with a backdated time.
+    store.set("project", "folder", "owner_id", "mallory");
+    store.set("project", "folder", "deleted_at", 1);
+    store.set("project", "hers", "owner_id", "mallory");
+    store.set("project", "hers", "parent_id", "folder");
+    // The member's own private project, filed in the folder, with a task.
+    store.set("project", "mine", "owner_id", "me");
+    store.set("project", "mine", "parent_id", "folder");
+    store.set("task", "t", "project_id", "mine");
+    store.set("task", "t", "title", "Diagnosis");
+
+    sweepExpiredTrash(store, noop, NOW);
+
+    expect(store.get("project", "folder")).toBeNull();
+    expect(store.get("project", "hers")).toBeNull();
+    expect(store.get("project", "mine")?.parent_id).toBeNull();
+    expect(store.get("task", "t")?.title).toBe("Diagnosis");
+  });
+});

@@ -64,12 +64,16 @@ export function taskContextClosure(
 
   // Down: the open subtree below each matched task. A matched descendant belongs to its own group
   // and takes its children with it.
+  // Iterative, as the chain can be as deep as a member makes it (see `buildTaskTree`).
   const descend = (task: Task, seen: Set<string>): void => {
-    for (const child of childrenOf.get(task.id) ?? []) {
-      if (child.is_completed || matchedIds.has(child.id) || seen.has(child.id)) continue;
-      seen.add(child.id);
-      kept.set(child.id, child);
-      descend(child, seen);
+    const stack = [task];
+    for (let at = stack.pop(); at; at = stack.pop()) {
+      for (const child of childrenOf.get(at.id) ?? []) {
+        if (child.is_completed || matchedIds.has(child.id) || seen.has(child.id)) continue;
+        seen.add(child.id);
+        kept.set(child.id, child);
+        stack.push(child);
+      }
     }
   };
   // Up: the parents this group's tasks hang from, as context rows.

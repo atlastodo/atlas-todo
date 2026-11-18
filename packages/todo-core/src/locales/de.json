@@ -409,6 +409,7 @@
     "apiTokensCreateConfirm": "Erstellen",
     "apiTokensNamePlaceholder": "z. B. n8n zu Hause",
     "apiTokensCreateFailed": "Das Token konnte nicht erstellt werden.",
+    "apiTokensNeedsRecovery": "Richte zuerst deine Wiederherstellungsphrase ein: Ein Token enthält einen Schlüssel, mit dem sich dein Konto sonst wiederherstellen ließe.",
     "apiTokensCreatedTitle": "Dein neues Token",
     "apiTokensShownOnce": "Kopiere es jetzt: Es wird nur einmal angezeigt. Wer dieses Token hat, kann alle deine Aufgaben lesen und ändern – bewahre es so sicher auf wie dein Passwort.",
     "apiTokensCopy": "Token kopieren",

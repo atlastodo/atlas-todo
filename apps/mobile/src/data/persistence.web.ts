@@ -5,6 +5,7 @@ import {
   type Persistence,
 } from "@atlastodo/client-core";
 import { isElectron } from "../auth/serverUrl";
+import { assertStorageScope } from "../auth/accountId";
 import { closeAll, trackOpen } from "./openDatabases";
 
 /**
@@ -48,6 +49,8 @@ async function requestPersistentStorageInElectron(): Promise<void> {
 }
 
 function dbName(userId: string): string {
+  // An account id (a UUID) or the local-only scope, nothing else: see `accountId.ts`.
+  assertStorageScope(userId);
   return `atlas-${userId}`;
 }
 

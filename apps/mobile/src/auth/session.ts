@@ -1,5 +1,10 @@
 import * as SecureStore from "expo-secure-store";
-import { type Session, type TokenStore, sessionFromAuth } from "@atlastodo/client-core";
+import {
+  type Session,
+  type TokenStore,
+  sessionFromAuth as sessionFromAuthResponse,
+} from "@atlastodo/client-core";
+import { assertAccountId } from "./accountId";
 
 /**
  * Session persistence: tokens live in the device keychain (iOS Keychain / Android Keystore) via
@@ -10,7 +15,13 @@ import { type Session, type TokenStore, sessionFromAuth } from "@atlastodo/clien
 
 const KEY = "atlas.session";
 
-export { type Session, sessionFromAuth };
+export { type Session };
+
+/** The session an auth response opens, refused when its account id could not name storage. */
+export function sessionFromAuth(auth: Parameters<typeof sessionFromAuthResponse>[0]): Session {
+  assertAccountId(auth.user.id);
+  return sessionFromAuthResponse(auth);
+}
 
 /** Load the persisted session, or null when there is none (or the keychain is unreadable). */
 export async function readSession(): Promise<Session | null> {

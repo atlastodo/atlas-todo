@@ -20,6 +20,35 @@ use crate::rules::task::{
     CreateTaskInput, Task,
 };
 
+/// What a project name names (case-insensitive), as `resolveProjectName` in todo-core.
+#[derive(Debug, PartialEq, Eq)]
+pub enum NameMatch {
+    One(String),
+    Ambiguous,
+    None,
+}
+
+/// The project `name` names, for filing a task by name: the account's own projects first, as a
+/// shared project's name is set by its owner and must not capture tasks meant for the user's own.
+pub fn resolve_project_name(projects: &[Project], name: &str, user_id: &str) -> NameMatch {
+    let lower = name.to_lowercase();
+    let matches: Vec<&Project> = projects
+        .iter()
+        .filter(|p| p.name.to_lowercase() == lower)
+        .collect();
+    let own: Vec<&Project> = matches
+        .iter()
+        .copied()
+        .filter(|p| p.owner_id == user_id)
+        .collect();
+    let pick = if own.is_empty() { matches } else { own };
+    match pick.as_slice() {
+        [] => NameMatch::None,
+        [one] => NameMatch::One(one.id.clone()),
+        _ => NameMatch::Ambiguous,
+    }
+}
+
 /// A project or folder (`toProject`).
 #[derive(Debug, Clone, Serialize)]
 pub struct Project {
@@ -265,13 +294,20 @@ impl TodoClient {
 
     fn project_id(&self, reference: &str) -> Result<String> {
         let projects = self.projects();
-        let lower = reference.to_lowercase();
-        projects
-            .iter()
-            .find(|p| p.id == reference)
-            .or_else(|| projects.iter().find(|p| p.name.to_lowercase() == lower))
-            .map(|p| p.id.clone())
-            .ok_or_else(|| Error::atlas("unknown_project", format!("no project \"{reference}\"")))
+        if let Some(p) = projects.iter().find(|p| p.id == reference) {
+            return Ok(p.id.clone());
+        }
+        match resolve_project_name(&projects, reference, self.user_id()) {
+            NameMatch::One(id) => Ok(id),
+            NameMatch::Ambiguous => Err(Error::atlas(
+                "ambiguous_project",
+                format!("more than one project is named \"{reference}\"; use its id"),
+            )),
+            NameMatch::None => Err(Error::atlas(
+                "unknown_project",
+                format!("no project \"{reference}\""),
+            )),
+        }
     }
 
     fn label_id(&self, reference: &str) -> Result<String> {
@@ -452,11 +488,12 @@ impl TodoClient {
     pub fn quick_add(&mut self, text: &str) -> Result<TaskView> {
         let projects = self.projects();
         let labels = self.labels();
+        let user = self.user_id().to_owned();
         let by_name = |name: &str| -> Option<String> {
-            projects
-                .iter()
-                .find(|p| p.name.to_lowercase() == name.to_lowercase())
-                .map(|p| p.id.clone())
+            match resolve_project_name(&projects, name, &user) {
+                NameMatch::One(id) => Some(id),
+                NameMatch::Ambiguous | NameMatch::None => None,
+            }
         };
         let known = |name: &str| {
             labels
@@ -639,5 +676,54 @@ fn json_text(v: &Value) -> String {
     match v {
         Value::String(s) => s.clone(),
         other => other.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn project(id: &str, name: &str, owner: &str) -> Project {
+        Project {
+            id: id.into(),
+            owner_id: owner.into(),
+            name: name.into(),
+            color: String::new(),
+            icon: String::new(),
+            sort_order: Number::from(0),
+            is_favorite: false,
+            parent_id: None,
+            kind: "project".into(),
+            default_view: String::new(),
+            archived_at: None,
+            deleted_at: None,
+        }
+    }
+
+    #[test]
+    fn a_name_resolves_to_the_accounts_own_project_first() {
+        let projects = [
+            project("mine", "Work", "me"),
+            project("theirs", "work", "mallory"),
+            project("a", "Ideas", "a"),
+            project("b", "ideas", "b"),
+            project("only", "Garden", "c"),
+        ];
+        assert_eq!(
+            resolve_project_name(&projects, "WORK", "me"),
+            NameMatch::One("mine".into())
+        );
+        assert_eq!(
+            resolve_project_name(&projects, "garden", "me"),
+            NameMatch::One("only".into())
+        );
+        assert_eq!(
+            resolve_project_name(&projects, "ideas", "me"),
+            NameMatch::Ambiguous
+        );
+        assert_eq!(
+            resolve_project_name(&projects, "nope", "me"),
+            NameMatch::None
+        );
     }
 }

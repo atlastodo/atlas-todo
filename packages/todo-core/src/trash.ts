@@ -123,7 +123,8 @@ export function restoreFromTrash(
 // Kinds keyed by `task_id`, tombstoned with the task so they do not sync forever.
 const TASK_CHILDREN: EntityKind[] = ["attachment", "reminder", "comment", "activity"];
 
-// Tombstones a container's children, then the entity. A project may be a folder, so nested projects are purged too.
+// Tombstones a container's children, then the entity. A project may be a folder, so nested projects
+// of the same owner are purged too.
 function purgeCascade(store: LocalStore, kind: EntityKind, id: string): void {
   // Tasks this purge removes; what hangs off them goes too (see `TASK_CHILDREN`).
   const tasks = new Set<string>(kind === "task" ? [id] : []);
@@ -136,13 +137,21 @@ function purgeCascade(store: LocalStore, kind: EntityKind, id: string): void {
       if (list) list.push(e.id);
       else childrenOf.set(parent, [e.id]);
     }
+    // A nested project of another owner is another account's share scope, filed here: the folder's
+    // owner (or a backdated deleted_at they wrote) must not delete it on this device. It moves to
+    // the root instead, with what hangs under it.
+    const owner = store.get("project", id)?.owner_id;
     const doomed = new Set<string>([id]);
     const queue = [...(childrenOf.get(id) ?? [])];
     while (queue.length > 0) {
       const next = queue.pop()!;
       if (doomed.has(next)) continue; // cyclic data: never revisit
+      if (store.get("project", next)?.owner_id !== owner) {
+        store.set("project", next, "parent_id", null);
+        continue;
+      }
       doomed.add(next);
-      queue.push(...(childrenOf.get(next) ?? []));
+      for (const child of childrenOf.get(next) ?? []) queue.push(child);
     }
     for (const e of store.list("section"))
       if (typeof e.fields.project_id === "string" && doomed.has(e.fields.project_id))

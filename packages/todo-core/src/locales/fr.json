@@ -424,6 +424,7 @@
     "apiTokensCreateConfirm": "Créer",
     "apiTokensNamePlaceholder": "p. ex. n8n à la maison",
     "apiTokensCreateFailed": "Impossible de créer le jeton.",
+    "apiTokensNeedsRecovery": "Configurez d'abord votre phrase de récupération : un jeton contient une clé qui pourrait sinon servir à récupérer votre compte.",
     "apiTokensCreatedTitle": "Votre nouveau jeton",
     "apiTokensShownOnce": "Copiez-le maintenant : il n'est affiché qu'une seule fois. Quiconque possède ce jeton peut lire et modifier toutes vos tâches, gardez-le donc aussi précieusement que votre mot de passe.",
     "apiTokensCopy": "Copier le jeton",

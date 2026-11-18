@@ -328,3 +328,16 @@ describe("tied ranks in the tree", () => {
     expect(orderAfter(roots, move, "X")).toEqual(["P", "X", "Q"]);
   });
 });
+
+describe("deep chains", () => {
+  it("flattens a 100,000-deep subtask chain without overflowing the stack", () => {
+    const n = 100_000;
+    const chain: Task[] = Array.from({ length: n }, (_, i) =>
+      task(`t${i}`, { parent_id: i === 0 ? null : `t${i - 1}` }),
+    );
+    const rows = flattenTree(chain);
+    expect(rows).toHaveLength(n);
+    expect(rows[n - 1]!.depth).toBe(n - 1);
+    expect(subtreeProgress(buildTaskTree(chain)[0]!).total).toBe(n - 1);
+  });
+});
