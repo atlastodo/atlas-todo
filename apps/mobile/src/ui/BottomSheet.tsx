@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { ThemeScope } from "../theme/ThemeProvider";
 import { useKeyboardHeight } from "../hooks/useKeyboardHeight";
 import { useIsWide } from "../hooks/useIsWide";
+import { useHeldWhileClosing } from "../hooks/useHeldWhileClosing";
 import { X } from "./icons";
 import { SheetScrollProvider } from "./SheetScroll";
 import {
@@ -77,6 +78,10 @@ export function SheetHeader({
  *
  * On wide web (desktop, tablet) it is a centred dialog instead, `size` wide at most, like the web
  * task detail; phones and native keep the bottom sheet.
+ *
+ * While it fades out it keeps the header and body it last had open, so a caller that clears the
+ * state they read on close does not flash other content; pointer events are off meanwhile, so the
+ * held buttons (with their old callbacks) cannot be pressed.
  */
 export function BottomSheet({
   visible,
@@ -98,6 +103,11 @@ export function BottomSheet({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
+  const shownTitle = useHeldWhileClosing(visible, title);
+  const shownSubtitle = useHeldWhileClosing(visible, subtitle);
+  const shownIcon = useHeldWhileClosing(visible, icon);
+  const shownAction = useHeldWhileClosing(visible, headerAction);
+  const shownChildren = useHeldWhileClosing(visible, children);
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const isWide = useIsWide();
@@ -123,7 +133,7 @@ export function BottomSheet({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1, pointerEvents: visible ? "auto" : "none" }}>
         <ThemeScope
           className={`flex-1 ${centered ? "items-center justify-center p-6" : "justify-end"} ${SCRIM_CLASS}`}
           style={isWeb ? WEB_OVERLAY_STYLE : undefined}
@@ -163,12 +173,12 @@ export function BottomSheet({
                       <View className="h-1.5 w-12 rounded-full bg-neutral-300 dark:bg-neutral-600" />
                     </View>
                   )}
-                  {title != null && (
+                  {shownTitle != null && (
                     <SheetHeader
-                      title={title}
-                      subtitle={subtitle}
-                      icon={icon}
-                      action={headerAction}
+                      title={shownTitle}
+                      subtitle={shownSubtitle}
+                      icon={shownIcon}
+                      action={shownAction}
                       onClose={dismiss}
                     />
                   )}
@@ -181,7 +191,7 @@ export function BottomSheet({
                       isWeb ? null : { scrollHandler, nativeScrollGesture, scrollAnimatedProps }
                     }
                   >
-                    {children}
+                    {shownChildren}
                   </SheetScrollProvider>
                 </View>
               </GestureDetector>
