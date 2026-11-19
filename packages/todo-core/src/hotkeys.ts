@@ -22,6 +22,7 @@ export interface HotkeyHandlers {
   openPalette?: HotkeyHandler;
   focusSearch?: HotkeyHandler;
   openHelp?: HotkeyHandler;
+  openHabits?: HotkeyHandler;
   focusQuickAdd?: HotkeyHandler;
   cursorNext?: HotkeyHandler;
   cursorPrev?: HotkeyHandler;
@@ -82,6 +83,13 @@ export const HOTKEY_BINDINGS: readonly HotkeyBinding[] = [
     triggerKeys: ["?"],
     displayKeys: ["?"],
     descriptionKey: "about.shortcutQuickHelp",
+    group: "global",
+  },
+  {
+    action: "openHabits",
+    triggerKeys: ["h"],
+    displayKeys: ["H"],
+    descriptionKey: "about.shortcutOpenHabits",
     group: "global",
   },
   // Navigation.

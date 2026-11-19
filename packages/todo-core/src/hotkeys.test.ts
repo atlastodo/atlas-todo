@@ -18,6 +18,7 @@ function spies(): Required<HotkeyHandlers> {
     openPalette: vi.fn(),
     focusSearch: vi.fn(),
     openHelp: vi.fn(),
+    openHabits: vi.fn(),
     focusQuickAdd: vi.fn(),
     cursorNext: vi.fn(),
     cursorPrev: vi.fn(),
@@ -45,6 +46,7 @@ describe("dispatchHotkey", () => {
   it("maps each single-key binding to its handler outside a text field", () => {
     const cases: [string, keyof HotkeyHandlers][] = [
       ["?", "openHelp"],
+      ["h", "openHabits"],
       ["/", "focusSearch"],
       ["a", "focusQuickAdd"],
       ["q", "focusQuickAdd"],

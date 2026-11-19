@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
-import { PREFERENCES_ID, createTask, dateKeyFromMs, endOfDay } from "@atlastodo/todo-core";
+import { createTask, endOfDay } from "@atlastodo/todo-core";
 import { laterToday, withApp } from "../testutil";
 import { TodayScreen } from "./TodayScreen";
 
@@ -171,79 +171,6 @@ describe("TodayScreen", () => {
 
       expect(screen.getByText("Laundry")).toBeTruthy();
       expect(screen.queryByText("Next month's report")).toBeNull();
-    });
-  });
-
-  describe("habits", () => {
-    /** A daily habit in the store; `days` limits it to those weekdays (0 = Sunday). */
-    function seedHabit(store: LocalStore, id: string, name: string, days: number[] = []) {
-      const now = Date.now();
-      const fields: Record<string, unknown> = {
-        name,
-        goal_kind: "daily",
-        days,
-        target: 1,
-        color: "#6366f1",
-        icon: "hash",
-        steps: [],
-        archived_at: null,
-        created_at: now,
-        sort_order: now,
-      };
-      for (const [field, value] of Object.entries(fields)) store.set("habit", id, field, value);
-    }
-
-    const MEDITATE = "11111111-1111-4111-8111-111111111111";
-    const STRETCH = "22222222-2222-4222-8222-222222222222";
-
-    it("checks off a habit due today without leaving Today, and keeps it listed", async () => {
-      const store = new LocalStore("test");
-      seedHabit(store, MEDITATE, "Meditate");
-      await render(<TodayScreen />, { wrapper: withApp(store) });
-
-      expect(screen.getByText("· 0 of 1 done")).toBeTruthy();
-      await fireEvent.press(screen.getByLabelText("Mark Meditate done today"));
-
-      const checkins = store.list("habit_checkin").map((c) => c.fields);
-      expect(checkins).toEqual([
-        expect.objectContaining({
-          habit_id: MEDITATE,
-          date: dateKeyFromMs(Date.now()),
-          state: "done",
-        }),
-      ]);
-      expect(screen.getByText("Meditate")).toBeTruthy();
-      expect(screen.getByText("· All done today")).toBeTruthy();
-    });
-
-    it("lists only habits due today, and nothing when none is", async () => {
-      const store = new LocalStore("test");
-      const tomorrow = (new Date().getDay() + 1) % 7;
-      seedHabit(store, STRETCH, "Stretch", [tomorrow]);
-      await render(<TodayScreen />, { wrapper: withApp(store) });
-
-      expect(screen.queryByText("Stretch")).toBeNull();
-      expect(screen.queryByText("Habits")).toBeNull();
-    });
-
-    it("folds to its header, keeping the count", async () => {
-      const store = new LocalStore("test");
-      seedHabit(store, MEDITATE, "Meditate");
-      await render(<TodayScreen />, { wrapper: withApp(store) });
-
-      await fireEvent.press(screen.getByLabelText("Hide today's habits"));
-
-      expect(screen.queryByText("Meditate")).toBeNull();
-      expect(screen.getByText("· 0 of 1 done")).toBeTruthy();
-    });
-
-    it("is not shown when turned off in settings", async () => {
-      const store = new LocalStore("test");
-      seedHabit(store, MEDITATE, "Meditate");
-      store.set("preference", PREFERENCES_ID, "today_habits", false);
-      await render(<TodayScreen />, { wrapper: withApp(store) });
-
-      expect(screen.queryByText("Meditate")).toBeNull();
     });
   });
 });

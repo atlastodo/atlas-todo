@@ -1,4 +1,4 @@
-import { type Habit, type Task } from "@atlastodo/todo-core";
+import { type Task } from "@atlastodo/todo-core";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -11,7 +11,6 @@ import {
 } from "@atlastodo/todo-core";
 import { useTaskListView } from "../hooks/useTaskListView";
 import { PlanDaySheet } from "../ui/PlanDaySheet";
-import { TodayHabits } from "../ui/TodayHabits";
 import { Sun } from "../ui/icons";
 import { QuickAddTaskList } from "./ViewTaskList";
 
@@ -21,16 +20,14 @@ import { QuickAddTaskList } from "./ViewTaskList";
  * timezone is the synced `timezone` preference. The Plan day review ({@link PlanDaySheet}) writes
  * through the same store path as the overdue header's "reschedule all to today". On the web an
  * overdue row's grip can be dragged onto the Today group to move just that task to today (end of
- * day, like "reschedule all"), with an undo toast. Above the tasks, the habits in play today
- * ({@link TodayHabits}), checkable in place.
+ * day, like "reschedule all"), with an undo toast.
  */
 
 export interface TodayScreenProps {
   onOpenTask?: (task: Task) => void;
-  onOpenHabit?: (habit: Habit) => void;
 }
 
-export function TodayScreen({ onOpenTask, onOpenHabit }: TodayScreenProps = {}) {
+export function TodayScreen({ onOpenTask }: TodayScreenProps = {}) {
   const { t } = useTranslation();
   const view = useTaskListView("today", { group: "date", sort: "manual" });
   const [planOpen, setPlanOpen] = useState(false);
@@ -64,7 +61,6 @@ export function TodayScreen({ onOpenTask, onOpenHabit }: TodayScreenProps = {}) 
         onPlanDay={() => setPlanOpen(true)}
         onDropOnToday={(task) => view.reschedule(task, endOfDay(view.now, view.timeZone))}
         quickAddDefaults={{ due_at: endOfDay(view.now, view.timeZone) }}
-        aboveTasks={<TodayHabits now={view.now} onOpenHabit={onOpenHabit} />}
       />
       <PlanDaySheet
         open={planOpen}

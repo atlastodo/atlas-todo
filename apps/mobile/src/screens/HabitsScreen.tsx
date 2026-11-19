@@ -18,7 +18,6 @@ import {
 import { useHabits } from "../hooks/useHabits";
 import { useHabitGroups, type HabitGroupSummary, type HabitSummary } from "../hooks/useHabitGroups";
 import { useHabitCheckins } from "../hooks/useHabitCheckins";
-import { useHabitDayToggle } from "../hooks/useHabitDayToggle";
 import { usePreferences } from "../hooks/usePreferences";
 import { useToast } from "../data/ToastProvider";
 import { useNow } from "../hooks/useNow";
@@ -211,9 +210,9 @@ function HabitCard({
   inlineStrip: boolean;
 }) {
   const { t } = useTranslation();
+  const toast = useToast();
   const motion = useMotion();
-  const { statesFor, checkinFor } = useHabitCheckins();
-  const toggleHabitDay = useHabitDayToggle();
+  const { statesFor, checkinFor, cycle } = useHabitCheckins();
 
   const states = statesFor(habit.id);
   const dayState = states.get(dayKey);
@@ -222,7 +221,22 @@ function HabitCard({
 
   const contextRef = useContextMenu((pos) => onOpenActions(habit, pos));
 
-  const toggleDay = (date: string) => toggleHabitDay(habit, date);
+  const toggleDay = (date: string) => {
+    const { next, undo } = cycle(habit.id, date);
+    if (next === "done") haptics.success();
+    else haptics.selection();
+    toast.show(
+      t(
+        next === "done"
+          ? "toast.habitChecked"
+          : next === "skip"
+            ? "toast.habitSkipped"
+            : "toast.habitCleared",
+        { name: habit.name },
+      ),
+      { label: t("common.undo"), run: undo },
+    );
+  };
 
   const strip = (fullWidth: boolean) => (
     <HabitWeekStrip

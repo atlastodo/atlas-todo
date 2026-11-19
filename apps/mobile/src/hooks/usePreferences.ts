@@ -32,6 +32,7 @@ import { useStore } from "../data/StoreProvider";
 
 /** What the habits screen lists: only what is in play today, or every habit. */
 export type HabitsScope = "today" | "all";
+export type HabitsTip = "key" | "hold";
 
 /**
  * Whether the reminders master toggle is on for a raw preference bag. Default-on, so a fresh store
@@ -110,12 +111,6 @@ export interface UsePreferences {
   /** Habits & streaks visible (defaults on, hideable). */
   habitsEnabled: boolean;
   setHabitsEnabled: (value: boolean) => void;
-  /** Whether Today shows the habits due today above its tasks (defaults on; only while habits are on). */
-  todayHabits: boolean;
-  setTodayHabits: (value: boolean) => void;
-  /** Whether Today's habits section is folded to its header (default false). */
-  todayHabitsCollapsed: boolean;
-  setTodayHabitsCollapsed: (value: boolean) => void;
   /** Countdown widgets visible (defaults on, hideable). */
   countdownsEnabled: boolean;
   setCountdownsEnabled: (value: boolean) => void;
@@ -144,6 +139,13 @@ export interface UsePreferences {
   /** Whether the habits screen shows only what is in play today (default) or everything. */
   habitsScope: HabitsScope;
   setHabitsScope: (value: HabitsScope) => void;
+  /**
+   * Whether the one-time tip for opening habits from anywhere has been shown: `key` (H, on a
+   * keyboard) and `hold` (the add button's press-and-hold, on a phone) separately, so seeing one
+   * does not hide the other on the user's other device.
+   */
+  habitsTipSeen: (kind: HabitsTip) => boolean;
+  setHabitsTipSeen: (kind: HabitsTip) => void;
   /**
    * Delete the user's own activity entries older than this many days (one of
    * {@link ACTIVITY_RETENTION_DAYS}, or the server's limit); 0, the default, keeps them forever.
@@ -212,9 +214,6 @@ export function usePreferences(): UsePreferences {
   const focusEnabled = prefs.focus_enabled !== false;
   const focusSoundEnabled = prefs.focus_sound_enabled !== false;
   const habitsEnabled = prefs.habits_enabled !== false;
-  const todayHabits = prefs.today_habits !== false;
-  // Synced, like a habit group's fold: it is a durable choice about how Today reads.
-  const todayHabitsCollapsed = prefs.today_habits_collapsed === true;
   const countdownsEnabled = prefs.countdowns_enabled !== false;
   const statsEnabled = prefs.stats_enabled !== false;
   const defaultView: SmartView = isSmartView(prefs.default_view) ? prefs.default_view : "today";
@@ -341,6 +340,24 @@ export function usePreferences(): UsePreferences {
   const setHabitsScope = useCallback(
     (value: HabitsScope) => setField("habits_scope", value),
     [setField],
+  );
+  const habitsTipSeen = useCallback(
+    (kind: HabitsTip) => {
+      const raw = prefs.habits_tip_seen;
+      return (
+        raw !== null && typeof raw === "object" && (raw as Record<string, unknown>)[kind] === true
+      );
+    },
+    [prefs],
+  );
+  const setHabitsTipSeen = useCallback(
+    (kind: HabitsTip) => {
+      const raw = store.get("preference", PREF_ID)?.habits_tip_seen;
+      const base = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+      store.set("preference", PREF_ID, "habits_tip_seen", { ...base, [kind]: true });
+      kick();
+    },
+    [store, kick],
   );
   const activityRetentionDays = activityRetentionIn(prefs);
   const setActivityRetentionDays = useCallback(
@@ -474,11 +491,6 @@ export function usePreferences(): UsePreferences {
     [setField],
   );
   const setHabitsEnabled = useCallback((v: boolean) => setField("habits_enabled", v), [setField]);
-  const setTodayHabits = useCallback((v: boolean) => setField("today_habits", v), [setField]);
-  const setTodayHabitsCollapsed = useCallback(
-    (v: boolean) => setField("today_habits_collapsed", v),
-    [setField],
-  );
   const setCountdownsEnabled = useCallback(
     (v: boolean) => setField("countdowns_enabled", v),
     [setField],
@@ -534,10 +546,6 @@ export function usePreferences(): UsePreferences {
     setFocusSoundEnabled,
     habitsEnabled,
     setHabitsEnabled,
-    todayHabits,
-    setTodayHabits,
-    todayHabitsCollapsed,
-    setTodayHabitsCollapsed,
     countdownsEnabled,
     setCountdownsEnabled,
     statsEnabled,
@@ -554,6 +562,8 @@ export function usePreferences(): UsePreferences {
     setHabitGroupExpanded,
     habitsScope,
     setHabitsScope,
+    habitsTipSeen,
+    setHabitsTipSeen,
     activityRetentionDays,
     setActivityRetentionDays,
     projectPinned,
