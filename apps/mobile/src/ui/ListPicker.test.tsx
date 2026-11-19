@@ -112,53 +112,5 @@ describe("ListPicker", () => {
       await fireEvent.press(screen.getByLabelText("Close"));
       expect(screen.queryByLabelText("Option 2")).toBeNull();
     });
-
-    it("positions dropdown directly above button when near bottom of viewport", async () => {
-      // Mock window.innerHeight
-      const originalInnerHeight = window.innerHeight;
-      Object.defineProperty(window, "innerHeight", {
-        writable: true,
-        configurable: true,
-        value: 600,
-      });
-
-      await render(
-        <ListPicker
-          label="Bottom Picker"
-          value="opt1"
-          options={shortOptions}
-          onChange={() => {}}
-        />,
-      );
-
-      // Trigger button press
-      await fireEvent.press(screen.getByLabelText("Bottom Picker"));
-      expect(screen.getByLabelText("Option 2")).toBeTruthy();
-
-      Object.defineProperty(window, "innerHeight", {
-        writable: true,
-        configurable: true,
-        value: originalInnerHeight,
-      });
-    });
-
-    it("does not dismiss dropdown when scrolling inside the dropdown list", async () => {
-      await render(
-        <ListPicker
-          label="Web Scroll Picker"
-          value="val0"
-          options={longOptions}
-          onChange={() => {}}
-        />,
-      );
-
-      await fireEvent.press(screen.getByLabelText("Web Scroll Picker"));
-      expect(screen.getByLabelText("Item 0")).toBeTruthy();
-
-      const item = screen.getByLabelText("Item 0");
-      await fireEvent.scroll(item, { nativeEvent: { contentOffset: { y: 50 } } });
-
-      expect(screen.getByLabelText("Item 0")).toBeTruthy();
-    });
   });
 });

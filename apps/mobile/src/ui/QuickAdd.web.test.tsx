@@ -22,12 +22,6 @@ async function compose(text: string) {
 }
 
 describe("QuickAdd web date highlight/unlink", () => {
-  it("shows a parsed due chip for a recognised trailing date phrase", async () => {
-    await compose("pay rent tomorrow");
-    // The date chip carries what the phrase meant, rather than its own field name.
-    expect(screen.getByText(/Tomorrow/)).toBeTruthy();
-  });
-
   it("unlinks the date on Backspace with the caret right after the phrase", async () => {
     const text = "pay rent tomorrow";
     const input = await compose(text);

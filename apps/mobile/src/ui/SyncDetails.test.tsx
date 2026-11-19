@@ -316,8 +316,6 @@ describe("projects without a key", () => {
   });
 });
 
-describe("changes to projects the user left", () => {});
-
 describe("changes the server rejected", () => {
   const rejected = (opId: string, entityKind: string, entityId: string, at: number) => ({
     opId,

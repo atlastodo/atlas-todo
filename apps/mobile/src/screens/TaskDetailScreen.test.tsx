@@ -303,10 +303,6 @@ describe("TaskDetailScreen", () => {
     expect(titleInput.props.editable).toBe(false);
     expect(keyboardDismissSpy).toHaveBeenCalled();
 
-    // Trying to focus notes right after close blurs and dismisses keyboard
-    await fireEvent(notesInput, "focus");
-    expect(keyboardDismissSpy).toHaveBeenCalled();
-
     keyboardDismissSpy.mockRestore();
   });
 

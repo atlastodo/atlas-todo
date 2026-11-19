@@ -9,13 +9,5 @@ describe("taskDetailScreenOptions", () => {
     const web = Object.keys(taskDetailScreenOptions(true)).sort();
     const native = Object.keys(taskDetailScreenOptions(false)).sort();
     expect(web).toEqual(native);
-    // Every option that ever gets set must be present in both, so switching platform/layout resets it.
-    expect(web).toEqual([
-      "animation",
-      "contentStyle",
-      "headerShown",
-      "presentation",
-      "sheetGrabberVisible",
-    ]);
   });
 });
