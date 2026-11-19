@@ -45,6 +45,27 @@ describe("useListKeyboardNav.web", () => {
     expect(onEscape).toHaveBeenCalledTimes(1);
   });
 
+  it("moves the highlight from a focused search field that stops the key bubbling", async () => {
+    // The palette's search field holds focus, and react-native-web's TextInput calls
+    // stopPropagation on every keydown.
+    const onEnter = jest.fn();
+    await render(<Harness enabled count={3} onEnter={onEnter} onEscape={jest.fn()} />);
+    const input = document.createElement("input");
+    input.addEventListener("keydown", (e) => e.stopPropagation());
+    document.body.appendChild(input);
+    const pressInField = async (key: string) => {
+      await act(() => {
+        input.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+      });
+    };
+
+    await pressInField("ArrowDown");
+    expect(screen.getByText("index:1")).toBeTruthy();
+    await pressInField("Enter");
+    expect(onEnter).toHaveBeenCalledWith(1);
+    document.body.removeChild(input);
+  });
+
   it("does not listen while disabled", async () => {
     const onEscape = jest.fn();
     await render(<Harness enabled={false} count={3} onEnter={jest.fn()} onEscape={onEscape} />);
