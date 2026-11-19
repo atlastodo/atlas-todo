@@ -184,7 +184,8 @@ export function HabitMonthCalendar({
                 accessibilityRole="button"
                 accessibilityLabel={label}
                 onPress={() => onToggleDay(day)}
-                className="flex-1"
+                // Rounded like the cell, so the keyboard focus ring follows it.
+                className="flex-1 rounded-md"
               >
                 {body}
               </Pressable>

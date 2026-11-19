@@ -166,7 +166,7 @@ export function BoardCard({
               onToggle(task);
             }}
             hitSlop={8}
-            className="mt-0.5 p-0.5 web:cursor-pointer"
+            className="mt-0.5 rounded-full p-0.5 web:cursor-pointer"
           >
             {task.is_completed ? (
               <CircleCheckBig size={18} className="text-accent-500" />
@@ -342,7 +342,7 @@ function SubtaskRow({
             onToggle(task);
           }}
           hitSlop={8}
-          className="p-0.5 web:cursor-pointer"
+          className="rounded-full p-0.5 web:cursor-pointer"
         >
           <Circle size={14} className="text-neutral-500" />
         </Pressable>

@@ -145,6 +145,8 @@ export function HabitWeekStrip({
                 accessibilityRole="button"
                 accessibilityLabel={label}
                 onPress={() => onToggleDay(day)}
+                // Round, so the keyboard focus ring (which follows the pressable's own radius) circles the day.
+                className="rounded-full"
               >
                 {circle}
               </Pressable>

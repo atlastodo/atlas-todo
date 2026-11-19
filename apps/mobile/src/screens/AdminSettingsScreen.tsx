@@ -231,7 +231,7 @@ function InviteSection({
               accessibilityRole="button"
               accessibilityLabel={t("admin.revokeInvite")}
               onPress={() => onRevoke(invite.id)}
-              className="p-2"
+              className="rounded-full p-2"
             >
               <CircleX size={16} className="text-red-600 dark:text-red-400" />
             </Pressable>
