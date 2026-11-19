@@ -1,15 +1,8 @@
-## v0.1.21-rc.1
+## v0.1.21-rc.2
 
 ### Features
-- Open habits from anywhere with H or by holding +
+- Habits button above +, tap to toggle, swipe the drawer down
 
 ### Fixes
-- Keep the habit week strip together in the habits dialog
-- Let keys reach the palette and Cmd-K from a text field
-- Keep dialogs' content while they fade out
-
-### Documentation
-- Rules for writing tests
-
-### Maintenance
-- 4 maintenance commits (CI, build, tests) ([full list](https://github.com/atlastodo/atlas-todo/compare/v0.1.20...v0.1.21-rc.1))
+- Round the focus ring on icon buttons
+- Round the keyboard focus ring on round controls
