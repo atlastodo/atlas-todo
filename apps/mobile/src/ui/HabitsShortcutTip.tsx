@@ -8,10 +8,11 @@ import { useHabitsDialog } from "../data/HabitsDialogContext";
 import { useToast } from "../data/ToastProvider";
 
 /**
- * Teaches the habits shortcut once, as a toast with an Open action: "press H" where there is a
- * keyboard layout (wide web, desktop), "press and hold +" on a phone. It waits for the first habit,
- * so someone who does not use habits is never told about them, and each tip is recorded as seen
- * (synced) the moment it shows.
+ * Teaches H once, where there is a keyboard layout (wide web, desktop), as a toast with an Open
+ * action. It waits for the first habit, so someone who does not use habits is never told about
+ * them, and is recorded as seen (synced) the moment it shows. A phone is taught the add button's
+ * press-and-hold by a callout on the button itself (`FloatingAddButton`): a toast there is too
+ * narrow for the sentence.
  */
 export function HabitsShortcutTip() {
   const { t } = useTranslation();
@@ -20,17 +21,15 @@ export function HabitsShortcutTip() {
   const { habitsTipSeen, setHabitsTipSeen } = usePreferences();
   const { enabled, openHabits } = useHabitsDialog();
   const isWide = useIsWide();
-  const kind = Platform.OS === "web" && isWide ? "key" : "hold";
-  const due = enabled && habits.length + habitGroups.length > 0 && !habitsTipSeen(kind);
+  const keyboard = Platform.OS === "web" && isWide;
+  const due =
+    keyboard && enabled && habits.length + habitGroups.length > 0 && !habitsTipSeen("key");
 
   useEffect(() => {
     if (!due) return;
-    setHabitsTipSeen(kind);
-    toast.show(t(kind === "key" ? "habits.tipKey" : "habits.tipHold"), {
-      label: t("common.open"),
-      run: openHabits,
-    });
-  }, [due, kind, setHabitsTipSeen, toast, t, openHabits]);
+    setHabitsTipSeen("key");
+    toast.show(t("habits.tipKey"), { label: t("common.open"), run: openHabits });
+  }, [due, setHabitsTipSeen, toast, t, openHabits]);
 
   return null;
 }
