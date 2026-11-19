@@ -208,13 +208,6 @@ export class DesktopUpdater {
     }, intervalMs);
   }
 
-  public stopPeriodicCheck(): void {
-    if (this.checkIntervalTimer) {
-      clearInterval(this.checkIntervalTimer);
-      this.checkIntervalTimer = null;
-    }
-  }
-
   public async checkForUpdates(): Promise<UpdateState> {
     if (this.state.disabled) {
       return this.getState();

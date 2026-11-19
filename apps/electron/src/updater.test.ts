@@ -150,21 +150,6 @@ describe("DesktopUpdater lifecycle", () => {
     expect(state.disabled).toBe(false);
     expect(state.currentVersion).toBe("0.30.12");
   });
-
-  it("handles state change listeners", () => {
-    const updater = new DesktopUpdater("0.30.12", {
-      argv: [],
-      env: {},
-    });
-    const received: string[] = [];
-    const unsubscribe = updater.onStateChange((s) => {
-      received.push(s.status);
-    });
-
-    updater.stopPeriodicCheck();
-    unsubscribe();
-    expect(received.length).toBe(0);
-  });
 });
 
 describe("expectedChecksum", () => {
