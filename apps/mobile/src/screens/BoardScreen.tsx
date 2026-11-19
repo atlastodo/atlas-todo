@@ -623,6 +623,7 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
                 accessibilityRole="button"
                 accessibilityLabel={t("board.addSection")}
                 onPress={addSection}
+                className="rounded-full"
               >
                 <Plus size={20} className="text-accent-600" />
               </Pressable>
@@ -940,7 +941,7 @@ function BoardColumn({
               accessibilityLabel={t("board.renameSection", { name: column.name })}
               onPress={onStartRename}
               hitSlop={8}
-              className="p-1 web:cursor-pointer opacity-70 hover:opacity-100"
+              className="rounded-full p-1 web:cursor-pointer opacity-70 hover:opacity-100"
             >
               <Pencil size={14} className="text-neutral-500" />
             </Pressable>
@@ -954,7 +955,7 @@ function BoardColumn({
                 onOpenActions({ x: e?.nativeEvent?.pageX ?? 0, y: e?.nativeEvent?.pageY ?? 0 })
               }
               hitSlop={8}
-              className="p-1 web:cursor-pointer opacity-70 hover:opacity-100"
+              className="rounded-full p-1 web:cursor-pointer opacity-70 hover:opacity-100"
             >
               <EllipsisVertical size={15} className="text-neutral-500" />
             </Pressable>

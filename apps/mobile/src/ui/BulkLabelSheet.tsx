@@ -55,6 +55,7 @@ export function BulkLabelSheet({ title, tasks, onApply, onClear, onClose }: Bulk
             accessibilityRole="button"
             accessibilityLabel={t("common.close")}
             onPress={onClose}
+            className="rounded-full"
           >
             <X size={20} className="text-neutral-500" />
           </Pressable>

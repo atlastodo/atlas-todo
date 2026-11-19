@@ -95,6 +95,7 @@ export function ListPrefSheet({
             accessibilityRole="button"
             accessibilityLabel={t("common.close")}
             onPress={onClose}
+            className="rounded-full"
           >
             <X size={20} className="text-neutral-500" />
           </Pressable>

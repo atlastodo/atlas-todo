@@ -211,7 +211,7 @@ export function BoardCard({
               onContextMenu(task, pos(e));
             }}
             hitSlop={8}
-            className="p-1 -mr-1 opacity-60 active:opacity-100"
+            className="rounded-full p-1 -mr-1 opacity-60 active:opacity-100"
           >
             <EllipsisVertical size={16} className="text-neutral-500" />
           </Pressable>

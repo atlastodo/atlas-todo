@@ -116,7 +116,7 @@ export function SectionHeaderRow({
             accessibilityLabel={t("board.renameSection", { name })}
             onPress={onStartEdit}
             hitSlop={8}
-            className="p-1 web:cursor-pointer"
+            className="rounded-full p-1 web:cursor-pointer"
           >
             <Pencil size={isWeb ? 14 : 16} className="text-neutral-500" />
           </Pressable>
@@ -129,7 +129,7 @@ export function SectionHeaderRow({
               onOpenActions({ x: e?.nativeEvent?.pageX ?? 0, y: e?.nativeEvent?.pageY ?? 0 })
             }
             hitSlop={8}
-            className="p-1 web:cursor-pointer"
+            className="rounded-full p-1 web:cursor-pointer"
           >
             <EllipsisVertical size={isWeb ? 16 : 18} className="text-neutral-500" />
           </Pressable>

@@ -476,6 +476,7 @@ export function ShareDialog({
                       accessibilityState={{ expanded: isOpen }}
                       onPress={() => setExpanded(isOpen ? null : m.user_id)}
                       hitSlop={8}
+                      className="rounded-full"
                     >
                       <ShieldCheck
                         size={16}
@@ -519,6 +520,7 @@ export function ShareDialog({
                       accessibilityLabel={t("share.remove", { email: m.email })}
                       onPress={() => void remove(m.user_id)}
                       hitSlop={8}
+                      className="rounded-full"
                     >
                       <Trash2 size={16} className="text-neutral-500" />
                     </Pressable>

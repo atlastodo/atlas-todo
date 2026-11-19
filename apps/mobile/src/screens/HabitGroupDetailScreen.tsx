@@ -219,7 +219,7 @@ export function HabitGroupDetailScreen({
                   accessibilityLabel={t("habits.removeFromGroup")}
                   onPress={() => moveHabit(habit.id, null)}
                   hitSlop={8}
-                  className="p-1"
+                  className="rounded-full p-1"
                 >
                   <X size={16} className="text-neutral-500" />
                 </Pressable>

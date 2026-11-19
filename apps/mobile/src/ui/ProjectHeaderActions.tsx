@@ -123,7 +123,7 @@ export function ProjectHeaderActions({
           accessibilityLabel={favoriteLabel}
           onPress={onToggleFavorite}
           hitSlop={8}
-          className="p-1 web:cursor-pointer"
+          className="rounded-full p-1 web:cursor-pointer"
         >
           <Star
             size={18}
@@ -137,7 +137,7 @@ export function ProjectHeaderActions({
             accessibilityLabel={t("workspace.shareProject")}
             onPress={onShare}
             hitSlop={8}
-            className="p-1 web:cursor-pointer"
+            className="rounded-full p-1 web:cursor-pointer"
           >
             <UserPlus size={18} className="text-neutral-500" />
           </Pressable>
@@ -148,7 +148,7 @@ export function ProjectHeaderActions({
             accessibilityLabel={t("activity.title")}
             onPress={onActivity}
             hitSlop={8}
-            className="p-1 web:cursor-pointer"
+            className="rounded-full p-1 web:cursor-pointer"
           >
             <Activity size={18} className="text-neutral-500" />
           </Pressable>

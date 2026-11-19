@@ -62,7 +62,7 @@ export function LabelPicker({
               accessibilityLabel={t("label.remove", { name: l.name })}
               onPress={() => remove(l.id)}
               hitSlop={8}
-              className="web:cursor-pointer"
+              className="rounded-full web:cursor-pointer"
             >
               <X size={12} className="text-neutral-500" />
             </Pressable>

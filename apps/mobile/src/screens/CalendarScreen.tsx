@@ -273,7 +273,7 @@ export function CalendarScreen({ onOpenTask }: { onOpenTask?: (task: Task) => vo
           }
           onPress={() => shiftWithTransition(-1)}
           hitSlop={8}
-          className="p-1"
+          className="rounded-full p-1"
         >
           <ChevronLeft size={20} className="text-neutral-600 dark:text-neutral-300" />
         </Pressable>
@@ -282,7 +282,7 @@ export function CalendarScreen({ onOpenTask }: { onOpenTask?: (task: Task) => vo
           accessibilityLabel={mode === "week" ? t("calendar.nextWeek") : t("calendar.nextMonth")}
           onPress={() => shiftWithTransition(1)}
           hitSlop={8}
-          className="p-1"
+          className="rounded-full p-1"
         >
           <ChevronRight size={20} className="text-neutral-600 dark:text-neutral-300" />
         </Pressable>
@@ -310,6 +310,7 @@ export function CalendarScreen({ onOpenTask }: { onOpenTask?: (task: Task) => vo
             accessibilityLabel={t("common.cancel")}
             onPress={() => setMovingId(null)}
             hitSlop={8}
+            className="rounded-full"
           >
             <X size={16} className="text-accent-700 dark:text-accent-300" />
           </Pressable>

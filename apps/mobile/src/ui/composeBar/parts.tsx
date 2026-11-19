@@ -131,7 +131,7 @@ export function Panel({
           accessibilityLabel={t("common.back")}
           onPress={onBack}
           hitSlop={isWeb ? 8 : 10}
-          className="web:cursor-pointer"
+          className="rounded-full web:cursor-pointer"
         >
           <ChevronLeft size={isWeb ? 14 : 18} className="text-neutral-500" />
         </Pressable>

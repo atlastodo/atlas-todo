@@ -206,7 +206,7 @@ export function StyleEditButton({ label, onPress }: { label: string; onPress: ()
       accessibilityLabel={label}
       onPress={onPress}
       hitSlop={8}
-      className="p-1 web:cursor-pointer"
+      className="rounded-full p-1 web:cursor-pointer"
     >
       <SlidersHorizontal size={18} className="text-neutral-500" />
     </Pressable>

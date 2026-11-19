@@ -365,6 +365,7 @@ export function AttachmentsSection({ task }: { task: Task }) {
             accessibilityLabel={t("attachment.add")}
             onPress={() => void pick()}
             hitSlop={8}
+            className="rounded-full"
           >
             <Plus size={16} className="text-accent-600" />
           </Pressable>
@@ -454,6 +455,7 @@ function AttachmentRow({
           accessibilityLabel={t("attachment.retry")}
           onPress={onRetry}
           hitSlop={8}
+          className="rounded-full"
         >
           <RotateCcw size={14} className="text-neutral-500" />
         </Pressable>
@@ -463,6 +465,7 @@ function AttachmentRow({
         accessibilityLabel={t("attachment.delete")}
         onPress={onDelete}
         hitSlop={8}
+        className="rounded-full"
       >
         <Trash2 size={14} className="text-neutral-500" />
       </Pressable>

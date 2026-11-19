@@ -1506,7 +1506,7 @@ function SubtaskRow({
             accessibilityRole="button"
             accessibilityLabel={t("task.details", "Task details")}
             onPress={onOpen}
-            className="opacity-0 group-hover:opacity-100 web:focus-visible:opacity-100 web:cursor-pointer"
+            className="rounded-full opacity-0 group-hover:opacity-100 web:focus-visible:opacity-100 web:cursor-pointer"
           >
             <Info
               size={16}

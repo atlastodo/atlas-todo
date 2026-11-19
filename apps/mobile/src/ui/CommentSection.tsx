@@ -108,6 +108,7 @@ export function CommentSection({ task }: { task: Task }) {
                     toast.show(t("toast.commentDeleted"), { label: t("common.undo"), run: undo });
                   }}
                   hitSlop={8}
+                  className="rounded-full"
                 >
                   <Trash2 size={14} className="text-neutral-500" />
                 </Pressable>

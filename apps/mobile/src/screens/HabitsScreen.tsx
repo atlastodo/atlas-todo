@@ -156,7 +156,7 @@ function HabitGroupHeader({
         accessibilityState={{ expanded }}
         onPress={() => onToggle(group)}
         hitSlop={8}
-        className="p-1"
+        className="rounded-full p-1"
       >
         {expanded ? (
           <ChevronUp size={16} className="text-neutral-500" />
@@ -172,7 +172,7 @@ function HabitGroupHeader({
           onOpenActions(group, { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY })
         }
         hitSlop={8}
-        className="p-1"
+        className="rounded-full p-1"
       >
         <EllipsisVertical size={16} className="text-neutral-500" />
       </Pressable>
@@ -361,7 +361,7 @@ function HabitCard({
                 accessibilityState={{ expanded }}
                 onPress={() => onToggleExpand(habit)}
                 hitSlop={8}
-                className="p-1"
+                className="rounded-full p-1"
               >
                 {expanded ? (
                   <ChevronUp size={16} className="text-neutral-500" />
@@ -378,7 +378,7 @@ function HabitCard({
                 onOpenActions(habit, { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY })
               }
               hitSlop={8}
-              className="p-1"
+              className="rounded-full p-1"
             >
               <EllipsisVertical size={16} className="text-neutral-500" />
             </Pressable>
