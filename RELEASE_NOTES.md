@@ -1,8 +1,4 @@
-## v0.1.21-rc.2
+## v0.1.21-rc.3
 
 ### Features
-- Habits button above +, tap to toggle, swipe the drawer down
-
-### Fixes
-- Round the focus ring on icon buttons
-- Round the keyboard focus ring on round controls
+- Pull the habits drawer down from the top of its list
