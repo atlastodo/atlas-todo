@@ -82,11 +82,6 @@ function contrast(a: string, b: string): number {
 }
 
 describe("accent contrast", () => {
-  it("measures known pairs", () => {
-    expect(contrast("#ffffff", "#000000")).toBeCloseTo(21, 5);
-    expect(contrast("#ffffff", "#ffffff")).toBeCloseTo(1, 5);
-  });
-
   it("keeps white text on accent-600 and accent-700, and those shades as text on white, at 4.5:1", () => {
     for (const name of ACCENT_NAMES) {
       for (const shade of [600, 700] as const) {

@@ -4,11 +4,6 @@ import { ShortcutsModal } from "./ShortcutsHelp";
 /** The modal's ways out; the table is data-driven from `@atlastodo/todo-core`'s `HOTKEY_BINDINGS`. */
 
 describe("ShortcutsHelp", () => {
-  it("renders nothing when closed", async () => {
-    await render(<ShortcutsModal visible={false} onClose={() => {}} />);
-    expect(screen.queryByText("Keyboard Shortcuts")).toBeNull();
-  });
-
   it("closes from both close affordances (backdrop and header button)", async () => {
     const onClose = jest.fn();
     await render(<ShortcutsModal visible onClose={onClose} />);

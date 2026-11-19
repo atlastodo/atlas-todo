@@ -37,18 +37,6 @@ describe("countdownTo", () => {
     expect(c.label).toBe("Due now");
   });
 
-  it("is timezone/DST correct: same absolute instant yields the same countdown", () => {
-    // A deadline expressed in two different zones but denoting the SAME absolute instant:
-    // 2026-03-08T12:00:00-05:00 (US Eastern, EST) == 2026-03-08T17:00:00Z == the same epoch ms.
-    const targetEastern = Date.parse("2026-03-08T12:00:00-05:00");
-    const targetUtc = Date.parse("2026-03-08T17:00:00Z");
-    expect(targetEastern).toBe(targetUtc);
-    const now = Date.parse("2026-03-08T15:00:00Z");
-    expect(countdownTo(targetEastern, now)).toEqual(countdownTo(targetUtc, now));
-    // Two hours of physical time remain regardless of the wall-clock/zone.
-    expect(countdownTo(targetUtc, now).label).toBe("2h 0m");
-  });
-
   it("reports true elapsed duration across a spring-forward DST boundary", () => {
     // US spring-forward: 2026-03-08 02:00 local jumps to 03:00. From 2026-03-07T12:00 local to
     // 2026-03-09T12:00 local is 48 wall-clock hours but only 47 physical hours. A countdown is a

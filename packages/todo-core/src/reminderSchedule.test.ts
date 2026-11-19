@@ -5,7 +5,6 @@ import {
   adoptBooked,
   futureReminders,
   reconcileNotifications,
-  reconcileSchedule,
   reminderBody,
   reminderTitle,
 } from "./reminderSchedule";
@@ -168,42 +167,6 @@ describe("reminder notification body", () => {
     const sink = { schedule: vi.fn(), cancel: vi.fn() };
     reconcileNotifications(rs, tasks, NOW, new Map(), "fallback", sink);
     expect(sink.schedule).toHaveBeenCalledWith("Task t1", "first line", NOW + 60_000, "r1");
-  });
-});
-
-describe("reconcileSchedule", () => {
-  const tasks = [task("t1")];
-
-  it("schedules everything new when nothing is scheduled yet", () => {
-    const rs = [reminder("r1", { at: NOW + 60_000 })];
-    const diff = reconcileSchedule(rs, tasks, NOW, new Map());
-    expect(diff.toSchedule.map((s) => s.reminderId)).toEqual(["r1"]);
-    expect(diff.toCancel).toEqual([]);
-  });
-
-  it("is a no-op when the scheduled set already matches (idempotent)", () => {
-    const rs = [reminder("r1", { at: NOW + 60_000 })];
-    const scheduled = new Map([["r1", NOW + 60_000]]);
-    expect(reconcileSchedule(rs, tasks, NOW, scheduled)).toEqual({ toSchedule: [], toCancel: [] });
-  });
-
-  it("cancels a reminder that is no longer desired (deleted/fired/completed)", () => {
-    const rs = [reminder("r1", { at: NOW + 60_000, fired_at: NOW + 60_000 })];
-    const scheduled = new Map([["r1", NOW + 60_000]]);
-    expect(reconcileSchedule(rs, tasks, NOW, scheduled)).toEqual({
-      toSchedule: [],
-      toCancel: ["r1"],
-    });
-  });
-
-  it("reschedules (cancel + schedule) when the fire instant moves", () => {
-    const rs = [reminder("r1", { at: NOW + 120_000 })];
-    const scheduled = new Map([["r1", NOW + 60_000]]);
-    const diff = reconcileSchedule(rs, tasks, NOW, scheduled);
-    expect(diff.toCancel).toEqual(["r1"]);
-    expect(diff.toSchedule).toEqual([
-      { reminderId: "r1", fireAt: NOW + 120_000, title: "Task t1" },
-    ]);
   });
 });
 

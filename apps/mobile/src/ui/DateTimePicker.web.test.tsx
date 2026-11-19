@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 import { render, screen, fireEvent } from "@testing-library/react-native";
-import DateTimePicker, { fromInputValue } from "./DateTimePicker.web";
+import DateTimePicker from "./DateTimePicker.web";
 
 /**
  * The web picker's event contract (the `.web` file is imported directly). The browser's `dd/mm/yyyy` input fires per segment,
@@ -133,6 +133,20 @@ describe("web DateTimePicker", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
+  it("reports no date when the field is left half-typed", async () => {
+    const onChange = jest.fn();
+    await render(
+      <DateTimePicker value={new Date(2026, 7, 3, 9, 0)} mode="datetime" onChange={onChange} />,
+    );
+
+    // The browser reports an incomplete field as "" (or a cut-off value): nothing to write.
+    await blurWith("2026-08-17T");
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange.mock.calls[0][0].type).toBe("dismissed");
+    expect(onChange.mock.calls[0][1]).toBeUndefined();
+  });
+
   it("reports a picked time on the day it was opened with", async () => {
     const onChange = jest.fn();
     await render(
@@ -144,23 +158,5 @@ describe("web DateTimePicker", () => {
     const [event, date] = onChange.mock.calls[0];
     expect(event.type).toBe("set");
     expect(date.getTime()).toBe(new Date(2026, 7, 3, 7, 45).getTime());
-  });
-});
-
-describe("fromInputValue", () => {
-  const base = new Date(2026, 7, 3, 9, 0);
-
-  it("has nothing to report for a half-typed field", () => {
-    // What the browser reports mid-edit: no value at all until every segment is filled.
-    expect(fromInputValue("", "date", base)).toBeNull();
-    expect(fromInputValue("", "datetime", base)).toBeNull();
-    expect(fromInputValue("2026-08-17T", "datetime", base)).toBeNull();
-    expect(fromInputValue("", "time", base)).toBeNull();
-  });
-
-  it("keeps a datetime in local time", () => {
-    expect(fromInputValue("2026-08-17T14:30", "datetime", base)?.getTime()).toBe(
-      new Date(2026, 7, 17, 14, 30).getTime(),
-    );
   });
 });

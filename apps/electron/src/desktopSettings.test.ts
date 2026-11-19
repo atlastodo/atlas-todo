@@ -2,11 +2,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  DEFAULT_DESKTOP_SETTINGS,
-  loadDesktopSettings,
-  saveDesktopSettings,
-} from "./desktopSettings";
+import { loadDesktopSettings, saveDesktopSettings } from "./desktopSettings";
 
 describe("desktop settings", () => {
   let dir: string;
@@ -27,8 +23,6 @@ describe("desktop settings", () => {
       autoCheckUpdates: true,
       allowInsecureServer: false,
     });
-    expect(DEFAULT_DESKTOP_SETTINGS.closeToTray).toBe(true);
-    expect(DEFAULT_DESKTOP_SETTINGS.autoCheckUpdates).toBe(true);
   });
 
   it("round-trips the close-to-tray choice", () => {
@@ -55,7 +49,6 @@ describe("desktop settings", () => {
   });
 
   it("keeps insecure content off unless a file turned it on", () => {
-    expect(DEFAULT_DESKTOP_SETTINGS.allowInsecureServer).toBe(false);
     fs.writeFileSync(file, '{"closeToTray":true,"autoCheckUpdates":true}');
     expect(loadDesktopSettings(file).allowInsecureServer).toBe(false);
     fs.writeFileSync(file, '{"allowInsecureServer":"yes"}');

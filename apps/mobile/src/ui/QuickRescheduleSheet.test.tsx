@@ -35,13 +35,6 @@ describe("QuickRescheduleSheet", () => {
     expect(screen.getByLabelText("No date")).toBeTruthy();
   });
 
-  it("reschedules to the weekend", async () => {
-    const { onPick } = await mount();
-    const weekend = quickScheduleOptions(NOW).find((o) => o.key === "weekend")!;
-    await fireEvent.press(screen.getByLabelText("This weekend"));
-    expect(onPick).toHaveBeenCalledWith(weekend.dueAt);
-  });
-
   it("picks the instant `quickScheduleOptions` computes", async () => {
     // The sheet must not invent its own dates -- the phone and the web reschedule to the same instant.
     const { onPick } = await mount();

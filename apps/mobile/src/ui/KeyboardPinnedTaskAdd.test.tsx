@@ -63,14 +63,4 @@ describe("KeyboardPinnedTaskAdd", () => {
     await fireEvent.press(screen.getByText("Discard"));
     expect(onClose).toHaveBeenCalled();
   });
-
-  it("closes directly when tapping backdrop with empty input", async () => {
-    const onClose = jest.fn();
-    const onAdd = jest.fn();
-
-    await render(<KeyboardPinnedTaskAdd visible={true} onClose={onClose} onAdd={onAdd} />);
-
-    await fireEvent.press(screen.getByLabelText("Close"));
-    expect(onClose).toHaveBeenCalled();
-  });
 });

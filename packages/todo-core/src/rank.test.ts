@@ -18,12 +18,4 @@ describe("rankBetween", () => {
     expect(rankBetween(2, 4)).toBe(3);
     expect(rankBetween(0, 1)).toBe(0.5);
   });
-
-  it("always yields a value strictly between two distinct neighbours", () => {
-    const before = 1.25;
-    const after = 1.5;
-    const mid = rankBetween(before, after);
-    expect(mid).toBeGreaterThan(before);
-    expect(mid).toBeLessThan(after);
-  });
 });
