@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TextInput } from "react-native";
+import { TextInput, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { PomodoroConfig } from "@atlastodo/todo-core";
 import { usePreferences } from "../../hooks/usePreferences";
@@ -83,13 +83,17 @@ export function FeaturesSection() {
           value={habitsEnabled}
           onValueChange={setHabitsEnabled}
         />
+        {/* A sub-setting of Habits & streaks: indented on a rail under it, and only while habits are on. */}
         {habitsEnabled && (
-          <Toggle
-            label={t("settings.todayHabits")}
-            description={t("settings.todayHabitsDesc")}
-            value={todayHabits}
-            onValueChange={setTodayHabits}
-          />
+          <View className="mb-3 ml-1 border-l-2 border-neutral-200 pl-4 dark:border-neutral-700">
+            <Toggle
+              label={t("settings.todayHabits")}
+              description={t("settings.todayHabitsDesc")}
+              value={todayHabits}
+              onValueChange={setTodayHabits}
+              className="py-1"
+            />
+          </View>
         )}
         <Toggle
           label={t("settings.stats")}
