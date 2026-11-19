@@ -19,8 +19,8 @@ import {
 /**
  * The full Habits screen over whatever screen is showing, opened by H (web/desktop) or the floating
  * add button's press-and-hold (phone) through `HabitsDialogContext`. Wide: a centred dialog. Narrow:
- * a drawer sliding up from the bottom, under the status bar, that a pull down its header closes, as
- * on the app's other sheets. Escape, the backdrop, the X and the Android back button close it.
+ * a drawer sliding up from the bottom, under the status bar, that a pull down its header, or down the
+ * list from its top, closes, as on the app's other sheets. Escape, the backdrop, the X and the Android back button close it.
  * Opening a habit closes it and pushes the habit's screen.
  *
  * Renders nothing while the habits feature is off, so neither entry point can reach it then.
@@ -31,10 +31,8 @@ export function HabitsDialog({ onOpenHabit }: { onOpenHabit: (habit: Habit) => v
   const isWide = useIsWide();
   const insets = useSafeAreaInsets();
   // The phone drawer slides in, and out on a pull down its header, like the app's other sheets.
-  const { isWeb, dismiss, animatedStyle, headerPanGesture } = useSheetDismiss(
-    closeHabits,
-    open && !isWide,
-  );
+  const { isWeb, dismiss, animatedStyle, headerPanGesture, topPullGesture, scrollHandler } =
+    useSheetDismiss(closeHabits, open && !isWide);
   if (!enabled) return null;
   // The drawer slides itself out; the wide dialog has nothing to slide.
   const close = isWide ? closeHabits : dismiss;
@@ -52,6 +50,8 @@ export function HabitsDialog({ onOpenHabit }: { onOpenHabit: (habit: Habit) => v
   const list = (
     <View className="flex-1">
       <HabitsScreen
+        // The drawer's pull from the top of the list reads where the list is scrolled to.
+        onListScroll={isWide ? undefined : scrollHandler}
         onOpenHabit={(habit) => {
           closeHabits();
           onOpenHabit(habit);
@@ -105,14 +105,15 @@ export function HabitsDialog({ onOpenHabit }: { onOpenHabit: (habit: Habit) => v
                 animatedStyle,
               ]}
             >
-              {/* Plain View: NativeWind ignores `className` on Animated.View. Only the header drags,
-                  so a pull inside the list scrolls it or reorders a habit. */}
+              {/* Plain View: NativeWind ignores `className` on Animated.View. The header always
+                  drags; the list only from its top, like the menu, so a pull further down scrolls it
+                  and a long press reorders a habit. */}
               <View
                 style={{ paddingBottom: insets.bottom }}
                 className="flex-1 flex-col overflow-hidden rounded-t-3xl border-t border-neutral-200 bg-white dark:border-neutral-700 dark:bg-zinc-900"
               >
                 <GestureDetector gesture={headerPanGesture}>{header}</GestureDetector>
-                {list}
+                <GestureDetector gesture={topPullGesture}>{list}</GestureDetector>
               </View>
             </Animated.View>
           )}

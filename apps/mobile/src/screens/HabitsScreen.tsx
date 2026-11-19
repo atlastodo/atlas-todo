@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import ReorderableList, { type ReorderableListReorderEvent } from "react-native-reorderable-list";
-import Animated from "react-native-reanimated";
+import Animated, { type useAnimatedScrollHandler } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import {
   dateKeyFromMs,
@@ -414,9 +414,12 @@ const STRIP_INLINE_MIN_WIDTH = 760;
 export function HabitsScreen({
   now,
   onOpenHabit,
+  onListScroll,
 }: {
   now?: number;
   onOpenHabit?: (habit: Habit) => void;
+  /** The list's scroll, for a sheet around the screen that pulls down from the top (the habits drawer). */
+  onListScroll?: ReturnType<typeof useAnimatedScrollHandler>;
 }) {
   const { t } = useTranslation();
   const liveNow = useNow();
@@ -732,6 +735,7 @@ export function HabitsScreen({
               </View>
             }
             panGesture={dragPan}
+            onScroll={onListScroll}
             // A worklet: the library calls this on the UI thread, and a plain arrow throws there.
             onDragEnd={({ from, to }) => {
               "worklet";

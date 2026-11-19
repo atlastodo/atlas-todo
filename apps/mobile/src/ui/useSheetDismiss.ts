@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Platform, useWindowDimensions } from "react-native";
 import {
+  GestureStateManager,
   useNativeGesture,
   usePanGesture,
   useSimultaneousGestures,
@@ -41,6 +42,9 @@ export const PLACEHOLDER_COLOR = "#737373";
 /** A primary button with nothing to submit yet: a flat grey fill, not a faded accent that still looks pressable. */
 export const DISABLED_BUTTON_CLASS = "bg-neutral-200 dark:bg-neutral-800";
 export const DISABLED_BUTTON_TEXT_CLASS = "text-neutral-500 dark:text-neutral-400";
+
+/** Longer than this at rest before moving, a press belongs to a long-press drag, not a pull. */
+const LONG_PRESS_MS = 200;
 
 /**
  * Slide-in, pull-down dismissal and animation shared by the bottom sheets. Native slides the
@@ -153,6 +157,40 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
     },
   });
 
+  // For a list that brings its own gesture detector (the reorderable habits list), which leaves no
+  // way to run `contentPanGesture` alongside its scroll: a pan on the list's container that decides
+  // by hand, from the offset the list reports through `scrollHandler`. Scrolled down, or moving up,
+  // it fails and the list scrolls; at the top and pulling down, it takes the sheet. A press that
+  // rests before it moves is the list's long-press drag (reordering), never a pull.
+  const touchStartY = useSharedValue(0);
+  const touchStartAt = useSharedValue(0);
+  const topPullGesture = usePanGesture({
+    enabled: !isWeb,
+    manualActivation: true,
+    onTouchesDown: (event) => {
+      touchStartY.value = event.allTouches[0]?.absoluteY ?? 0;
+      touchStartAt.value = Date.now();
+    },
+    onTouchesMove: (event) => {
+      const y = event.allTouches[0]?.absoluteY;
+      if (y === undefined) return;
+      const dy = y - touchStartY.value;
+      if (scrollOffset.value > 0 || dy < -5) {
+        GestureStateManager.fail(event.handlerTag);
+      } else if (dy > 8) {
+        if (Date.now() - touchStartAt.value > LONG_PRESS_MS)
+          GestureStateManager.fail(event.handlerTag);
+        else GestureStateManager.activate(event.handlerTag);
+      }
+    },
+    onUpdate: (event) => {
+      translateY.value = Math.max(0, event.translationY);
+    },
+    onDeactivate: (event) => {
+      settleDrag(event.translationY, event.velocityY, !event.canceled);
+    },
+  });
+
   /** For the sheet's scroll view: frozen while a pull drives the sheet. */
   const scrollAnimatedProps = useAnimatedProps(() => ({ scrollEnabled: !dragging.value }));
 
@@ -170,6 +208,7 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
     scrollHandler,
     composedGesture,
     contentPanGesture,
+    topPullGesture,
     nativeScrollGesture,
     scrollAnimatedProps,
   };
