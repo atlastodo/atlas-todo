@@ -1,5 +1,5 @@
 import { type Task } from "@atlastodo/todo-core";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactElement } from "react";
 import { Platform, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
@@ -80,13 +80,19 @@ export function ViewTaskList({ view, onOpenTask, emptyLabel, ...rest }: ViewTask
 /**
  * {@link ViewTaskList} plus the list-pref menu and, on wide web, a quick-add header
  * (`quickAddDefaults` seed new tasks). A phone, web included, adds through the list's add button.
+ * `aboveTasks` scrolls with the list, under the quick add (Today's habits).
  */
 export function QuickAddTaskList({
   view,
   quickAddDefaults,
+  aboveTasks,
   ...rest
-}: ViewTaskListProps & { quickAddDefaults?: ListProps["quickAddDefaults"] }) {
+}: ViewTaskListProps & {
+  quickAddDefaults?: ListProps["quickAddDefaults"];
+  aboveTasks?: ReactElement;
+}) {
   const isWide = useIsWide();
+  const quickAdd = Platform.OS === "web" && isWide;
   return (
     <ViewTaskList
       view={view}
@@ -97,24 +103,29 @@ export function QuickAddTaskList({
       listPref={view.listPref}
       onChangeListPref={view.setListPref}
       header={
-        Platform.OS === "web" && isWide ? (
-          // `pl-1`: QuickAdd's own inset then centres its "+" on the rows' 16px checkbox column.
-          <View className="py-2 pl-1 pr-4">
-            <QuickAdd
-              onAdd={view.create}
-              onCreateProject={view.createProject}
-              onCreateLabel={view.createLabel}
-              resolveLabels={view.resolveLabels}
-              smartDates={view.smartDates}
-              resolveProject={view.resolveProject}
-              projects={view.projects}
-              sections={view.sections}
-              labels={view.labels}
-              now={view.now}
-              formatDue={view.formatDue}
-              defaults={quickAddDefaults}
-              timeZone={view.timeZone}
-            />
+        quickAdd || aboveTasks ? (
+          <View>
+            {quickAdd && (
+              // `pl-1`: QuickAdd's own inset then centres its "+" on the rows' 16px checkbox column.
+              <View className="py-2 pl-1 pr-4">
+                <QuickAdd
+                  onAdd={view.create}
+                  onCreateProject={view.createProject}
+                  onCreateLabel={view.createLabel}
+                  resolveLabels={view.resolveLabels}
+                  smartDates={view.smartDates}
+                  resolveProject={view.resolveProject}
+                  projects={view.projects}
+                  sections={view.sections}
+                  labels={view.labels}
+                  now={view.now}
+                  formatDue={view.formatDue}
+                  defaults={quickAddDefaults}
+                  timeZone={view.timeZone}
+                />
+              </View>
+            )}
+            {aboveTasks}
           </View>
         ) : undefined
       }

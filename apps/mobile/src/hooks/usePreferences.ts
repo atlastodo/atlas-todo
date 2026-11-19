@@ -110,6 +110,12 @@ export interface UsePreferences {
   /** Habits & streaks visible (defaults on, hideable). */
   habitsEnabled: boolean;
   setHabitsEnabled: (value: boolean) => void;
+  /** Whether Today shows the habits due today above its tasks (defaults on; only while habits are on). */
+  todayHabits: boolean;
+  setTodayHabits: (value: boolean) => void;
+  /** Whether Today's habits section is folded to its header (default false). */
+  todayHabitsCollapsed: boolean;
+  setTodayHabitsCollapsed: (value: boolean) => void;
   /** Countdown widgets visible (defaults on, hideable). */
   countdownsEnabled: boolean;
   setCountdownsEnabled: (value: boolean) => void;
@@ -206,6 +212,9 @@ export function usePreferences(): UsePreferences {
   const focusEnabled = prefs.focus_enabled !== false;
   const focusSoundEnabled = prefs.focus_sound_enabled !== false;
   const habitsEnabled = prefs.habits_enabled !== false;
+  const todayHabits = prefs.today_habits !== false;
+  // Synced, like a habit group's fold: it is a durable choice about how Today reads.
+  const todayHabitsCollapsed = prefs.today_habits_collapsed === true;
   const countdownsEnabled = prefs.countdowns_enabled !== false;
   const statsEnabled = prefs.stats_enabled !== false;
   const defaultView: SmartView = isSmartView(prefs.default_view) ? prefs.default_view : "today";
@@ -465,6 +474,11 @@ export function usePreferences(): UsePreferences {
     [setField],
   );
   const setHabitsEnabled = useCallback((v: boolean) => setField("habits_enabled", v), [setField]);
+  const setTodayHabits = useCallback((v: boolean) => setField("today_habits", v), [setField]);
+  const setTodayHabitsCollapsed = useCallback(
+    (v: boolean) => setField("today_habits_collapsed", v),
+    [setField],
+  );
   const setCountdownsEnabled = useCallback(
     (v: boolean) => setField("countdowns_enabled", v),
     [setField],
@@ -520,6 +534,10 @@ export function usePreferences(): UsePreferences {
     setFocusSoundEnabled,
     habitsEnabled,
     setHabitsEnabled,
+    todayHabits,
+    setTodayHabits,
+    todayHabitsCollapsed,
+    setTodayHabitsCollapsed,
     countdownsEnabled,
     setCountdownsEnabled,
     statsEnabled,

@@ -51,6 +51,8 @@ export function FeaturesSection() {
     setFocusSoundEnabled,
     habitsEnabled,
     setHabitsEnabled,
+    todayHabits,
+    setTodayHabits,
     countdownsEnabled,
     setCountdownsEnabled,
     statsEnabled,
@@ -81,6 +83,14 @@ export function FeaturesSection() {
           value={habitsEnabled}
           onValueChange={setHabitsEnabled}
         />
+        {habitsEnabled && (
+          <Toggle
+            label={t("settings.todayHabits")}
+            description={t("settings.todayHabitsDesc")}
+            value={todayHabits}
+            onValueChange={setTodayHabits}
+          />
+        )}
         <Toggle
           label={t("settings.stats")}
           description={t("settings.statsDesc")}
