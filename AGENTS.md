@@ -32,6 +32,17 @@
   - `apps/mobile`: jest-expo (`bun run test -- <pattern>`) — must run under real Node; under Bun's runtime it dies at load (`Attempted to assign to readonly property`).
 - A change to anything the web build bundles is worth a web export (`cd apps/mobile && bunx expo export --platform web`); a native change, a release APK build (`.github/scripts/android-gradle.sh` from `apps/mobile/android` after `bunx expo prebuild --platform android --clean`) and `android:permissions`.
 
+## Writing tests
+
+A test guards intended behavior: it changes only when that behavior changes and fails only when it regresses. Don't add a test that depends on:
+
+- **The past:** asserting that removed code, routes, fields or files stay gone. Bringing them back would be a decision, not a regression. The exception is a removal whose return would open an auth, data-exposure or E2EE hole (an unauthenticated or plaintext route, a token reaching an account-critical route, a field leaving unencrypted): keep those as security guards.
+- **Nothing:** something no change to the code can break: that the framework renders or fires events, that a mock returns what it was told to (above all a mock of the unit under test), or what the type system already guarantees.
+- **The implementation:** an expected value computed with the code's own logic (write the literal instead), private state, internal call order, or which helper ran.
+- **UI internals** (`apps/mobile`): props passed to a child, component state, or a snapshot of the tree. Assert what the user sees (text, enabled/disabled, what's on screen after an action) or what gets written to the store.
+
+Before adding a test, check that no existing test already guards the same behavior on the same path; extend that one instead. Don't add production code that exists only for a test (test-only exports, `_forTests` hooks, reset functions); test through the public API. A rule shared by `atlas-todo-rules` and `@atlastodo/todo-core` is tested through a `test-vectors/` fixture both sides read, not with parallel hand-written cases.
+
 ## Layout
 
 - `apps/mobile` — the single UI (React Native + Expo); the web app is the same code via react-native-web. Dynamic `accent-*` colors resolve to CSS variables (`--accent-<shade>` hex and `--accent-<shade>-rgb` channels from `@atlastodo/todo-core`) supporting Tailwind opacity modifiers (e.g. `bg-accent-100/60`, `dark:bg-accent-950/70`). Metro watches the workspace root (Bun's store, `node_modules/.bun`, lives there).
