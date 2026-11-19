@@ -67,7 +67,7 @@ export function HabitsDialog({ onOpenHabit }: { onOpenHabit: (habit: Habit) => v
               className="absolute inset-x-6 items-center"
             >
               <View
-                className={`h-full w-full max-w-[760px] flex-col overflow-hidden rounded-2xl ${ELEVATED_SURFACE_CLASS}`}
+                className={`h-full w-full max-w-[840px] flex-col overflow-hidden rounded-2xl ${ELEVATED_SURFACE_CLASS}`}
               >
                 {body}
               </View>

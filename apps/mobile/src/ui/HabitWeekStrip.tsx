@@ -11,6 +11,9 @@ import {
   type Habit,
 } from "@atlastodo/todo-core";
 
+/** The widest a strip on its own row spreads: seven 36px circles with about 18px between them. */
+const FULL_WIDTH_MAX = 360;
+
 /**
  * The seven days ending on the shown one, as labelled circles (weekday and date), the smallest
  * thing you can aim at to correct a day. Older days are edited on the detail screen's month
@@ -46,11 +49,13 @@ export function HabitWeekStrip({
 
   return (
     // Sharing a row with the name, a fixed gap keeps the circles one strip; on a row of their own
-    // they distribute. `justify-between` also keeps seven 36px circles inside a 320px phone.
+    // they distribute. `justify-between` also keeps seven 36px circles inside a 320px phone, and the
+    // cap stops them drifting apart on a wider row (a tablet, the habits dialog in a narrow window).
     <View
       className={
         fullWidth ? "flex-1 flex-row justify-between" : "shrink-0 flex-row justify-end gap-2"
       }
+      style={fullWidth ? { maxWidth: FULL_WIDTH_MAX } : undefined}
     >
       {days.map((day) => {
         const state = states.get(day);
