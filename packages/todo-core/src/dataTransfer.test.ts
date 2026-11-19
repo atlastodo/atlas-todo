@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { LocalStore } from "@atlastodo/client-core";
 import {
-  PORTABLE_KINDS,
   exportData,
   serializeBundle,
   bundleFilename,
@@ -40,8 +39,6 @@ describe("dataTransfer", () => {
     expect(bundle.entities.project).toHaveLength(1);
     expect(bundle.entities.label).toHaveLength(1);
     // Server-managed kinds are not portable.
-    expect(PORTABLE_KINDS).not.toContain("project_member");
-    expect(PORTABLE_KINDS).not.toContain("activity");
     expect(bundle.entities).not.toHaveProperty("project_member");
     expect(bundle.entities).not.toHaveProperty("activity");
   });

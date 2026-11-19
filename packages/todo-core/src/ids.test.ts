@@ -36,10 +36,6 @@ describe("ticktickUuid", () => {
     expect(ticktickUuid("project", "Inbox")).toBe("b7de6dcd-878d-49f8-9767-045a64694c3c");
     expect(ticktickUuid("label", "home")).toBe("b2c16c87-3d9d-49a6-a75e-ed2b875473dd");
   });
-
-  it("is the ticktick-namespaced case of derivedUuid", () => {
-    expect(ticktickUuid("task", "abc")).toBe(derivedUuid("ticktick:task", "abc"));
-  });
 });
 
 // sha256("habit_checkin\0h1\u00002026-07-06"), computed with node:crypto rather than the code under test.

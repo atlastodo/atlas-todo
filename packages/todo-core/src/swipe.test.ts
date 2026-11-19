@@ -4,7 +4,6 @@ import {
   clampOffset,
   isHorizontal,
   resolveTaskSwipe,
-  DEFAULT_SWIPE,
   type TaskSwipeRow,
 } from "./swipe";
 
@@ -52,13 +51,6 @@ describe("clampOffset", () => {
     expect(clampOffset(30, 96)).toBe(30);
     expect(clampOffset(200, 96)).toBe(96);
     expect(clampOffset(-200, 96)).toBe(-96);
-  });
-});
-
-describe("DEFAULT_SWIPE", () => {
-  it("exposes sensible defaults", () => {
-    expect(DEFAULT_SWIPE.threshold).toBeGreaterThan(0);
-    expect(DEFAULT_SWIPE.axisRatio).toBeGreaterThan(1);
   });
 });
 

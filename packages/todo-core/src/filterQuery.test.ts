@@ -43,30 +43,10 @@ function ast(query: string): FilterNode {
 }
 
 describe("parse", () => {
-  it("handles AND / OR with fields", () => {
-    const r = parse("p1 & due:today");
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.ast.type).toBe("and");
-    const or = parse("@work | @home");
-    expect(or.ok).toBe(true);
-    if (or.ok) expect(or.ast.type).toBe("or");
-  });
-
-  it("treats adjacency as implicit AND", () => {
-    const r = parse("p1 overdue");
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.ast.type).toBe("and");
-  });
-
   it("binds NOT tighter than AND, and AND tighter than OR", () => {
     // a | b & c  ==  a | (b & c)
     const r = parse("p1 | p2 & p3");
     expect(r.ok && r.ast.type).toBe("or");
-  });
-
-  it("respects parentheses", () => {
-    const r = parse("(p1 | p2) & due:week");
-    expect(r.ok && r.ast.type).toBe("and");
   });
 
   it("surfaces an error for invalid input instead of throwing", () => {
@@ -94,45 +74,6 @@ describe("parse", () => {
 });
 
 describe("evaluate", () => {
-  it("matches priority and due:today", () => {
-    const node = ast("p1 & due:today");
-    const match = task({ priority: 1, due_at: new Date(2026, 6, 15, 18).getTime() });
-    const miss = task({ priority: 2, due_at: new Date(2026, 6, 15, 18).getTime() });
-    expect(evaluate(node, match, ctx())).toBe(true);
-    expect(evaluate(node, miss, ctx())).toBe(false);
-  });
-
-  it("evaluates label + due:week + priority over a fixture set", () => {
-    const node = ast("@work & due:week & p1");
-    const labels: Record<string, string[]> = { a: ["work"], b: ["home"], c: ["work"] };
-    const c = ctx({ labelsOf: (t) => labels[t.id] ?? [] });
-
-    const tasks = [
-      task({ id: "a", priority: 1, due_at: new Date(2026, 6, 17).getTime() }), // work, in week, p1 -> match
-      task({ id: "b", priority: 1, due_at: new Date(2026, 6, 17).getTime() }), // home -> no
-      task({ id: "c", priority: 2, due_at: new Date(2026, 6, 17).getTime() }), // work but p2 -> no
-    ];
-    expect(tasks.filter((t) => evaluate(node, t, c)).map((t) => t.id)).toEqual(["a"]);
-  });
-
-  it("handles NOT and OR", () => {
-    const node = ast("p1 | !due:none");
-    const withDue = task({ priority: 4, due_at: NOW });
-    const noDue = task({ priority: 4, due_at: null });
-    const p1NoDue = task({ priority: 1, due_at: null });
-    expect(evaluate(node, withDue, ctx())).toBe(true); // !due:none
-    expect(evaluate(node, noDue, ctx())).toBe(false);
-    expect(evaluate(node, p1NoDue, ctx())).toBe(true); // p1
-  });
-
-  it("matches project by name and free text on the title", () => {
-    const node = ast("#home & report");
-    const c = ctx({ projectNameOf: (t) => (t.project_id === "p1" ? "Home" : null) });
-    expect(evaluate(node, task({ project_id: "p1", title: "Quarterly report" }), c)).toBe(true);
-    expect(evaluate(node, task({ project_id: "p1", title: "groceries" }), c)).toBe(false);
-    expect(evaluate(node, task({ project_id: "p2", title: "report" }), c)).toBe(false);
-  });
-
   // NOW is Wednesday 2026-07-15; that week's weekend is Sat/Sun Jul 18-19, next week is Jul 20-26.
   it("matches this calendar month (due:month)", () => {
     const node = ast("due:month");

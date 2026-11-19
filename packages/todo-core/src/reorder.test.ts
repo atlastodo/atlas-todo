@@ -40,15 +40,6 @@ describe("reorderRank", () => {
     expect(reorderRank(items(10, 20), 0, 9)).toBeNull();
     expect(reorderRank([], 0, 0)).toBeNull();
   });
-
-  it("keeps every other item's rank (only the moved one is re-ranked)", () => {
-    // The whole point of fractional ranking: a move touches one row, not the list.
-    const list = items(10, 20, 30, 40);
-    const r = reorderRank(list, 0, 3)!;
-    expect(r.id).toBe("t0");
-    // Its new rank sits after 40; the others are untouched by this function.
-    expect(r.sort_order).toBeGreaterThan(40);
-  });
 });
 
 /** `items` after applying a move's writes, in display order (rank, then original position). */

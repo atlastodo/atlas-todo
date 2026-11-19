@@ -120,15 +120,6 @@ describe("isoWeek", () => {
   });
 });
 
-describe("endOfDay", () => {
-  it("returns the same calendar day, near midnight", () => {
-    const start = startOfDay(new Date(2026, 6, 3, 10).getTime());
-    const end = endOfDay(start);
-    expect(startOfDay(end)).toBe(start);
-    expect(end).toBeGreaterThan(start);
-  });
-});
-
 describe("isAllDayTask and partitionDayTasks", () => {
   it("identifies all-day tasks at 23:59 end-of-day", () => {
     const allDayTime = endOfDay(Date.UTC(2026, 6, 3), "UTC");

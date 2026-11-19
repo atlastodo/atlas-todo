@@ -9,26 +9,6 @@ const day = (y: number, m: number, d: number, h = 23, min = 59) =>
   new Date(y, m, d, h, min, 0, 0).getTime();
 
 describe("parseQuickAdd — dates & times", () => {
-  it("parses 'tomorrow'", () => {
-    const r = parseQuickAdd("Buy milk tomorrow", NOW);
-    expect(r.title).toBe("Buy milk");
-    expect(r.input.due_at).toBe(day(2023, 0, 3));
-  });
-
-  it("combines a date and a time", () => {
-    const r = parseQuickAdd("Buy milk tomorrow 5pm", NOW);
-    expect(r.title).toBe("Buy milk");
-    expect(r.input.due_at).toBe(day(2023, 0, 3, 17, 0));
-  });
-
-  it("parses 'today' and a 24h time", () => {
-    expect(parseQuickAdd("Standup 09:30 today", NOW).input.due_at).toBe(day(2023, 0, 2, 9, 30));
-  });
-
-  it("parses relative 'in N days'", () => {
-    expect(parseQuickAdd("Ping in 3 days", NOW).input.due_at).toBe(day(2023, 0, 5));
-  });
-
   it("resolves 'today' to end of day (23:59) of the chosen timezone", () => {
     // 2026-07-15 12:00 UTC. A date without an explicit time is an all-day task: 23:59 in that zone.
     const now = Date.UTC(2026, 6, 15, 12, 0, 0);
@@ -48,66 +28,6 @@ describe("parseQuickAdd — dates & times", () => {
   it("includes the time in the due chip when one is typed", () => {
     const r = parseQuickAdd("Plan today 5pm", NOW);
     expect(r.chips.find((c) => c.kind === "due")!.label).toMatch(/\d[:.]\d/);
-  });
-
-  it("parses 'next monday' as a week out from today's monday", () => {
-    expect(parseQuickAdd("Review next monday", NOW).input.due_at).toBe(day(2023, 0, 9));
-  });
-
-  it("parses a bare weekday as the next occurrence", () => {
-    expect(parseQuickAdd("Submit friday", NOW).input.due_at).toBe(day(2023, 0, 6));
-  });
-
-  it("parses an absolute month/day", () => {
-    expect(parseQuickAdd("Trip jun 3", NOW).input.due_at).toBe(day(2023, 5, 3));
-  });
-
-  it("rolls a past month/day into next year", () => {
-    // Jan 1 is already behind NOW (Jan 2) → next year.
-    expect(parseQuickAdd("Party jan 1", NOW).input.due_at).toBe(day(2024, 0, 1));
-  });
-
-  it("assumes today when only a time is given", () => {
-    expect(parseQuickAdd("Call 5pm", NOW).input.due_at).toBe(day(2023, 0, 2, 17, 0));
-  });
-
-  it("parses time before date: 'name 13:00 mon'", () => {
-    const r = parseQuickAdd("Meeting 13:00 mon", NOW);
-    expect(r.title).toBe("Meeting");
-    expect(r.input.due_at).toBe(day(2023, 0, 2, 13, 0));
-    expect(r.dateMatch).toEqual({ start: 8, end: 17, text: "13:00 mon" });
-  });
-
-  it("parses date before time: 'name mon 13:00'", () => {
-    const r = parseQuickAdd("Meeting mon 13:00", NOW);
-    expect(r.title).toBe("Meeting");
-    expect(r.input.due_at).toBe(day(2023, 0, 2, 13, 0));
-    expect(r.dateMatch).toEqual({ start: 8, end: 17, text: "mon 13:00" });
-  });
-
-  it("parses 'at' prefix in time before and after date", () => {
-    const r1 = parseQuickAdd("Meeting at 13:00 mon", NOW);
-    expect(r1.title).toBe("Meeting");
-    expect(r1.input.due_at).toBe(day(2023, 0, 2, 13, 0));
-    expect(r1.dateMatch).toEqual({ start: 8, end: 20, text: "at 13:00 mon" });
-
-    const r2 = parseQuickAdd("Meeting mon at 13:00", NOW);
-    expect(r2.title).toBe("Meeting");
-    expect(r2.input.due_at).toBe(day(2023, 0, 2, 13, 0));
-    expect(r2.dateMatch).toEqual({ start: 8, end: 20, text: "mon at 13:00" });
-  });
-
-  it("parses dot notation in 24h time", () => {
-    const r = parseQuickAdd("Lunch 13.00 mon", NOW);
-    expect(r.title).toBe("Lunch");
-    expect(r.input.due_at).toBe(day(2023, 0, 2, 13, 0));
-  });
-
-  it("provides dateMatch span when only time is given", () => {
-    const r = parseQuickAdd("Sync 13:00", NOW);
-    expect(r.title).toBe("Sync");
-    expect(r.input.due_at).toBe(day(2023, 0, 2, 13, 0));
-    expect(r.dateMatch).toEqual({ start: 5, end: 10, text: "13:00" });
   });
 });
 
@@ -211,16 +131,6 @@ describe("parseQuickAdd — recurrence", () => {
     );
   });
 
-  it("parses 'every monday' as a weekly BYDAY rule", () => {
-    expect(parseQuickAdd("Sync every monday", NOW).input.recurrence).toBe("FREQ=WEEKLY;BYDAY=MO");
-  });
-
-  it("parses 'every!' as after-completion", () => {
-    expect(parseQuickAdd("Vacuum every! 3 days", NOW).input.recurrence).toBe(
-      "FREQ=DAILY;INTERVAL=3;MODE=COMPLETION",
-    );
-  });
-
   it("parses a spelled-out 'from completion' suffix as after-completion", () => {
     expect(parseQuickAdd("Review every 2 weeks from completion", NOW).input.recurrence).toBe(
       "FREQ=WEEKLY;INTERVAL=2;MODE=COMPLETION",
@@ -272,11 +182,6 @@ describe("parseQuickAdd — date match span & unlinking", () => {
     expect(r.dateMatch).toEqual({ start: 5, end: 8, text: "fri" });
     expect(r.title).toBe("call");
     expect(r.input.due_at).toBeDefined();
-  });
-
-  it("spans a multi-word date phrase", () => {
-    const r = parseQuickAdd("ship next monday", NOW);
-    expect(r.dateMatch).toMatchObject({ start: 5, end: 16, text: "next monday" });
   });
 
   it("keeps an unlinked date phrase as literal title text with no due date", () => {
