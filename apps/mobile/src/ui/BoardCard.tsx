@@ -46,6 +46,8 @@ export interface BoardCardProps {
   /** The open subtasks nested in this card, in tree order (`depth` 1 is a direct child); the subtask badge toggles them. */
   subtasks?: { task: Task; depth: number }[];
   drag?: () => void;
+  /** Report where a press began, so the column's drop-in-place menu (after `drag`) opens there. */
+  onPressIn?: (pos: MenuPos) => void;
   focused?: boolean;
   preview?: boolean;
 }
@@ -62,6 +64,7 @@ export function BoardCard({
   subtaskCount,
   subtasks = [],
   drag,
+  onPressIn,
   focused = false,
   preview = false,
 }: BoardCardProps) {
@@ -123,6 +126,7 @@ export function BoardCard({
           x: e?.nativeEvent?.pageX ?? 0,
           y: e?.nativeEvent?.pageY ?? 0,
         };
+        onPressIn?.(pressPos.current);
       }}
       onLongPress={(e) => {
         if (canDrag) {

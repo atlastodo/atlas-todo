@@ -850,6 +850,12 @@ function BoardColumn({
     scheduleOnRN(triggerIndexHaptic);
   }, [triggerIndexHaptic]);
 
+  // Where the last press on a card began: the list reports a drop in place with no position.
+  const pressPos = useRef<MenuPos>({ x: 0, y: 0 });
+  const notePressPos = useCallback((pos: MenuPos) => {
+    pressPos.current = pos;
+  }, []);
+
   const onDragRelease = useCallback(
     (from: number, to: number) => {
       const action = dragReleaseAction({
@@ -860,7 +866,7 @@ function BoardColumn({
       });
       if (action !== "menu") return;
       const task = cards[from];
-      if (task) onCardActions?.(task, { x: 0, y: 0 });
+      if (task) onCardActions?.(task, pressPos.current);
     },
     [cards, onCardActions],
   );
@@ -886,6 +892,7 @@ function BoardColumn({
       onCardDragStart={onCardDragStart}
       onContextMenu={onCardActions}
       drag={drag}
+      onPressIn={notePressPos}
     />
   );
 
@@ -1203,6 +1210,7 @@ function DraggableCard({
   onCardDragStart,
   onContextMenu,
   drag,
+  onPressIn,
 }: {
   task: Task;
   now: number;
@@ -1221,6 +1229,7 @@ function DraggableCard({
   onCardDragStart: (task: Task) => void;
   onContextMenu?: (task: Task, pos: MenuPos) => void;
   drag?: () => void;
+  onPressIn?: (pos: MenuPos) => void;
 }) {
   const ref = useRef<ViewInstance>(null);
   const bottomEdgeRef = useRef<ViewInstance>(null);
@@ -1262,6 +1271,7 @@ function DraggableCard({
         subtasks={subtasks}
         onContextMenu={onContextMenu}
         drag={drag}
+        onPressIn={onPressIn}
         focused={focused}
       />
       {isLast && (
