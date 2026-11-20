@@ -33,6 +33,10 @@ import { useStore } from "../data/StoreProvider";
 /** What the habits screen lists: only what is in play today, or every habit. */
 export type HabitsScope = "today" | "all";
 export type HabitsTip = "key" | "hold";
+const HABITS_TIP_FIELD: Record<HabitsTip, string> = {
+  key: "habits_key_tip_seen",
+  hold: "habits_hold_tip_seen",
+};
 
 /**
  * Whether the reminders master toggle is on for a raw preference bag. Default-on, so a fresh store
@@ -341,23 +345,24 @@ export function usePreferences(): UsePreferences {
     (value: HabitsScope) => setField("habits_scope", value),
     [setField],
   );
+  // One field per tip, not one map of them: synced fields merge last-writer-wins, so two devices
+  // each marking a different tip seen at once would lose one of the marks in a shared map.
+  // `habits_tip_seen` is that map, written by the 0.1.21 release candidates; still read, never written.
   const habitsTipSeen = useCallback(
     (kind: HabitsTip) => {
-      const raw = prefs.habits_tip_seen;
+      if (prefs[HABITS_TIP_FIELD[kind]] === true) return true;
+      const legacy = prefs.habits_tip_seen;
       return (
-        raw !== null && typeof raw === "object" && (raw as Record<string, unknown>)[kind] === true
+        legacy !== null &&
+        typeof legacy === "object" &&
+        (legacy as Record<string, unknown>)[kind] === true
       );
     },
     [prefs],
   );
   const setHabitsTipSeen = useCallback(
-    (kind: HabitsTip) => {
-      const raw = store.get("preference", PREF_ID)?.habits_tip_seen;
-      const base = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
-      store.set("preference", PREF_ID, "habits_tip_seen", { ...base, [kind]: true });
-      kick();
-    },
-    [store, kick],
+    (kind: HabitsTip) => setField(HABITS_TIP_FIELD[kind], true),
+    [setField],
   );
   const activityRetentionDays = activityRetentionIn(prefs);
   const setActivityRetentionDays = useCallback(
