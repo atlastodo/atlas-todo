@@ -1,11 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Platform, useWindowDimensions } from "react-native";
 import {
-  GestureStateManager,
+  Gesture,
   useNativeGesture,
   usePanGesture,
   useSimultaneousGestures,
 } from "react-native-gesture-handler";
+import type { PanGesture } from "react-native-gesture-handler";
 import {
   useAnimatedProps,
   useAnimatedScrollHandler,
@@ -157,41 +158,70 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
     },
   });
 
-  // For a list that brings its own gesture detector (the reorderable habits list), which leaves no
-  // way to run `contentPanGesture` alongside its scroll: a pan on the list's container that decides
-  // by hand, from the offset the list reports through `scrollHandler`. Scrolled down, or moving up,
-  // it fails and the list scrolls; at the top and pulling down, it takes the sheet. A press that
-  // rests before it moves is the list's long-press drag (reordering), never a pull.
-  const touchStartY = useSharedValue(0);
+  // For a list that brings its own gesture detector (the reorderable habits list): that detector
+  // already runs a pan of ours (its `panGesture`) alongside the list's native scroll, so the pull
+  // lives on that pan, the way `contentPanGesture` sits beside the menu's scroll view. A pan of its
+  // own around the list would compete with the scroll instead: the scroll view taking the touch
+  // cancelled it mid-pull, snapping the sheet back and leaving the rest of the touch to the list.
+  // The list chains its own begin/update/end/finalize callbacks onto this builder, so the pull uses
+  // only the ones it leaves alone (start, change, touches). A press that rested before it moved is
+  // the list's long-press drag (reordering), never a pull.
   const touchStartAt = useSharedValue(0);
-  const topPullGesture = usePanGesture({
-    enabled: !isWeb,
-    manualActivation: true,
-    onTouchesDown: (event) => {
-      touchStartY.value = event.allTouches[0]?.absoluteY ?? 0;
-      touchStartAt.value = Date.now();
-    },
-    onTouchesMove: (event) => {
-      const y = event.allTouches[0]?.absoluteY;
-      if (y === undefined) return;
-      const dy = y - touchStartY.value;
-      if (scrollOffset.value > 0 || dy < -5) {
-        GestureStateManager.fail(event.handlerTag);
-      } else if (dy > 8) {
-        if (Date.now() - touchStartAt.value > LONG_PRESS_MS)
-          GestureStateManager.fail(event.handlerTag);
-        else GestureStateManager.activate(event.handlerTag);
+  const heldBeforeMoving = useSharedValue(false);
+  const lastTranslationY = useSharedValue(0);
+  const lastVelocityY = useSharedValue(0);
+  const listDragPan = useMemo(() => {
+    const endPull = (canDismiss: boolean) => {
+      "worklet";
+      if (!dragging.value) return;
+      dragging.value = false;
+      if (canDismiss) {
+        settleDrag(lastTranslationY.value - dragStart.value, lastVelocityY.value, true);
+      } else {
+        translateY.value = withTiming(0, { duration: 150 });
       }
-    },
-    onUpdate: (event) => {
-      translateY.value = Math.max(0, event.translationY);
-    },
-    onDeactivate: (event) => {
-      settleDrag(event.translationY, event.velocityY, !event.canceled);
-    },
-  });
+    };
+    // Vertical only, as `useDragPan`; see there for why there is no `failOffsetX`.
+    return Gesture.Pan()
+      .activeOffsetY([-10, 10])
+      .onTouchesDown(() => {
+        "worklet";
+        touchStartAt.value = Date.now();
+      })
+      .onStart(() => {
+        "worklet";
+        heldBeforeMoving.value = Date.now() - touchStartAt.value > LONG_PRESS_MS;
+      })
+      .onChange((event) => {
+        "worklet";
+        lastTranslationY.value = event.translationY;
+        lastVelocityY.value = event.velocityY;
+        if (
+          !dragging.value &&
+          !heldBeforeMoving.value &&
+          scrollOffset.value <= 0 &&
+          event.translationY > 0
+        ) {
+          dragging.value = true;
+          dragStart.value = event.translationY;
+        }
+        if (dragging.value) {
+          translateY.value = Math.max(0, event.translationY - dragStart.value);
+        }
+      })
+      .onTouchesUp(() => {
+        "worklet";
+        endPull(true);
+      })
+      .onTouchesCancelled(() => {
+        "worklet";
+        endPull(false);
+      }) as unknown as PanGesture;
+    // `settleDrag` is rebuilt each render but reads only shared values, `dismissTargetY` and `onClose`.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [dismissTargetY, onClose]);
 
-  /** For the sheet's scroll view: frozen while a pull drives the sheet. */
+  /** For the sheet's scroll view (or `listDragPan`'s list): frozen while a pull drives the sheet. */
   const scrollAnimatedProps = useAnimatedProps(() => ({ scrollEnabled: !dragging.value }));
 
   const composedGesture = useSimultaneousGestures(contentPanGesture, nativeScrollGesture);
@@ -208,7 +238,7 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
     scrollHandler,
     composedGesture,
     contentPanGesture,
-    topPullGesture,
+    listDragPan,
     nativeScrollGesture,
     scrollAnimatedProps,
   };

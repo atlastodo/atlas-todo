@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import ReorderableList, { type ReorderableListReorderEvent } from "react-native-reorderable-list";
+import type { PanGesture } from "react-native-gesture-handler";
 import Animated, { type useAnimatedScrollHandler } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import {
@@ -415,11 +416,17 @@ export function HabitsScreen({
   now,
   onOpenHabit,
   onListScroll,
+  listDragPan,
+  listAnimatedProps,
 }: {
   now?: number;
   onOpenHabit?: (habit: Habit) => void;
   /** The list's scroll, for a sheet around the screen that pulls down from the top (the habits drawer). */
   onListScroll?: ReturnType<typeof useAnimatedScrollHandler>;
+  /** That sheet's pull, run on the list's drag pan beside its scroll (replaces the plain drag pan). */
+  listDragPan?: PanGesture;
+  /** That sheet's animated list props: the scroll frozen while the pull drives the sheet. */
+  listAnimatedProps?: object;
 }) {
   const { t } = useTranslation();
   const liveNow = useNow();
@@ -734,8 +741,10 @@ export function HabitsScreen({
                 )}
               </View>
             }
-            panGesture={dragPan}
+            panGesture={listDragPan ?? dragPan}
             onScroll={onListScroll}
+            // Not in the list's types, but passed through to its animated FlatList.
+            {...(listAnimatedProps ? { animatedProps: listAnimatedProps } : {})}
             // A worklet: the library calls this on the UI thread, and a plain arrow throws there.
             onDragEnd={({ from, to }) => {
               "worklet";

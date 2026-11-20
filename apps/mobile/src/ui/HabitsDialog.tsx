@@ -31,8 +31,17 @@ export function HabitsDialog({ onOpenHabit }: { onOpenHabit: (habit: Habit) => v
   const isWide = useIsWide();
   const insets = useSafeAreaInsets();
   // The phone drawer slides in, and out on a pull down its header, like the app's other sheets.
-  const { isWeb, dismiss, animatedStyle, headerPanGesture, topPullGesture, scrollHandler } =
-    useSheetDismiss(closeHabits, open && !isWide);
+  const {
+    isWeb,
+    dismiss,
+    animatedStyle,
+    headerPanGesture,
+    listDragPan,
+    scrollAnimatedProps,
+    scrollHandler,
+  } = useSheetDismiss(closeHabits, open && !isWide);
+  // The drawer's pull from the top of the list, on native only (web has no pull to close).
+  const pullsDown = !isWide && !isWeb;
   if (!enabled) return null;
   // The drawer slides itself out; the wide dialog has nothing to slide.
   const close = isWide ? closeHabits : dismiss;
@@ -51,7 +60,9 @@ export function HabitsDialog({ onOpenHabit }: { onOpenHabit: (habit: Habit) => v
     <View className="flex-1">
       <HabitsScreen
         // The drawer's pull from the top of the list reads where the list is scrolled to.
-        onListScroll={isWide ? undefined : scrollHandler}
+        onListScroll={pullsDown ? scrollHandler : undefined}
+        listDragPan={pullsDown ? listDragPan : undefined}
+        listAnimatedProps={pullsDown ? scrollAnimatedProps : undefined}
         onOpenHabit={(habit) => {
           closeHabits();
           onOpenHabit(habit);
@@ -113,7 +124,7 @@ export function HabitsDialog({ onOpenHabit }: { onOpenHabit: (habit: Habit) => v
                 className="flex-1 flex-col overflow-hidden rounded-t-3xl border-t border-neutral-200 bg-white dark:border-neutral-700 dark:bg-zinc-900"
               >
                 <GestureDetector gesture={headerPanGesture}>{header}</GestureDetector>
-                <GestureDetector gesture={topPullGesture}>{list}</GestureDetector>
+                {list}
               </View>
             </Animated.View>
           )}
