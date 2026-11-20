@@ -156,8 +156,9 @@ export function FloatingAddButton({
         }}
       >
         {holdable && (
-          // A slot of its own above the add button, so the habits button lies inside this box
-          // (Android delivers no touches outside a parent's bounds). Untouchable while put away.
+          // A slot of its own above the add button, in the column's layout rather than overflowing
+          // it, so the column's box (and so the screen it reserves) covers the habits button.
+          // Untouchable while put away.
           <Animated.View
             style={[
               {
