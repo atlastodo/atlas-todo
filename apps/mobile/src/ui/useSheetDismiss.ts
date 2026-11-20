@@ -202,9 +202,11 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
           translateY.value = Math.max(0, event.translationY - dragStart.value);
         }
       })
-      .onTouchesUp(() => {
+      .onTouchesUp((event) => {
         "worklet";
-        endPull(true);
+        // Only the last finger off ends the pull: one of two lifting must not settle the sheet
+        // under the other.
+        if (event.numberOfTouches === 0) endPull(true);
       })
       .onTouchesCancelled(() => {
         "worklet";
