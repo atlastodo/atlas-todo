@@ -44,9 +44,6 @@ export const PLACEHOLDER_COLOR = "#737373";
 export const DISABLED_BUTTON_CLASS = "bg-neutral-200 dark:bg-neutral-800";
 export const DISABLED_BUTTON_TEXT_CLASS = "text-neutral-500 dark:text-neutral-400";
 
-/** Longer than this at rest before moving, a press belongs to a long-press drag, not a pull. */
-const LONG_PRESS_MS = 200;
-
 /**
  * Slide-in, pull-down dismissal and animation shared by the bottom sheets. Native slides the
  * sheet in on `visible` and out on dismiss; web and tests close immediately.
@@ -164,10 +161,10 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
   // own around the list would compete with the scroll instead: the scroll view taking the touch
   // cancelled it mid-pull, snapping the sheet back and leaving the rest of the touch to the list.
   // The list chains its own begin/update/end/finalize callbacks onto this builder, so the pull uses
-  // only the ones it leaves alone (start, change, touches). A press that rested before it moved is
-  // the list's long-press drag (reordering), never a pull.
-  const touchStartAt = useSharedValue(0);
-  const heldBeforeMoving = useSharedValue(false);
+  // only the ones it leaves alone (change, touches). A touch in which the list lifted a row to
+  // reorder it (`onListDragStart`, the list's `onDragStart`) is that drag's, never a pull: told by
+  // the lift itself, not by how long the finger rested, so a slow pull still pulls.
+  const reordering = useSharedValue(false);
   const lastTranslationY = useSharedValue(0);
   const lastVelocityY = useSharedValue(0);
   const listDragPan = useMemo(() => {
@@ -184,24 +181,20 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
     // Vertical only, as `useDragPan`; see there for why there is no `failOffsetX`.
     return Gesture.Pan()
       .activeOffsetY([-10, 10])
-      .onTouchesDown(() => {
+      .onTouchesDown((event) => {
         "worklet";
-        touchStartAt.value = Date.now();
-      })
-      .onStart(() => {
-        "worklet";
-        heldBeforeMoving.value = Date.now() - touchStartAt.value > LONG_PRESS_MS;
+        // A new touch, not a second finger joining one: whatever the last touch reordered is over.
+        if (event.numberOfTouches === 1) reordering.value = false;
       })
       .onChange((event) => {
         "worklet";
         lastTranslationY.value = event.translationY;
         lastVelocityY.value = event.velocityY;
-        if (
-          !dragging.value &&
-          !heldBeforeMoving.value &&
-          scrollOffset.value <= 0 &&
-          event.translationY > 0
-        ) {
+        if (reordering.value) {
+          endPull(false);
+          return;
+        }
+        if (!dragging.value && scrollOffset.value <= 0 && event.translationY > 0) {
           dragging.value = true;
           dragStart.value = event.translationY;
         }
@@ -221,6 +214,12 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [dismissTargetY, onClose]);
 
+  /** For the list's `onDragStart` (a worklet, run on the UI thread): a row was lifted to reorder. */
+  const onListDragStart = () => {
+    "worklet";
+    reordering.value = true;
+  };
+
   /** For the sheet's scroll view (or `listDragPan`'s list): frozen while a pull drives the sheet. */
   const scrollAnimatedProps = useAnimatedProps(() => ({ scrollEnabled: !dragging.value }));
 
@@ -239,6 +238,7 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
     composedGesture,
     contentPanGesture,
     listDragPan,
+    onListDragStart,
     nativeScrollGesture,
     scrollAnimatedProps,
   };

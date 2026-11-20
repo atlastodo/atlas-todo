@@ -418,6 +418,7 @@ export function HabitsScreen({
   onListScroll,
   listDragPan,
   listAnimatedProps,
+  onListDragStart,
 }: {
   now?: number;
   onOpenHabit?: (habit: Habit) => void;
@@ -427,6 +428,8 @@ export function HabitsScreen({
   listDragPan?: PanGesture;
   /** That sheet's animated list props: the scroll frozen while the pull drives the sheet. */
   listAnimatedProps?: object;
+  /** That sheet's word that a row was lifted to reorder (a worklet: run on the UI thread). */
+  onListDragStart?: () => void;
 }) {
   const { t } = useTranslation();
   const liveNow = useNow();
@@ -743,6 +746,7 @@ export function HabitsScreen({
             }
             panGesture={listDragPan ?? dragPan}
             onScroll={onListScroll}
+            onDragStart={onListDragStart}
             // Not in the list's types, but passed through to its animated FlatList.
             {...(listAnimatedProps ? { animatedProps: listAnimatedProps } : {})}
             // A worklet: the library calls this on the UI thread, and a plain arrow throws there.

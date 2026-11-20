@@ -37,6 +37,7 @@ export function HabitsDialog({ onOpenHabit }: { onOpenHabit: (habit: Habit) => v
     animatedStyle,
     headerPanGesture,
     listDragPan,
+    onListDragStart,
     scrollAnimatedProps,
     scrollHandler,
   } = useSheetDismiss(closeHabits, open && !isWide);
@@ -63,6 +64,7 @@ export function HabitsDialog({ onOpenHabit }: { onOpenHabit: (habit: Habit) => v
         onListScroll={pullsDown ? scrollHandler : undefined}
         listDragPan={pullsDown ? listDragPan : undefined}
         listAnimatedProps={pullsDown ? scrollAnimatedProps : undefined}
+        onListDragStart={pullsDown ? onListDragStart : undefined}
         onOpenHabit={(habit) => {
           closeHabits();
           onOpenHabit(habit);
