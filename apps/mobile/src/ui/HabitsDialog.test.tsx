@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { LocalStore } from "@atlastodo/client-core";
 import { PREFERENCES_ID } from "@atlastodo/todo-core";
 import { withApp } from "../testutil";
@@ -132,6 +132,33 @@ describe("opening habits from the add button", () => {
 
     await fireEvent.press(screen.getByLabelText("Add"));
     expect(onAdd).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("turning habits off", () => {
+  it("puts the habits button away, so + adds again", async () => {
+    const store = storeWithHabit();
+    const onAdd = await renderButton(store);
+    await holdAndRelease(0);
+
+    await act(() => store.set("preference", PREFERENCES_ID, "habits_enabled", false));
+
+    expect(screen.queryByLabelText("Open habits")).toBeNull();
+    await fireEvent.press(screen.getByLabelText("Add"));
+    expect(onAdd).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes the habits dialog, which stays closed when habits come back on", async () => {
+    const store = storeWithHabit();
+    await renderButton(store);
+    await holdAndRelease(-68);
+    expect(screen.getByText("Meditate")).toBeTruthy();
+
+    await act(() => store.set("preference", PREFERENCES_ID, "habits_enabled", false));
+    expect(screen.queryByText("Meditate")).toBeNull();
+    await act(() => store.set("preference", PREFERENCES_ID, "habits_enabled", true));
+
+    expect(screen.queryByText("Meditate")).toBeNull();
   });
 });
 

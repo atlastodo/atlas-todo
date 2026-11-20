@@ -86,6 +86,14 @@ export function FloatingAddButton({
   const [revealed, setRevealed] = useState(false);
   const [holding, setHolding] = useState(false);
   const [over, setOver] = useState(false);
+  // Habits turned off (here or on another device) while the button was out: put it away, or its
+  // backdrop would linger and the next tap of + would only put it away instead of adding.
+  if (!holdable && (revealed || holding || over)) {
+    origin.current = null;
+    setRevealed(false);
+    setHolding(false);
+    setOver(false);
+  }
   const reveal = useSharedValue(0);
   useEffect(() => {
     reveal.value = withTiming(revealed ? 1 : 0, SLIDE);

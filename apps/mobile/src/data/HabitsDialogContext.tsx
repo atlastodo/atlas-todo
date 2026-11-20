@@ -29,6 +29,8 @@ export function HabitsDialogProvider({ children }: { children: ReactNode }) {
   const holdTipDue = enabled && habits.length + habitGroups.length > 0 && !habitsTipSeen("hold");
   const dismissHoldTip = useCallback(() => setHabitsTipSeen("hold"), [setHabitsTipSeen]);
   const [open, setOpen] = useState(false);
+  // Closed for good when habits are turned off while it is open, not hidden until they come back on.
+  if (!enabled && open) setOpen(false);
   const openHabits = useCallback(() => setOpen(true), []);
   const closeHabits = useCallback(() => setOpen(false), []);
   const value = useMemo(
