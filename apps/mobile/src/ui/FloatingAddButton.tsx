@@ -175,6 +175,9 @@ export function FloatingAddButton({
               accessibilityElementsHidden={!revealed}
               importantForAccessibility={revealed ? "auto" : "no-hide-descendants"}
               onPress={openHabits}
+              // Orange 600 on white and 400 on the dark surface: both clear the 3:1 an icon needs
+              // (the 500 it was, on white, did not). Hovered, white on orange 600.
+              className={over ? "bg-orange-600" : "bg-white dark:bg-neutral-800"}
               style={[
                 {
                   width: HABITS_SIZE,
@@ -182,7 +185,6 @@ export function FloatingAddButton({
                   borderRadius: HABITS_SIZE / 2,
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: over ? "#f97316" : "#ffffff",
                 },
                 Platform.select({
                   ios: {
@@ -197,7 +199,10 @@ export function FloatingAddButton({
                 }),
               ]}
             >
-              <Flame size={24} color={over ? "#ffffff" : "#f97316"} />
+              <Flame
+                size={24}
+                className={over ? "text-white" : "text-orange-600 dark:text-orange-400"}
+              />
             </Pressable>
           </Animated.View>
         )}
