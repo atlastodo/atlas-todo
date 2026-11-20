@@ -926,6 +926,7 @@
     "openHabits": "Otwórz nawyki",
     "tipKey": "Wskazówka: naciśnij H, aby otworzyć nawyki z dowolnego miejsca.",
     "tipHold": "Wskazówka: przytrzymaj +, aby otworzyć nawyki.",
+    "tipHoldHint": "Ukrywa tę wskazówkę na stałe",
     "delete": "Usuń: {{name}}",
     "history": "Historia",
     "toggleWeekday": "Przełącz: {{day}}",

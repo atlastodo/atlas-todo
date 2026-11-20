@@ -903,6 +903,7 @@
     "openHabits": "Abrir hábitos",
     "tipKey": "Consejo: pulsa H para abrir tus hábitos desde cualquier lugar.",
     "tipHold": "Consejo: mantén pulsado + para abrir tus hábitos.",
+    "tipHoldHint": "Oculta este consejo para siempre",
     "delete": "Eliminar {{name}}",
     "history": "Historial",
     "toggleWeekday": "Alternar {{day}}",

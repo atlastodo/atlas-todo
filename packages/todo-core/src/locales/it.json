@@ -903,6 +903,7 @@
     "openHabits": "Apri le abitudini",
     "tipKey": "Suggerimento: premi H per aprire le tue abitudini ovunque.",
     "tipHold": "Suggerimento: tieni premuto + per aprire le tue abitudini.",
+    "tipHoldHint": "Nasconde questo suggerimento per sempre",
     "delete": "Elimina {{name}}",
     "history": "Cronologia",
     "toggleWeekday": "Attiva/disattiva {{day}}",

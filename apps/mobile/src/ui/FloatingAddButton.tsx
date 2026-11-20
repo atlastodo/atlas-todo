@@ -212,7 +212,7 @@ export function FloatingAddButton({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("habits.tipHold")}
-            accessibilityHint={t("common.close")}
+            accessibilityHint={t("habits.tipHoldHint")}
             onPress={habitsDialog.dismissHoldTip}
             style={{ position: "absolute", right: 0, bottom: ADD_SIZE + HABITS_GAP, width: 220 }}
             className="flex-row items-start gap-2 rounded-xl bg-neutral-900 px-3 py-2.5 shadow-lg dark:bg-neutral-100"

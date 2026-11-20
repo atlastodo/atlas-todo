@@ -880,6 +880,7 @@
     "openHabits": "Gewohnheiten öffnen",
     "tipKey": "Tipp: Drücke H, um deine Gewohnheiten von überall zu öffnen.",
     "tipHold": "Tipp: Halte + gedrückt, um deine Gewohnheiten zu öffnen.",
+    "tipHoldHint": "Blendet diesen Tipp dauerhaft aus",
     "delete": "{{name}} löschen",
     "history": "Verlauf",
     "toggleWeekday": "{{day}} umschalten",

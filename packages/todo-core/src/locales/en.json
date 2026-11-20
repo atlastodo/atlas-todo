@@ -880,6 +880,7 @@
     "openHabits": "Open habits",
     "tipKey": "Tip: press H to open your habits from anywhere.",
     "tipHold": "Tip: press and hold + to open your habits.",
+    "tipHoldHint": "Hides this tip for good",
     "delete": "Delete {{name}}",
     "history": "History",
     "toggleWeekday": "Toggle {{day}}",

@@ -903,6 +903,7 @@
     "openHabits": "Ouvrir les habitudes",
     "tipKey": "Astuce : appuyez sur H pour ouvrir vos habitudes depuis n’importe où.",
     "tipHold": "Astuce : maintenez + appuyé pour ouvrir vos habitudes.",
+    "tipHoldHint": "Masque cette astuce définitivement",
     "delete": "Supprimer {{name}}",
     "history": "Historique",
     "toggleWeekday": "Basculer {{day}}",

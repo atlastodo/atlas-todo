@@ -880,6 +880,7 @@
     "openHabits": "Gewoontes openen",
     "tipKey": "Tip: druk op H om je gewoontes overal te openen.",
     "tipHold": "Tip: houd + ingedrukt om je gewoontes te openen.",
+    "tipHoldHint": "Verbergt deze tip voorgoed",
     "delete": "{{name}} verwijderen",
     "history": "Geschiedenis",
     "toggleWeekday": "{{day}} omschakelen",

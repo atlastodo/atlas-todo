@@ -880,6 +880,7 @@
     "openHabits": "Åbn vaner",
     "tipKey": "Tip: tryk H for at åbne dine vaner hvor som helst.",
     "tipHold": "Tip: hold + nede for at åbne dine vaner.",
+    "tipHoldHint": "Skjuler dette tip for altid",
     "delete": "Slet {{name}}",
     "history": "Historik",
     "toggleWeekday": "Skift {{day}}",
