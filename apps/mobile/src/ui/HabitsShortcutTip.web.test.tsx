@@ -48,7 +48,10 @@ async function renderTip(store: LocalStore) {
 }
 
 describe("HabitsShortcutTip", () => {
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    delete (window as { matchMedia?: unknown }).matchMedia;
+  });
 
   it("tells a keyboard user about H once, after the first habit", async () => {
     jest.spyOn(useIsWideModule, "useIsWide").mockReturnValue(true);
@@ -63,6 +66,16 @@ describe("HabitsShortcutTip", () => {
 
   it("leaves a narrow window to the add button's own tip", async () => {
     jest.spyOn(useIsWideModule, "useIsWide").mockReturnValue(false);
+    await renderTip(storeWithHabit());
+    expect(screen.queryByText(TIP)).toBeNull();
+  });
+
+  it("does not tell a touch-only tablet about a key it has no keyboard for", async () => {
+    jest.spyOn(useIsWideModule, "useIsWide").mockReturnValue(true);
+    (window as { matchMedia?: unknown }).matchMedia = (query: string) => ({
+      matches: false,
+      media: query,
+    });
     await renderTip(storeWithHabit());
     expect(screen.queryByText(TIP)).toBeNull();
   });

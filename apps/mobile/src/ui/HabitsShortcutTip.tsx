@@ -8,7 +8,17 @@ import { useHabitsDialog } from "../data/HabitsDialogContext";
 import { useToast } from "../data/ToastProvider";
 
 /**
- * Teaches H once, where there is a keyboard layout (wide web, desktop), as a toast with an Open
+ * Whether the browser has a precise pointer (a mouse or trackpad): the best sign a page gets of a
+ * keyboard, which it cannot detect itself. A touch-only tablet has none. Assumed where it cannot
+ * be asked.
+ */
+function hasFinePointer(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return true;
+  return window.matchMedia("(any-pointer: fine)").matches;
+}
+
+/**
+ * Teaches H once, where there is a keyboard layout (wide web, desktop, not a touch-only tablet), as a toast with an Open
  * action. It waits for the first habit, so someone who does not use habits is never told about
  * them, and is recorded as seen (synced) the moment it shows. A phone is taught the add button's
  * press-and-hold by a callout on the button itself (`FloatingAddButton`): a toast there is too
@@ -21,7 +31,7 @@ export function HabitsShortcutTip() {
   const { habitsTipSeen, setHabitsTipSeen } = usePreferences();
   const { enabled, openHabits } = useHabitsDialog();
   const isWide = useIsWide();
-  const keyboard = Platform.OS === "web" && isWide;
+  const keyboard = Platform.OS === "web" && isWide && hasFinePointer();
   const due =
     keyboard && enabled && habits.length + habitGroups.length > 0 && !habitsTipSeen("key");
 
