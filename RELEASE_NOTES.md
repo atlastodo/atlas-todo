@@ -1,4 +1,4 @@
-## v0.1.21-rc.3
+## v0.1.21-rc.4
 
-### Features
-- Pull the habits drawer down from the top of its list
+### Fixes
+- Keep the habits drawer pull from snapping back
