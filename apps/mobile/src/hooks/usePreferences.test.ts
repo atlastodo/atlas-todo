@@ -91,7 +91,7 @@ describe("usePreferences writes", () => {
     expect((read(store, "menu_smart_views") as Record<string, boolean>)?.today).toBe(false);
   });
 
-  it("kicks a sync only through the provider's kick", async () => {
+  it("follows the store when another writer changes a setting", async () => {
     // The store is the source of truth; the hook must not keep its own copy of a setting.
     const { store, view } = await mount();
     await act(() => view.result.current.setTheme("light"));

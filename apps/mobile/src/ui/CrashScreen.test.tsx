@@ -1,4 +1,3 @@
-import { Component, type ReactNode } from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
 import { CrashScreen } from "./CrashScreen";
 import { lastCopiedText } from "../testutil";
@@ -49,37 +48,10 @@ describe("CrashScreen", () => {
     expect(lastCopiedText()).toContain("kaboom");
   });
 
-  it("renders after a real React throw", async () => {
-    // The rest of this file drives the fallback directly. This proves it survives being mounted the
-    // way it actually is -- by a boundary, replacing a subtree that just threw during render --
-    // without pulling expo-router's module graph into the test.
-    // React reports the throw it hands to the boundary; that report is part of the scenario.
-    const reported = jest.spyOn(console, "error").mockImplementation(() => {});
-    await render(
-      <TestBoundary>
-        <Exploding />
-      </TestBoundary>,
-    );
+  it("shows what went wrong", async () => {
+    await render(<CrashScreen error={new Error("render exploded")} report="sent" />);
 
     expect(screen.getByText("Something went wrong")).toBeTruthy();
     expect(screen.getByText("render exploded")).toBeTruthy();
-    expect(reported).toHaveBeenCalled();
-    reported.mockRestore();
   });
 });
-
-function Exploding(): ReactNode {
-  throw new Error("render exploded");
-}
-
-/** A six-line stand-in for expo-router's `Try`, so no router is needed to exercise the fallback. */
-class TestBoundary extends Component<{ children: ReactNode }, { error?: Error }> {
-  state: { error?: Error } = {};
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-  render() {
-    const { error } = this.state;
-    return error ? <CrashScreen error={error} report="sent" /> : this.props.children;
-  }
-}

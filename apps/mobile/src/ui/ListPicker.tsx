@@ -74,16 +74,16 @@ export function ListPicker<T extends string>({
     return options.filter((o) => o.label.toLowerCase().includes(q));
   }, [options, query]);
 
-  const close = () => {
-    setOpen(false);
-    setQuery("");
-  };
+  // The query resets on open (in `toggleOpen`), not here: clearing it on close would show every
+  // option while the web dialog fades out.
+  const close = () => setOpen(false);
 
   const toggleOpen = () => {
     if (open) {
       close();
       return;
     }
+    setQuery("");
     if (isWeb) {
       if (typeof window !== "undefined") {
         const el = triggerRef.current as unknown as HTMLElement | null;

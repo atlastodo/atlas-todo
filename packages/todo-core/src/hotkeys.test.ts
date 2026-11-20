@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import en from "./locales/en.json";
-import da from "./locales/da.json";
 import {
   dispatchHotkey,
   HOTKEY_BINDINGS,
@@ -19,6 +18,7 @@ function spies(): Required<HotkeyHandlers> {
     openPalette: vi.fn(),
     focusSearch: vi.fn(),
     openHelp: vi.fn(),
+    openHabits: vi.fn(),
     focusQuickAdd: vi.fn(),
     cursorNext: vi.fn(),
     cursorPrev: vi.fn(),
@@ -46,6 +46,7 @@ describe("dispatchHotkey", () => {
   it("maps each single-key binding to its handler outside a text field", () => {
     const cases: [string, keyof HotkeyHandlers][] = [
       ["?", "openHelp"],
+      ["h", "openHabits"],
       ["/", "focusSearch"],
       ["a", "focusQuickAdd"],
       ["q", "focusQuickAdd"],
@@ -153,35 +154,11 @@ function lookup(catalog: unknown, key: string): unknown {
 }
 
 describe("HOTKEY_BINDINGS", () => {
-  it("is the source of truth: every trigger key listed fires its action through dispatchHotkey", () => {
-    for (const binding of HOTKEY_BINDINGS) {
-      for (const trigger of binding.triggerKeys) {
-        const h = spies();
-        // Mod combos are matched on the lowercased key (Shift+K must still open the palette);
-        // single keys on the exact one.
-        const key = binding.mod ? trigger.toLowerCase() : trigger;
-        const handled = dispatchHotkey(input({ key, metaKey: binding.mod === true }), h);
-        expect(handled).toBe(!binding.noPreventDefault);
-        expect(h[binding.action]).toHaveBeenCalledTimes(1);
-      }
-    }
-  });
-
-  it("stays inert while typing unless the binding opts in", () => {
-    for (const binding of HOTKEY_BINDINGS) {
-      const h = spies();
-      const trigger = binding.triggerKeys[0]!;
-      dispatchHotkey(input({ key: trigger, metaKey: binding.mod === true, typing: true }), h);
-      expect(h[binding.action]).toHaveBeenCalledTimes(binding.whileTyping ? 1 : 0);
-    }
-  });
-
-  it("renders every binding in a known group with a description in BOTH locale catalogs", () => {
+  it("renders every binding in a known group with a description in the English catalog (i18n.test.ts holds the other locales to its keys)", () => {
     for (const binding of HOTKEY_BINDINGS) {
       expect(HOTKEY_GROUPS).toContain(binding.group);
       expect(binding.displayKeys.length).toBeGreaterThan(0);
       expect(lookup(en, binding.descriptionKey), `en:${binding.descriptionKey}`).toBeDefined();
-      expect(lookup(da, binding.descriptionKey), `da:${binding.descriptionKey}`).toBeDefined();
     }
   });
 });

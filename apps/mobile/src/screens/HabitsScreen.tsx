@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import ReorderableList, { type ReorderableListReorderEvent } from "react-native-reorderable-list";
-import Animated from "react-native-reanimated";
+import type { PanGesture } from "react-native-gesture-handler";
+import Animated, { type useAnimatedScrollHandler } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import {
   dateKeyFromMs,
@@ -86,6 +87,7 @@ function HabitGroupHeader({
   onToggle,
   onOpen,
   onOpenActions,
+  onPressIn,
 }: {
   group: Habit;
   summary: HabitGroupSummary;
@@ -96,6 +98,8 @@ function HabitGroupHeader({
   onToggle: (group: Habit) => void;
   onOpen?: (habit: Habit) => void;
   onOpenActions: (habit: Habit, pos: MenuPos) => void;
+  /** Where a press began, so a hold that lifts and drops in place opens its menu there. */
+  onPressIn: (pos: MenuPos) => void;
 }) {
   const { t } = useTranslation();
   const Icon = projectIconFor(group.icon);
@@ -116,6 +120,7 @@ function HabitGroupHeader({
         onPress={() => onOpen?.(group)}
         // A hold that goes nowhere opens the menu instead, like a habit card.
         onLongPress={startDrag}
+        onPressIn={(event) => onPressIn({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY })}
         delayLongPress={220}
         className="min-w-0 flex-1"
       >
@@ -156,7 +161,7 @@ function HabitGroupHeader({
         accessibilityState={{ expanded }}
         onPress={() => onToggle(group)}
         hitSlop={8}
-        className="p-1"
+        className="rounded-full p-1"
       >
         {expanded ? (
           <ChevronUp size={16} className="text-neutral-500" />
@@ -172,7 +177,7 @@ function HabitGroupHeader({
           onOpenActions(group, { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY })
         }
         hitSlop={8}
-        className="p-1"
+        className="rounded-full p-1"
       >
         <EllipsisVertical size={16} className="text-neutral-500" />
       </Pressable>
@@ -193,6 +198,7 @@ function HabitCard({
   onOpen,
   onOpenActions,
   inlineStrip,
+  onPressIn,
 }: {
   habit: Habit;
   summary: HabitSummary;
@@ -208,6 +214,8 @@ function HabitCard({
   onOpenActions: (habit: Habit, pos: MenuPos) => void;
   /** Whether the list is wide enough for the week strip beside the name (see `STRIP_INLINE_MIN_WIDTH`). */
   inlineStrip: boolean;
+  /** Where a press began, so a hold that lifts and drops in place opens its menu there. */
+  onPressIn: (pos: MenuPos) => void;
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -316,6 +324,9 @@ function HabitCard({
               accessibilityLabel={t("habits.open", { name: habit.name })}
               onPress={() => onOpen?.(habit)}
               onLongPress={startDrag}
+              onPressIn={(event) =>
+                onPressIn({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY })
+              }
               delayLongPress={220}
               className="min-w-0 flex-1"
             >
@@ -361,7 +372,7 @@ function HabitCard({
                 accessibilityState={{ expanded }}
                 onPress={() => onToggleExpand(habit)}
                 hitSlop={8}
-                className="p-1"
+                className="rounded-full p-1"
               >
                 {expanded ? (
                   <ChevronUp size={16} className="text-neutral-500" />
@@ -378,7 +389,7 @@ function HabitCard({
                 onOpenActions(habit, { x: event.nativeEvent.pageX, y: event.nativeEvent.pageY })
               }
               hitSlop={8}
-              className="p-1"
+              className="rounded-full p-1"
             >
               <EllipsisVertical size={16} className="text-neutral-500" />
             </Pressable>
@@ -414,9 +425,21 @@ const STRIP_INLINE_MIN_WIDTH = 760;
 export function HabitsScreen({
   now,
   onOpenHabit,
+  onListScroll,
+  listDragPan,
+  listAnimatedProps,
+  onListDragStart,
 }: {
   now?: number;
   onOpenHabit?: (habit: Habit) => void;
+  /** The list's scroll, for a sheet around the screen that pulls down from the top (the habits drawer). */
+  onListScroll?: ReturnType<typeof useAnimatedScrollHandler>;
+  /** That sheet's pull, run on the list's drag pan beside its scroll (replaces the plain drag pan). */
+  listDragPan?: PanGesture;
+  /** That sheet's animated list props: the scroll frozen while the pull drives the sheet. */
+  listAnimatedProps?: object;
+  /** That sheet's word that a row was lifted to reorder (a worklet: run on the UI thread). */
+  onListDragStart?: () => void;
 }) {
   const { t } = useTranslation();
   const liveNow = useNow();
@@ -452,6 +475,12 @@ export function HabitsScreen({
   const dragPan = useDragPan();
 
   const openActions = useCallback((habit: Habit, pos: MenuPos) => setMenu({ habit, pos }), []);
+  // Where the last press on a row began: a hold lifts the row, and one dropped where it was lifted
+  // opens the row's menu (`onDragRelease`), which the list reports with no position of its own.
+  const pressPos = useRef<MenuPos>({ x: 0, y: 0 });
+  const notePressPos = useCallback((pos: MenuPos) => {
+    pressPos.current = pos;
+  }, []);
 
   const groupById = useMemo(
     () => new Map(habits.filter((h) => h.kind === "group").map((g) => [g.id, g])),
@@ -503,7 +532,7 @@ export function HabitsScreen({
       });
       const row = rows[from];
       if (action !== "menu" || !row) return;
-      openActions(row.kind === "group" ? row.group : row.habit, { x: 0, y: 0 });
+      openActions(row.kind === "group" ? row.group : row.habit, pressPos.current);
     },
     [rows, openActions],
   );
@@ -731,7 +760,11 @@ export function HabitsScreen({
                 )}
               </View>
             }
-            panGesture={dragPan}
+            panGesture={listDragPan ?? dragPan}
+            onScroll={onListScroll}
+            onDragStart={onListDragStart}
+            // Not in the list's types, but passed through to its animated FlatList.
+            {...(listAnimatedProps ? { animatedProps: listAnimatedProps } : {})}
             // A worklet: the library calls this on the UI thread, and a plain arrow throws there.
             onDragEnd={({ from, to }) => {
               "worklet";
@@ -758,6 +791,7 @@ export function HabitsScreen({
                         }}
                         onOpen={onOpenHabit}
                         onOpenActions={openActions}
+                        onPressIn={notePressPos}
                       />
                     ) : (
                       <HabitCard
@@ -772,6 +806,7 @@ export function HabitsScreen({
                         onToggleExpand={toggleExpand}
                         onOpen={onOpenHabit}
                         onOpenActions={openActions}
+                        onPressIn={notePressPos}
                         inlineStrip={inlineStrip}
                       />
                     )

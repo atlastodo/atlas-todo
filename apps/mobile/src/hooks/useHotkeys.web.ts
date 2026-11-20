@@ -18,22 +18,29 @@ export function useHotkeys(handlers: HotkeyHandlers): void {
   ref.current = handlers;
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
+    function dispatch(e: KeyboardEvent, typing: boolean) {
       if (isModalOpen()) return;
       const handled = dispatchHotkey(
-        {
-          key: e.key,
-          metaKey: e.metaKey,
-          ctrlKey: e.ctrlKey,
-          altKey: e.altKey,
-          typing: isTyping(e.target),
-        },
+        { key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, typing },
         ref.current,
       );
       if (handled) e.preventDefault();
     }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Two phases. react-native-web's TextInput stops every keydown from bubbling, so the bindings
+    // that work while typing (Cmd/Ctrl-K) are heard in the capture phase, from a text field only;
+    // everything else keeps the bubble phase, after the focused element has had its say.
+    const onCapture = (e: KeyboardEvent) => {
+      if (isTyping(e.target)) dispatch(e, true);
+    };
+    const onBubble = (e: KeyboardEvent) => {
+      if (!isTyping(e.target)) dispatch(e, false);
+    };
+    window.addEventListener("keydown", onCapture, true);
+    window.addEventListener("keydown", onBubble);
+    return () => {
+      window.removeEventListener("keydown", onCapture, true);
+      window.removeEventListener("keydown", onBubble);
+    };
   }, []);
 }
 

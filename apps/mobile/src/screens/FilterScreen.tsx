@@ -185,7 +185,7 @@ function FilterEditor({ filterId, onOpenTask, onSaved, onDeleted }: FilterScreen
                 toast.show(isFav ? t("toast.favRemoved") : t("toast.favAdded"));
               }}
               hitSlop={8}
-              className="p-1 web:cursor-pointer"
+              className="rounded-full p-1 web:cursor-pointer"
             >
               <Star
                 size={18}
@@ -205,7 +205,7 @@ function FilterEditor({ filterId, onOpenTask, onSaved, onDeleted }: FilterScreen
                 });
               }}
               hitSlop={8}
-              className="p-1"
+              className="rounded-full p-1"
             >
               <Trash2 size={18} className="text-neutral-500" />
             </Pressable>

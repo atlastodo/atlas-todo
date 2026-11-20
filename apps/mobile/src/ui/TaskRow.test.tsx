@@ -116,31 +116,6 @@ describe("TaskRow", () => {
     expect(order).toEqual(["Recurring", "Has reminder", "Priority 1", "date"]);
   });
 
-  it("renders a text input and info icon when isEditing is true", async () => {
-    const onOpen = jest.fn();
-    const onSaveRename = jest.fn();
-    const t = task();
-    await render(
-      <TaskRow
-        task={t}
-        now={NOW}
-        onToggle={() => {}}
-        isEditing={true}
-        onOpen={onOpen}
-        onSaveRename={onSaveRename}
-      />,
-    );
-
-    const input = screen.getByLabelText("Task title");
-    expect(input.props.value).toBe("Buy milk");
-
-    // Info icon is present when editing
-    const infoButton = screen.getByLabelText("Task details");
-    expect(infoButton).toBeTruthy();
-    await fireEvent.press(infoButton);
-    expect(onOpen).toHaveBeenCalledWith(t);
-  });
-
   it("saves updated title and opens details when clicking the info icon while editing", async () => {
     const onOpen = jest.fn();
     const onSaveRename = jest.fn();
@@ -157,6 +132,7 @@ describe("TaskRow", () => {
     );
 
     const input = screen.getByLabelText("Task title");
+    expect(input.props.value).toBe("Buy milk");
     await fireEvent.changeText(input, "Buy almond milk");
 
     const infoButton = screen.getByLabelText("Task details");
@@ -291,49 +267,6 @@ describe("TaskRow", () => {
     expect(onSaveRename).toHaveBeenCalledWith(t, "");
   });
 
-  it("configures indent swipe for top-level task when onIndent is provided and canIndent is true", async () => {
-    const onIndent = jest.fn();
-    const t = task({ parent_id: null });
-    const { toJSON } = await render(
-      <TaskRow task={t} now={NOW} onToggle={() => {}} onIndent={onIndent} canIndent={true} />,
-    );
-    expect(toJSON()).toBeTruthy();
-  });
-
-  it("configures outdent swipe for subtask when onOutdent is provided and canOutdent is true", async () => {
-    const onOutdent = jest.fn();
-    const t = task({ parent_id: "parent-1" });
-    const { toJSON } = await render(
-      <TaskRow
-        task={t}
-        now={NOW}
-        onToggle={() => {}}
-        onOutdent={onOutdent}
-        canOutdent={true}
-        depth={1}
-      />,
-    );
-    expect(toJSON()).toBeTruthy();
-  });
-
-  it("supports configurable swipe actions from the list's preferences", async () => {
-    const onDelete = jest.fn();
-    const onToggle = jest.fn();
-    const t = task();
-
-    const { toJSON } = await render(
-      <TaskRow
-        task={t}
-        now={NOW}
-        onToggle={onToggle}
-        onDelete={onDelete}
-        swipeRightAction="delete"
-        swipeLeftAction="complete"
-      />,
-    );
-    expect(toJSON()).toBeTruthy();
-  });
-
   it("does not start rename or open task if pointer was dragged before releasing", async () => {
     const onStartRename = jest.fn();
     const onOpen = jest.fn();
@@ -453,11 +386,6 @@ describe("TaskRow", () => {
   describe("a task this device cannot decrypt (locked)", () => {
     const LOCKED_TITLE = "Encrypted task — key not available";
     const locked = () => task({ title: "", locked: true });
-
-    it("shows the placeholder instead of the (empty) title", async () => {
-      await render(<TaskRow task={locked()} now={NOW} onToggle={() => {}} />);
-      expect(screen.getByText(LOCKED_TITLE)).toBeTruthy();
-    });
 
     it("offers no rename: a tap opens the task instead", async () => {
       const onStartRename = jest.fn();

@@ -105,6 +105,7 @@ export function ReminderSection({ task }: { task: Task }) {
               toast.show(t("toast.reminderDeleted"), { label: t("common.undo"), run: undo });
             }}
             hitSlop={8}
+            className="rounded-full"
           >
             <X size={14} className="text-neutral-500" />
           </Pressable>

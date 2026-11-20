@@ -37,6 +37,28 @@ describe("useHotkeys.web", () => {
     document.body.removeChild(input);
   });
 
+  it("opens the palette on Cmd-K from a text field that stops the key bubbling", async () => {
+    // react-native-web's TextInput calls stopPropagation on every keydown.
+    const openPalette = jest.fn();
+    const focusQuickAdd = jest.fn();
+    await render(<Harness handlers={{ openPalette, focusQuickAdd }} />);
+    const input = document.createElement("input");
+    input.addEventListener("keydown", (e) => e.stopPropagation());
+    document.body.appendChild(input);
+
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true, cancelable: true }),
+    );
+    input.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "a", bubbles: true, cancelable: true }),
+    );
+
+    expect(openPalette).toHaveBeenCalledTimes(1);
+    // Single keys stay the field's.
+    expect(focusQuickAdd).not.toHaveBeenCalled();
+    document.body.removeChild(input);
+  });
+
   it("removes its listener on unmount", async () => {
     const openPalette = jest.fn();
     const { unmount } = await render(<Harness handlers={{ openPalette }} />);

@@ -120,7 +120,7 @@ function FilterRow({
         }
         onPress={onToggleFavorite}
         hitSlop={8}
-        className="p-1"
+        className="rounded-full p-1"
       >
         <Star
           size={isWeb ? 16 : 18}
@@ -132,7 +132,7 @@ function FilterRow({
         accessibilityLabel={t("filter.delete")}
         onPress={onDelete}
         hitSlop={8}
-        className="p-1"
+        className="rounded-full p-1"
       >
         <Trash2 size={isWeb ? 16 : 18} className="text-neutral-500" />
       </Pressable>

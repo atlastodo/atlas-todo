@@ -333,6 +333,7 @@ export function PlanDaySheet({
                   accessibilityRole="button"
                   accessibilityLabel={t("common.close")}
                   onPress={() => setPickerOpen(false)}
+                  className="rounded-full"
                 >
                   <X size={14} className="text-neutral-500" />
                 </Pressable>

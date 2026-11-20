@@ -495,7 +495,7 @@ export function TaskDetailScreen({
             accessibilityLabel={task.is_completed ? t("task.reopen") : t("task.complete")}
             onPress={() => onToggle(task)}
             hitSlop={8}
-            className="mt-1"
+            className="mt-1 rounded-full"
           >
             {task.is_completed ? (
               <CircleCheckBig size={24} className="text-accent-500" />
@@ -1438,7 +1438,7 @@ function SubtaskRow({
         accessibilityLabel={toggleLabel}
         onPress={onToggle}
         hitSlop={10}
-        className="web:cursor-pointer"
+        className="rounded-full web:cursor-pointer"
       >
         {task.is_completed ? (
           <CircleCheckBig size={18} className="text-accent-500" />
@@ -1506,7 +1506,7 @@ function SubtaskRow({
             accessibilityRole="button"
             accessibilityLabel={t("task.details", "Task details")}
             onPress={onOpen}
-            className="opacity-0 group-hover:opacity-100 web:focus-visible:opacity-100 web:cursor-pointer"
+            className="rounded-full opacity-0 group-hover:opacity-100 web:focus-visible:opacity-100 web:cursor-pointer"
           >
             <Info
               size={16}

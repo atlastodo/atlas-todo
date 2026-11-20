@@ -4,7 +4,7 @@ import type { ListKeyboardNav } from "./useListKeyboardNav";
 /**
  * Arrow/Enter/Escape navigation for a keyboard-driven list on the RN-web build: the desktop
  * counterpart of tapping a row. Owns the highlighted index, resets it to the top when the list opens
- * or its length changes, and binds a `window` `keydown` listener while `enabled`:
+ * or its length changes, and binds a capture-phase `window` `keydown` listener while `enabled`:
  *   ArrowDown / ArrowUp  move the highlight (clamped to the ends)
  *   Enter                run the highlighted row (`onEnter`)
  *   Escape               dismiss (`onEscape`)
@@ -55,8 +55,10 @@ export function useListKeyboardNav({ enabled, count, onEnter, onEscape }: ListKe
           break;
       }
     }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    // Capture phase: the list is driven from a focused search field, and react-native-web's
+    // TextInput stops every keydown from bubbling, so a bubble-phase listener never hears it.
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [enabled]);
 
   return index;

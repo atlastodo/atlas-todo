@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import { HOTKEY_BINDINGS, HOTKEY_GROUPS, type HotkeyGroup } from "@atlastodo/todo-core";
+import { useOptionalHabitsDialog } from "../data/HabitsDialogContext";
 import { ThemeScope } from "../theme/ThemeProvider";
 import { SheetHeader } from "./BottomSheet";
 import { ELEVATED_SURFACE_CLASS, SCRIM_CLASS } from "./useSheetDismiss";
@@ -60,6 +61,9 @@ function ShortcutRow({ keys, description }: { keys: string[]; description: strin
 export function ShortcutsTable() {
   const { t } = useTranslation();
   const modKey = cmdKey();
+  // H does nothing while the habits feature is off, so it is not offered then.
+  const habitsOn = useOptionalHabitsDialog()?.enabled === true;
+  const shown = HOTKEY_BINDINGS.filter((binding) => binding.action !== "openHabits" || habitsOn);
   return (
     <View className="gap-5">
       {HOTKEY_GROUPS.map((group) => (
@@ -70,13 +74,15 @@ export function ShortcutsTable() {
           <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-accent-600 dark:text-accent-400">
             {t(GROUP_LABEL_KEYS[group])}
           </Text>
-          {HOTKEY_BINDINGS.filter((binding) => binding.group === group).map((binding) => (
-            <ShortcutRow
-              key={binding.action}
-              keys={binding.displayKeys.map((k) => (k === "Mod" ? modKey : k))}
-              description={t(binding.descriptionKey)}
-            />
-          ))}
+          {shown
+            .filter((binding) => binding.group === group)
+            .map((binding) => (
+              <ShortcutRow
+                key={binding.action}
+                keys={binding.displayKeys.map((k) => (k === "Mod" ? modKey : k))}
+                description={t(binding.descriptionKey)}
+              />
+            ))}
         </View>
       ))}
     </View>

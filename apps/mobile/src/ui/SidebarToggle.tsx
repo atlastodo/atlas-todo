@@ -22,7 +22,7 @@ export function SidebarToggle({ tintColor }: { tintColor?: string }) {
       onHoverIn={collapsed ? tip.onHoverIn : undefined}
       onHoverOut={collapsed ? tip.onHoverOut : undefined}
       hitSlop={8}
-      className="p-1 web:cursor-pointer"
+      className="rounded-full p-1 web:cursor-pointer"
     >
       {/* In the sidebar (no header tint) fall back to a themed neutral; in a nav header match its tint. */}
       <Icon

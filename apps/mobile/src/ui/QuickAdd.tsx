@@ -677,6 +677,7 @@ export function QuickAdd(props: QuickAddProps) {
               importantForAccessibility="no"
               // Not a Tab stop: it only focuses the field, which is the next stop anyway.
               {...({ tabIndex: -1 } as object)}
+              className="rounded-full"
             >
               <Plus
                 size={isWeb ? 16 : 18}

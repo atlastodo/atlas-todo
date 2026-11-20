@@ -16,7 +16,7 @@
 ## Dev environment
 
 - All dev commands (`web:dev`, `mobile:dev`, `desktop:dev`, `desktop:start`, `desktop:package`, `nix:bun-lock`, `deps:update`, `test:all`, `lint`, `fmt`, `version:bump`, `screenshots`, `web:release-tarball`, `docker:build`, `build:android:*`, `android:permissions`, …) are devenv scripts defined in `devenv.nix` — run them inside `devenv shell`. The root `package.json` has **no** scripts; there is no root npm/bun task runner. (The full-suite script is `test:all`, not `test`: a script named `test` collides with the shell builtin and `devenv shell test` silently no-ops.)
-- Bun is the package manager (`bun.lock` committed; CI installs with `--frozen-lockfile`); Node 26 is the runtime (devenv, `engines`, CI). Bun is pinned to **1.4.4** everywhere — devenv (the flake's nixpkgs, which `devenv.yaml` follows) and `.bun-version` (which every `setup-bun` in CI reads with `bun-version-file`), in lockstep: `deps:update` moves both to the Bun that nixpkgs ships. No version pin lives in `.github/`: the weekly refresh pushes with the workflow token, which may not change workflow files.
+- Bun is the package manager (`bun.lock` committed; CI installs with `--frozen-lockfile`, and entering `devenv shell` runs the same install when `node_modules` is missing or older than `bun.lock` or a `package.json`, tracked by a stamp in `node_modules/`); Node 26 is the runtime (devenv, `engines`, CI). Bun is pinned to **1.4.4** everywhere — devenv (the flake's nixpkgs, which `devenv.yaml` follows) and `.bun-version` (which every `setup-bun` in CI reads with `bun-version-file`), in lockstep: `deps:update` moves both to the Bun that nixpkgs ships. No version pin lives in `.github/`: the weekly refresh pushes with the workflow token, which may not change workflow files.
 - One set of pins: `devenv.yaml` takes `nixpkgs` from this repository's flake (`atlas-todo: url: path:.`, `follows: atlas-todo/nixpkgs`), so the shell and the flake's builds share `flake.lock`. Move it with `nix flake update`, then `devenv update` (which copies it into `devenv.lock`); `lint` and CI's `Lint (TypeScript)` fail when `devenv.lock` is behind (`scripts/check-devenv-lock.mjs`).
 - There is no server or Postgres here. `web:dev`, `desktop:dev` and `mobile:android` talk to `EXPO_PUBLIC_API_URL` (default `http://localhost:8080`): a server run from the core repo (`devenv up` + `cargo run -p atlas-server` there) or its image. They warn, and start anyway, when nothing answers. `screenshots` runs a throwaway Postgres and the core server image (`ATLAS_SERVER_IMAGE`, default `ghcr.io/atlastodo/atlas:0.1.20`, the pinned core release; move it with the core pin) in Docker.
 - The Android SDK is opt-in (several GB): a gitignored `devenv.local.nix` containing `{ android.enable = true; }`, then re-enter the shell. Only the local native scripts (`emulator:*`, `mobile:android`, `build:android:local`, `build:android:aab`, `bundle:android:release`) need it, and they say so when it is off. Expo Go (`mobile:dev`) and EAS cloud builds don't.
@@ -31,6 +31,17 @@
   - `apps/electron`: `cd apps/electron && bunx --bun vitest run src/foo.test.ts` (vitest under Bun's runtime, supported since Bun 1.4; `test:all` and CI do the same).
   - `apps/mobile`: jest-expo (`bun run test -- <pattern>`) — must run under real Node; under Bun's runtime it dies at load (`Attempted to assign to readonly property`).
 - A change to anything the web build bundles is worth a web export (`cd apps/mobile && bunx expo export --platform web`); a native change, a release APK build (`.github/scripts/android-gradle.sh` from `apps/mobile/android` after `bunx expo prebuild --platform android --clean`) and `android:permissions`.
+
+## Writing tests
+
+A test guards intended behavior: it changes only when that behavior changes and fails only when it regresses. Don't add a test that depends on:
+
+- **The past:** asserting that removed code, routes, fields or files stay gone. Bringing them back would be a decision, not a regression. The exception is a removal whose return would open an auth, data-exposure or E2EE hole (an unauthenticated or plaintext route, a token reaching an account-critical route, a field leaving unencrypted): keep those as security guards.
+- **Nothing:** something no change to the code can break: that the framework renders or fires events, that a mock returns what it was told to (above all a mock of the unit under test), or what the type system already guarantees.
+- **The implementation:** an expected value computed with the code's own logic (write the literal instead), private state, internal call order, or which helper ran.
+- **UI internals** (`apps/mobile`): props passed to a child, component state, or a snapshot of the tree. Assert what the user sees (text, enabled/disabled, what's on screen after an action) or what gets written to the store.
+
+Before adding a test, check that no existing test already guards the same behavior on the same path; extend that one instead. Don't add production code that exists only for a test (test-only exports, `_forTests` hooks, reset functions); test through the public API. A rule shared by `atlas-todo-rules` and `@atlastodo/todo-core` is tested through a `test-vectors/` fixture both sides read, not with parallel hand-written cases.
 
 ## Layout
 

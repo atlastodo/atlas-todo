@@ -338,7 +338,7 @@ export function HabitDetailScreen({
                   accessibilityLabel={t("habits.clearReminder")}
                   onPress={() => updateHabit(habit.id, { reminder_time: null })}
                   hitSlop={8}
-                  className="p-1"
+                  className="rounded-full p-1"
                 >
                   <X size={16} className="text-neutral-500" />
                 </Pressable>

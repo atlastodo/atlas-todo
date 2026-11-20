@@ -552,7 +552,11 @@ function TaskRowView({
                 }
               }}
               hitSlop={12}
-              className="web:cursor-pointer p-1.5 -m-1.5"
+              // Shaped like what it holds (a round check, or the square select box), so the keyboard
+              // focus ring follows it.
+              className={
+                "web:cursor-pointer p-1.5 -m-1.5 " + (selectMode ? "rounded-md" : "rounded-full")
+              }
             >
               {selectMode ? (
                 <View

@@ -6,6 +6,7 @@ import { resolveTimeZone, shiftWallClockToZone } from "@atlastodo/todo-core";
 import { useAuth } from "../auth/AuthContext";
 import { usePreferences } from "../hooks/usePreferences";
 import { useLocalTasks } from "../hooks/useLocalTasks";
+import { useHeldWhileClosing } from "../hooks/useHeldWhileClosing";
 
 /**
  * Detects a device timezone change and offers to shift every open task's due instant so its local
@@ -30,6 +31,10 @@ export function TimezoneChangePrompt() {
 
   const changed = following && lastSeenTimezone !== "" && lastSeenTimezone !== deviceZone;
 
+  // The zone it moved from, held while the prompt fades out: answering records the new zone, which
+  // would otherwise read "from X to X" for a moment.
+  const shownFrom = useHeldWhileClosing(changed, lastSeenTimezone);
+
   const keep = () => setLastSeenTimezone(deviceZone);
   const reschedule = () => {
     for (const task of tasks) {
@@ -48,7 +53,7 @@ export function TimezoneChangePrompt() {
             {t("timezone.changedTitle")}
           </Text>
           <Text className="text-sm text-neutral-600 dark:text-neutral-300">
-            {t("timezone.changedBody", { from: lastSeenTimezone, to: deviceZone })}
+            {t("timezone.changedBody", { from: shownFrom, to: deviceZone })}
           </Text>
           <View className="mt-1 flex-row justify-end gap-2">
             <Pressable

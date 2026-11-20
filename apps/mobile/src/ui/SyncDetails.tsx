@@ -274,7 +274,7 @@ export function SyncDetails({ open, onClose }: { open: boolean; onClose: () => v
                           accessibilityLabel={t("sync.quarantinedDismiss")}
                           hitSlop={8}
                           onPress={() => dismissQuarantined(q.opId)}
-                          className="web:cursor-pointer"
+                          className="rounded-full web:cursor-pointer"
                         >
                           <X size={14} className="text-neutral-500 dark:text-neutral-400" />
                         </Pressable>

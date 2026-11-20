@@ -105,6 +105,7 @@ type MockListProps = {
   renderItem: (info: { item: unknown; index: number }) => MockNode;
   keyExtractor: (item: unknown, index: number) => string;
   onReorder: (event: { from: number; to: number }) => void;
+  onDragEnd?: (event: { from: number; to: number }) => void;
   ListHeaderComponent?: MockNode;
   ListEmptyComponent?: MockNode;
   ListFooterComponent?: MockNode;
@@ -113,13 +114,15 @@ type MockListProps = {
 /**
  * `react-native-reorderable-list` needs a real gesture, so this double is a plain list with an
  * `onReorder` trigger: a button labelled `reorder:<first-key>` that moves the first row to the last
- * position. Tests press it and check the persisted rank against `reorderRank`.
+ * position. Tests press it and check the persisted rank against `reorderRank`. A second button,
+ * `drop:<first-key>`, releases the first row where it was lifted (`onDragEnd` with `from === to`):
+ * a hold that went nowhere.
  */
 jest.mock("react-native-reorderable-list", () => {
   const R = jest.requireActual<typeof import("react")>("react");
   const RN = jest.requireActual<typeof import("react-native")>("react-native");
   const ReorderableList = (props: MockListProps) => {
-    const { data, renderItem, keyExtractor, onReorder } = props;
+    const { data, renderItem, keyExtractor, onReorder, onDragEnd } = props;
     const rows = data.map((item: unknown, index: number) =>
       R.createElement(R.Fragment, { key: keyExtractor(item, index) }, renderItem({ item, index })),
     );
@@ -135,6 +138,14 @@ jest.mock("react-native-reorderable-list", () => {
             R.createElement(RN.Text, null, "reorder"),
           )
         : null;
+    const drop =
+      data.length > 0 && onDragEnd
+        ? R.createElement(RN.Pressable, {
+            accessibilityRole: "button",
+            accessibilityLabel: `drop:${keyExtractor(data[0], 0)}`,
+            onPress: () => onDragEnd({ from: 0, to: 0 }),
+          })
+        : null;
     return R.createElement(
       RN.View,
       null,
@@ -142,6 +153,7 @@ jest.mock("react-native-reorderable-list", () => {
       data.length === 0 ? props.ListEmptyComponent : rows,
       props.ListFooterComponent,
       trigger,
+      drop,
     );
   };
   // Stable, like the library's per-cell lift: memoised task rows take it as a prop.

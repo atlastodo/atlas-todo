@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { quickScheduleOptions } from "./quickSchedule";
-import { endOfDay, addDays, dayOffset } from "./zonedTime";
+import { dayOffset } from "./zonedTime";
 
 const TZ = "UTC";
 // 2026-07-07T08:30:00Z; a fixed early-morning instant.
@@ -16,22 +16,11 @@ describe("quickScheduleOptions", () => {
     ]);
   });
 
-  it("lands each option at default due time (23:59, end of day) of the right calendar day", () => {
+  it("lands each option at the default due time (23:59) of its calendar day", () => {
     const opts = quickScheduleOptions(NOW, TZ);
-    expect(opts[0]!.dueAt).toBe(endOfDay(NOW, TZ));
-    expect(opts[1]!.dueAt).toBe(endOfDay(addDays(NOW, 1, TZ), TZ));
-    expect(opts[3]!.dueAt).toBe(endOfDay(addDays(NOW, 7, TZ), TZ));
-  });
-
-  it("produces due dates 0, 1, and 7 days out from now", () => {
-    const opts = quickScheduleOptions(NOW, TZ);
-    expect(dayOffset(opts[0]!.dueAt, NOW, TZ)).toBe(0);
-    expect(dayOffset(opts[1]!.dueAt, NOW, TZ)).toBe(1);
-    expect(dayOffset(opts[3]!.dueAt, NOW, TZ)).toBe(7);
-  });
-
-  it("sets today's target to end of day (23:59)", () => {
-    expect(quickScheduleOptions(NOW, TZ)[0]!.dueAt).toBe(endOfDay(NOW, TZ));
+    expect(opts[0]!.dueAt).toBe(Date.UTC(2026, 6, 7, 23, 59));
+    expect(opts[1]!.dueAt).toBe(Date.UTC(2026, 6, 8, 23, 59));
+    expect(opts[3]!.dueAt).toBe(Date.UTC(2026, 6, 14, 23, 59));
   });
 });
 

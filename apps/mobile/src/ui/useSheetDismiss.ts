@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Platform, useWindowDimensions } from "react-native";
 import {
+  Gesture,
   useNativeGesture,
   usePanGesture,
   useSimultaneousGestures,
 } from "react-native-gesture-handler";
+import type { PanGesture } from "react-native-gesture-handler";
 import {
   useAnimatedProps,
   useAnimatedScrollHandler,
@@ -153,7 +155,74 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
     },
   });
 
-  /** For the sheet's scroll view: frozen while a pull drives the sheet. */
+  // For a list that brings its own gesture detector (the reorderable habits list): that detector
+  // already runs a pan of ours (its `panGesture`) alongside the list's native scroll, so the pull
+  // lives on that pan, the way `contentPanGesture` sits beside the menu's scroll view. A pan of its
+  // own around the list would compete with the scroll instead: the scroll view taking the touch
+  // cancelled it mid-pull, snapping the sheet back and leaving the rest of the touch to the list.
+  // The list chains its own begin/update/end/finalize callbacks onto this builder, so the pull uses
+  // only the ones it leaves alone (change, touches). A touch in which the list lifted a row to
+  // reorder it (`onListDragStart`, the list's `onDragStart`) is that drag's, never a pull: told by
+  // the lift itself, not by how long the finger rested, so a slow pull still pulls.
+  const reordering = useSharedValue(false);
+  const lastTranslationY = useSharedValue(0);
+  const lastVelocityY = useSharedValue(0);
+  const listDragPan = useMemo(() => {
+    const endPull = (canDismiss: boolean) => {
+      "worklet";
+      if (!dragging.value) return;
+      dragging.value = false;
+      if (canDismiss) {
+        settleDrag(lastTranslationY.value - dragStart.value, lastVelocityY.value, true);
+      } else {
+        translateY.value = withTiming(0, { duration: 150 });
+      }
+    };
+    // Vertical only, as `useDragPan`; see there for why there is no `failOffsetX`.
+    return Gesture.Pan()
+      .activeOffsetY([-10, 10])
+      .onTouchesDown((event) => {
+        "worklet";
+        // A new touch, not a second finger joining one: whatever the last touch reordered is over.
+        if (event.numberOfTouches === 1) reordering.value = false;
+      })
+      .onChange((event) => {
+        "worklet";
+        lastTranslationY.value = event.translationY;
+        lastVelocityY.value = event.velocityY;
+        if (reordering.value) {
+          endPull(false);
+          return;
+        }
+        if (!dragging.value && scrollOffset.value <= 0 && event.translationY > 0) {
+          dragging.value = true;
+          dragStart.value = event.translationY;
+        }
+        if (dragging.value) {
+          translateY.value = Math.max(0, event.translationY - dragStart.value);
+        }
+      })
+      .onTouchesUp((event) => {
+        "worklet";
+        // Only the last finger off ends the pull: one of two lifting must not settle the sheet
+        // under the other.
+        if (event.numberOfTouches === 0) endPull(true);
+      })
+      .onTouchesCancelled(() => {
+        "worklet";
+        endPull(false);
+      }) as unknown as PanGesture;
+    // `settleDrag` is rebuilt each render but reads only shared values, `dismissTargetY` and `onClose`.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [dismissTargetY, onClose]);
+
+  /** For the list's `onDragStart` (a worklet, run on the UI thread): a row was lifted to reorder. */
+  const onListDragStart = () => {
+    "worklet";
+    reordering.value = true;
+  };
+
+  /** For the sheet's scroll view (or `listDragPan`'s list): frozen while a pull drives the sheet. */
   const scrollAnimatedProps = useAnimatedProps(() => ({ scrollEnabled: !dragging.value }));
 
   const composedGesture = useSimultaneousGestures(contentPanGesture, nativeScrollGesture);
@@ -170,6 +239,8 @@ export function useSheetDismiss(onClose: () => void, visible = true) {
     scrollHandler,
     composedGesture,
     contentPanGesture,
+    listDragPan,
+    onListDragStart,
     nativeScrollGesture,
     scrollAnimatedProps,
   };

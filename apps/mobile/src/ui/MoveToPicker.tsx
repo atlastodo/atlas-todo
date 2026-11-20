@@ -89,6 +89,7 @@ export function MoveToPicker({
               accessibilityRole="button"
               accessibilityLabel={t("common.back")}
               onPress={() => setStep(null)}
+              className="rounded-full"
             >
               <ChevronLeft size={20} className="text-neutral-500" />
             </Pressable>
@@ -110,6 +111,7 @@ export function MoveToPicker({
             accessibilityRole="button"
             accessibilityLabel={t("common.close")}
             onPress={onClose}
+            className="rounded-full"
           >
             <X size={20} className="text-neutral-500" />
           </Pressable>

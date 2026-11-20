@@ -52,9 +52,9 @@ const COMPLETE: Record<Mode, RegExp> = {
 /**
  * Parse an `<input>` value into a local-time Date, or `null` if empty or incomplete. Built field
  * by field: `new Date("2026-08-17")` is UTC midnight, and `"09:00"` is Invalid Date. `base`
- * supplies the day for `time`. Pure and exported for tests.
+ * supplies the day for `time`.
  */
-export function fromInputValue(raw: string, mode: Mode, base: Date): Date | null {
+function fromInputValue(raw: string, mode: Mode, base: Date): Date | null {
   const m = COMPLETE[mode].exec(raw);
   if (!m) return null;
   if (mode === "time") {

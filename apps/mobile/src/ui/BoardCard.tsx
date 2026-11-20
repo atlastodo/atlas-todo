@@ -46,6 +46,8 @@ export interface BoardCardProps {
   /** The open subtasks nested in this card, in tree order (`depth` 1 is a direct child); the subtask badge toggles them. */
   subtasks?: { task: Task; depth: number }[];
   drag?: () => void;
+  /** Report where a press began, so the column's drop-in-place menu (after `drag`) opens there. */
+  onPressIn?: (pos: MenuPos) => void;
   focused?: boolean;
   preview?: boolean;
 }
@@ -62,6 +64,7 @@ export function BoardCard({
   subtaskCount,
   subtasks = [],
   drag,
+  onPressIn,
   focused = false,
   preview = false,
 }: BoardCardProps) {
@@ -123,6 +126,7 @@ export function BoardCard({
           x: e?.nativeEvent?.pageX ?? 0,
           y: e?.nativeEvent?.pageY ?? 0,
         };
+        onPressIn?.(pressPos.current);
       }}
       onLongPress={(e) => {
         if (canDrag) {
@@ -166,7 +170,7 @@ export function BoardCard({
               onToggle(task);
             }}
             hitSlop={8}
-            className="mt-0.5 p-0.5 web:cursor-pointer"
+            className="mt-0.5 rounded-full p-0.5 web:cursor-pointer"
           >
             {task.is_completed ? (
               <CircleCheckBig size={18} className="text-accent-500" />
@@ -211,7 +215,7 @@ export function BoardCard({
               onContextMenu(task, pos(e));
             }}
             hitSlop={8}
-            className="p-1 -mr-1 opacity-60 active:opacity-100"
+            className="rounded-full p-1 -mr-1 opacity-60 active:opacity-100"
           >
             <EllipsisVertical size={16} className="text-neutral-500" />
           </Pressable>
@@ -342,7 +346,7 @@ function SubtaskRow({
             onToggle(task);
           }}
           hitSlop={8}
-          className="p-0.5 web:cursor-pointer"
+          className="rounded-full p-0.5 web:cursor-pointer"
         >
           <Circle size={14} className="text-neutral-500" />
         </Pressable>

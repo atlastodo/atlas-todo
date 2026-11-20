@@ -371,6 +371,20 @@ in
     if [ -n "''${DEVENV_PROFILE:-}" ]; then
       export PATH="$DEVENV_PROFILE/bin:$PATH"
     fi
+    # Install the JS dependencies when they are missing or older than the lockfile or a manifest
+    # (a fresh clone, a branch switch, a `git clean`), so `web:dev` and friends never meet a
+    # half-installed tree ("expo: command not found"). `--frozen-lockfile`, as CI: entering the
+    # shell never rewrites bun.lock; a manifest ahead of the lock (mid dependency change) only
+    # warns. The stamp records the last successful install, so an up-to-date tree costs nothing.
+    stamp="$DEVENV_ROOT/node_modules/.devenv-bun-install"
+    if [ ! -f "$stamp" ] || [ -n "$(cd "$DEVENV_ROOT" && find bun.lock package.json apps/*/package.json packages/*/package.json -newer "$stamp" 2>/dev/null)" ]; then
+      echo ">> Installing JS dependencies (bun install --frozen-lockfile)..."
+      if (cd "$DEVENV_ROOT" && bun install --frozen-lockfile); then
+        touch "$stamp"
+      else
+        echo "!! bun install --frozen-lockfile failed: is bun.lock behind a package.json? Run 'bun install' (then 'nix:bun-lock')." >&2
+      fi
+    fi
     echo "Atlas Todo app dev shell -- node $(node --version), bun $(bun --version)"
     echo "Scripts: web:dev, mobile:dev, desktop:dev, test:all, lint, fmt (the server is in atlastodo/atlas)"
     if [ -n "''${ANDROID_HOME:-}" ]; then

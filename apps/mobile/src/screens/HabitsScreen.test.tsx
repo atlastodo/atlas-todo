@@ -225,6 +225,18 @@ describe("HabitsScreen", () => {
     expect(screen.queryByText("Morning")).toBeNull();
   });
 
+  it("opens a held habit's menu where the finger was when it is dropped where it was lifted", async () => {
+    await renderScreen(seedHabit(new LocalStore("test")));
+
+    await fireEvent(screen.getByLabelText("Open Meditate"), "pressIn", {
+      nativeEvent: { pageX: 120, pageY: 340 },
+    });
+    await fireEvent.press(screen.getByLabelText(/^drop:/));
+
+    expect(screen.getByLabelText("Move to group")).toBeTruthy();
+    expect(screen.getByLabelText("Actions")).toHaveStyle({ left: 120, top: 340 });
+  });
+
   it("offers an undo when a group is deleted", async () => {
     await renderScreen();
     await addGroup("Skincare");

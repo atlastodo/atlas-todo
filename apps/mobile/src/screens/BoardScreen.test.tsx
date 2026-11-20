@@ -239,6 +239,20 @@ describe("BoardScreen", () => {
       await waitFor(() => expect(lastCopiedText()).toBe("- Sand the floor (#Home reno/To do)"));
     });
 
+    it("opens a held card's menu where the finger was when it is dropped where it was lifted", async () => {
+      await boardWithCard();
+      await fireEvent(screen.getByLabelText("Sand the floor"), "pressIn", {
+        nativeEvent: { pageX: 150, pageY: 260 },
+      });
+      await fireEvent.press(screen.getByLabelText(/^drop:/));
+
+      // The menu, not the card's own "Task actions" button.
+      const menu = screen
+        .getAllByLabelText("Task actions")
+        .find((el) => within(el).queryByRole("menuitem", { name: "Copy" }) !== null);
+      expect(menu).toHaveStyle({ left: 150, top: 260 });
+    });
+
     it("completes a card from the menu", async () => {
       const { s, projectId } = await boardWithCard();
       await openMenu();

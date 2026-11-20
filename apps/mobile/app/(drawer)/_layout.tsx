@@ -570,7 +570,7 @@ export default function DrawerLayout() {
                 accessibilityLabel={t("common.close")}
                 onPress={() => props.navigation.closeDrawer()}
                 hitSlop={8}
-                className="p-1 web:cursor-pointer"
+                className="rounded-full p-1 web:cursor-pointer"
               >
                 <X size={20} className="text-neutral-500 dark:text-neutral-400" />
               </Pressable>

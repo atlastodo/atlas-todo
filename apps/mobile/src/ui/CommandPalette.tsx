@@ -72,8 +72,15 @@ export function CommandPalette({
     [showingTasks, hits, results],
   );
 
+  // The query resets when the palette opens, not when it closes: clearing it on close would show
+  // every command while the palette fades out.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) setQuery("");
+  }
+
   function handleClose() {
-    setQuery("");
     onClose();
   }
 

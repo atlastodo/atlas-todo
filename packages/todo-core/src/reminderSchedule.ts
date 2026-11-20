@@ -128,15 +128,6 @@ export function adoptBooked(
   for (const id of booked) if (!wanted.has(id) && !scheduled.has(id)) scheduled.set(id, Number.NaN);
 }
 
-export function reconcileSchedule(
-  reminders: Reminder[],
-  tasks: Task[],
-  now: number,
-  scheduled: Map<string, number>,
-): ScheduleDiff {
-  return diffSchedule(futureReminders(reminders, tasks, now), scheduled);
-}
-
 export interface ReconcileOptions extends ReminderPlanOptions, ApplyOptions {
   booked?: readonly string[];
 }

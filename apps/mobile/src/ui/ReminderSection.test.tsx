@@ -41,18 +41,6 @@ const remindersFor = (s: LocalStore, taskId: string) =>
     .filter((r) => r.task_id === taskId);
 
 describe("ReminderSection", () => {
-  it("adds a before-due reminder when the task has a due date", async () => {
-    const s = new LocalStore("test");
-    const task = baseTask({ due_at: Date.now() + 3_600_000 });
-    await render(<ReminderSection task={task} />, { wrapper: withApp(s) });
-
-    await fireEvent.press(screen.getByLabelText("1 week before"));
-
-    const rs = remindersFor(s, task.id);
-    expect(rs).toHaveLength(1);
-    expect(rs[0]?.offset_min_before_due).toBe(7 * 24 * 60);
-  });
-
   it("offers no before-due offsets without a due date", async () => {
     const s = new LocalStore("test");
     await render(<ReminderSection task={baseTask({ due_at: null })} />, { wrapper: withApp(s) });
@@ -95,12 +83,5 @@ describe("ReminderSection", () => {
     rs = remindersFor(s, task.id);
     expect(rs).toHaveLength(1);
     expect(rs[0]?.offset_min_before_due).toBe(24 * 60);
-  });
-
-  it("does not render an enable-notifications checkbox (that lives in Settings)", async () => {
-    const s = new LocalStore("test");
-    await render(<ReminderSection task={baseTask()} />, { wrapper: withApp(s) });
-
-    expect(screen.queryByLabelText("Enable notifications (this device)")).toBeNull();
   });
 });

@@ -623,6 +623,7 @@ export function BoardScreen({ projectId, onOpenTask }: BoardScreenProps) {
                 accessibilityRole="button"
                 accessibilityLabel={t("board.addSection")}
                 onPress={addSection}
+                className="rounded-full"
               >
                 <Plus size={20} className="text-accent-600" />
               </Pressable>
@@ -849,6 +850,12 @@ function BoardColumn({
     scheduleOnRN(triggerIndexHaptic);
   }, [triggerIndexHaptic]);
 
+  // Where the last press on a card began: the list reports a drop in place with no position.
+  const pressPos = useRef<MenuPos>({ x: 0, y: 0 });
+  const notePressPos = useCallback((pos: MenuPos) => {
+    pressPos.current = pos;
+  }, []);
+
   const onDragRelease = useCallback(
     (from: number, to: number) => {
       const action = dragReleaseAction({
@@ -859,7 +866,7 @@ function BoardColumn({
       });
       if (action !== "menu") return;
       const task = cards[from];
-      if (task) onCardActions?.(task, { x: 0, y: 0 });
+      if (task) onCardActions?.(task, pressPos.current);
     },
     [cards, onCardActions],
   );
@@ -885,6 +892,7 @@ function BoardColumn({
       onCardDragStart={onCardDragStart}
       onContextMenu={onCardActions}
       drag={drag}
+      onPressIn={notePressPos}
     />
   );
 
@@ -940,7 +948,7 @@ function BoardColumn({
               accessibilityLabel={t("board.renameSection", { name: column.name })}
               onPress={onStartRename}
               hitSlop={8}
-              className="p-1 web:cursor-pointer opacity-70 hover:opacity-100"
+              className="rounded-full p-1 web:cursor-pointer opacity-70 hover:opacity-100"
             >
               <Pencil size={14} className="text-neutral-500" />
             </Pressable>
@@ -954,7 +962,7 @@ function BoardColumn({
                 onOpenActions({ x: e?.nativeEvent?.pageX ?? 0, y: e?.nativeEvent?.pageY ?? 0 })
               }
               hitSlop={8}
-              className="p-1 web:cursor-pointer opacity-70 hover:opacity-100"
+              className="rounded-full p-1 web:cursor-pointer opacity-70 hover:opacity-100"
             >
               <EllipsisVertical size={15} className="text-neutral-500" />
             </Pressable>
@@ -1202,6 +1210,7 @@ function DraggableCard({
   onCardDragStart,
   onContextMenu,
   drag,
+  onPressIn,
 }: {
   task: Task;
   now: number;
@@ -1220,6 +1229,7 @@ function DraggableCard({
   onCardDragStart: (task: Task) => void;
   onContextMenu?: (task: Task, pos: MenuPos) => void;
   drag?: () => void;
+  onPressIn?: (pos: MenuPos) => void;
 }) {
   const ref = useRef<ViewInstance>(null);
   const bottomEdgeRef = useRef<ViewInstance>(null);
@@ -1261,6 +1271,7 @@ function DraggableCard({
         subtasks={subtasks}
         onContextMenu={onContextMenu}
         drag={drag}
+        onPressIn={onPressIn}
         focused={focused}
       />
       {isLast && (

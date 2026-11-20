@@ -78,7 +78,7 @@ function StepRow({
           onOpenActions({ x: event.nativeEvent.pageX, y: event.nativeEvent.pageY })
         }
         hitSlop={8}
-        className="p-1"
+        className="rounded-full p-1"
       >
         <EllipsisVertical size={16} className="text-neutral-500" />
       </Pressable>

@@ -42,6 +42,9 @@ import {
 } from "../src/data/SelectionActionsProvider";
 import { CursorProvider, useCursor } from "../src/data/CursorProvider";
 import { CommandPaletteProvider, useCommandPalette } from "../src/data/CommandPaletteContext";
+import { HabitsDialogProvider, useHabitsDialog } from "../src/data/HabitsDialogContext";
+import { HabitsDialog } from "../src/ui/HabitsDialog";
+import { HabitsShortcutTip } from "../src/ui/HabitsShortcutTip";
 import { BottomChromeProvider } from "../src/data/BottomChromeContext";
 import { SidebarProvider } from "../src/data/SidebarContext";
 import { FocusProvider } from "../src/data/FocusProvider";
@@ -187,6 +190,7 @@ function HabitReminderScheduler() {
  */
 function GlobalCommandPalette() {
   const { open, openPalette, closePalette } = useCommandPalette();
+  const { enabled: habitsEnabled, openHabits } = useHabitsDialog();
   const [helpOpen, setHelpOpen] = useState(false);
   const commands = useCommands();
   const search = useTaskSearch();
@@ -199,6 +203,8 @@ function GlobalCommandPalette() {
     openPalette,
     focusSearch: openPalette,
     openHelp: () => setHelpOpen(true),
+    // Unwired while habits are off, so H stays an ordinary key.
+    openHabits: habitsEnabled ? openHabits : undefined,
     clearSelection: () => selection.clear(),
     // Declines when no list is registered, leaving the browser's own select-all.
     selectAll: () => selection.selectAll(),
@@ -224,6 +230,8 @@ function GlobalCommandPalette() {
         onSelectTask={(task) => router.push(`/task/${task.id}`)}
       />
       <ShortcutsModal visible={helpOpen} onClose={() => setHelpOpen(false)} />
+      <HabitsDialog onOpenHabit={(habit) => router.push(`/habit/${habit.id}`)} />
+      <HabitsShortcutTip />
     </>
   );
 }
@@ -280,30 +288,34 @@ function Gate() {
                             <BottomChromeProvider>
                               <OnboardingProvider>
                                 <CommandPaletteProvider>
-                                  <View className="flex-1 bg-white dark:bg-zinc-950">
-                                    <UpdateBanner />
-                                    {/* Theming the header here also covers the pushed task detail. */}
-                                    <Stack
-                                      screenOptions={{
-                                        headerTitleAlign: "left",
-                                        ...headerThemeOptions(scheme),
-                                        contentStyle: { backgroundColor: sceneBackground(scheme) },
-                                      }}
-                                    >
-                                      <Stack.Screen
-                                        name="(drawer)"
-                                        options={{ headerShown: false }}
-                                      />
-                                    </Stack>
-                                    <FocusBar onOpen={() => router.push("/focus")} />
-                                    <GlobalCommandPalette />
-                                    <RouteBreadcrumbs />
-                                    <OnboardingModal />
-                                    {/* After the wizard, so its explainer draws over it. */}
-                                    <PermissionExplainerHost />
-                                    <PersistentStorageExplainer />
-                                    <PermissionsSheetHost />
-                                  </View>
+                                  <HabitsDialogProvider>
+                                    <View className="flex-1 bg-white dark:bg-zinc-950">
+                                      <UpdateBanner />
+                                      {/* Theming the header here also covers the pushed task detail. */}
+                                      <Stack
+                                        screenOptions={{
+                                          headerTitleAlign: "left",
+                                          ...headerThemeOptions(scheme),
+                                          contentStyle: {
+                                            backgroundColor: sceneBackground(scheme),
+                                          },
+                                        }}
+                                      >
+                                        <Stack.Screen
+                                          name="(drawer)"
+                                          options={{ headerShown: false }}
+                                        />
+                                      </Stack>
+                                      <FocusBar onOpen={() => router.push("/focus")} />
+                                      <GlobalCommandPalette />
+                                      <RouteBreadcrumbs />
+                                      <OnboardingModal />
+                                      {/* After the wizard, so its explainer draws over it. */}
+                                      <PermissionExplainerHost />
+                                      <PersistentStorageExplainer />
+                                      <PermissionsSheetHost />
+                                    </View>
+                                  </HabitsDialogProvider>
                                 </CommandPaletteProvider>
                               </OnboardingProvider>
                             </BottomChromeProvider>

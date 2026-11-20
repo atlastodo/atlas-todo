@@ -32,6 +32,11 @@ import { useStore } from "../data/StoreProvider";
 
 /** What the habits screen lists: only what is in play today, or every habit. */
 export type HabitsScope = "today" | "all";
+export type HabitsTip = "key" | "hold";
+const HABITS_TIP_FIELD: Record<HabitsTip, string> = {
+  key: "habits_key_tip_seen",
+  hold: "habits_hold_tip_seen",
+};
 
 /**
  * Whether the reminders master toggle is on for a raw preference bag. Default-on, so a fresh store
@@ -138,6 +143,13 @@ export interface UsePreferences {
   /** Whether the habits screen shows only what is in play today (default) or everything. */
   habitsScope: HabitsScope;
   setHabitsScope: (value: HabitsScope) => void;
+  /**
+   * Whether the one-time tip for opening habits from anywhere has been shown: `key` (H, on a
+   * keyboard) and `hold` (the add button's press-and-hold, on a phone) separately, so seeing one
+   * does not hide the other on the user's other device.
+   */
+  habitsTipSeen: (kind: HabitsTip) => boolean;
+  setHabitsTipSeen: (kind: HabitsTip) => void;
   /**
    * Delete the user's own activity entries older than this many days (one of
    * {@link ACTIVITY_RETENTION_DAYS}, or the server's limit); 0, the default, keeps them forever.
@@ -331,6 +343,25 @@ export function usePreferences(): UsePreferences {
   const habitsScope: HabitsScope = prefs.habits_scope === "all" ? "all" : "today";
   const setHabitsScope = useCallback(
     (value: HabitsScope) => setField("habits_scope", value),
+    [setField],
+  );
+  // One field per tip, not one map of them: synced fields merge last-writer-wins, so two devices
+  // each marking a different tip seen at once would lose one of the marks in a shared map.
+  // `habits_tip_seen` is that map, written by the 0.1.21 release candidates; still read, never written.
+  const habitsTipSeen = useCallback(
+    (kind: HabitsTip) => {
+      if (prefs[HABITS_TIP_FIELD[kind]] === true) return true;
+      const legacy = prefs.habits_tip_seen;
+      return (
+        legacy !== null &&
+        typeof legacy === "object" &&
+        (legacy as Record<string, unknown>)[kind] === true
+      );
+    },
+    [prefs],
+  );
+  const setHabitsTipSeen = useCallback(
+    (kind: HabitsTip) => setField(HABITS_TIP_FIELD[kind], true),
     [setField],
   );
   const activityRetentionDays = activityRetentionIn(prefs);
@@ -536,6 +567,8 @@ export function usePreferences(): UsePreferences {
     setHabitGroupExpanded,
     habitsScope,
     setHabitsScope,
+    habitsTipSeen,
+    setHabitsTipSeen,
     activityRetentionDays,
     setActivityRetentionDays,
     projectPinned,

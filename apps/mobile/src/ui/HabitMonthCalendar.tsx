@@ -69,7 +69,7 @@ export function HabitMonthCalendar({
             setOffset((value) => value + 1);
           }}
           hitSlop={8}
-          className="p-1"
+          className="rounded-full p-1"
         >
           <ChevronLeft size={18} className="text-neutral-500" />
         </Pressable>
@@ -83,7 +83,7 @@ export function HabitMonthCalendar({
             setOffset((value) => Math.max(0, value - 1));
           }}
           hitSlop={8}
-          className={"p-1 " + (offset === 0 ? "opacity-30" : "")}
+          className={"rounded-full p-1 " + (offset === 0 ? "opacity-30" : "")}
         >
           <ChevronRight size={18} className="text-neutral-500" />
         </Pressable>
@@ -184,7 +184,8 @@ export function HabitMonthCalendar({
                 accessibilityRole="button"
                 accessibilityLabel={label}
                 onPress={() => onToggleDay(day)}
-                className="flex-1"
+                // Rounded like the cell, so the keyboard focus ring follows it.
+                className="flex-1 rounded-md"
               >
                 {body}
               </Pressable>
