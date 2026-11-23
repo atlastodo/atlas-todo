@@ -25,7 +25,7 @@
       "name": "@atlastodo/mobile",
       "version": "0.1.21",
       "dependencies": {
-        "@atlastodo/client-core": "0.1.20",
+        "@atlastodo/client-core": "0.1.21",
         "@atlastodo/todo-core": "workspace:*",
         "@expo/metro-runtime": "~58.0.14",
         "@react-native-async-storage/async-storage": "2.2.0",
@@ -98,8 +98,8 @@
       "name": "@atlastodo/todo-core",
       "version": "0.1.21",
       "dependencies": {
-        "@atlastodo/client-core": "0.1.20",
-        "@atlastodo/sdk": "0.1.20",
+        "@atlastodo/client-core": "0.1.21",
+        "@atlastodo/sdk": "0.1.21",
         "@noble/hashes": "^2.4.0",
         "fflate": "^0.8.3",
       },
@@ -128,13 +128,13 @@
 
     "@asamuzakjp/css-color": ["@asamuzakjp/css-color@3.2.0", "", { "dependencies": { "@csstools/css-calc": "^2.1.3", "@csstools/css-color-parser": "^3.0.9", "@csstools/css-parser-algorithms": "^3.0.4", "@csstools/css-tokenizer": "^3.0.3", "lru-cache": "^10.4.3" } }, "sha512-K1A6z8tS3XsmCMM86xoWdn7Fkdn9m6RSVtocUrJYIwZnFVkng/PvkEoWtOWmP+Scc6saYWHWZYbndEEXxl24jw=="],
 
-    "@atlastodo/client-core": ["@atlastodo/client-core@0.1.20", "", { "dependencies": { "@noble/ciphers": "^2.4.0", "@noble/curves": "^2.4.0", "@noble/hashes": "^2.4.0", "@scure/bip39": "^2.4.0" } }, "sha512-MlMxznqMpMJfocRuGSe3/vAILbCLysfE6Agteao84CoSx7MaN5wR+717RkdKmRdv7IpPPfULYmv3n5+IeZZq7w=="],
+    "@atlastodo/client-core": ["@atlastodo/client-core@0.1.21", "", { "dependencies": { "@noble/ciphers": "^2.4.0", "@noble/curves": "^2.4.0", "@noble/hashes": "^2.4.0", "@scure/bip39": "^2.4.0" } }, "sha512-bzc6mlfT22PV4iFcZ3zbc5cm1VtnTu/I3wzGC8tDIFfttKvck5UJoiIUKh9TlZ31E5J4uI4zFxr4ya8u4BrB7w=="],
 
     "@atlastodo/electron": ["@atlastodo/electron@workspace:apps/electron"],
 
     "@atlastodo/mobile": ["@atlastodo/mobile@workspace:apps/mobile"],
 
-    "@atlastodo/sdk": ["@atlastodo/sdk@0.1.20", "", { "dependencies": { "@atlastodo/client-core": "0.1.20" } }, "sha512-9LCMNtF5oHNcIMCGc6KZPmXbyHMmyPHttKpv+l73vJj3edKT85a741I2WVGh35/90gGDAc6upPkCfQkHH+AXxg=="],
+    "@atlastodo/sdk": ["@atlastodo/sdk@0.1.21", "", { "dependencies": { "@atlastodo/client-core": "0.1.21" } }, "sha512-qLZsk5fHODkG8WVV3+Ap1z+IWDslMAdDGog2slCdgh1RNu1GaDQZsROVgODv3tpFF8Y7VnVLqDDTUqIygXitvw=="],
 
     "@atlastodo/todo-core": ["@atlastodo/todo-core@workspace:packages/todo-core"],
 

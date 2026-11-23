@@ -17,8 +17,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@atlastodo/client-core": "0.1.20",
-    "@atlastodo/sdk": "0.1.20",
+    "@atlastodo/client-core": "0.1.21",
+    "@atlastodo/sdk": "0.1.21",
     "@noble/hashes": "^2.4.0",
     "fflate": "^0.8.3"
   },

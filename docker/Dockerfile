@@ -9,7 +9,7 @@
 # The base is the core release this app pins (the same version as the @atlastodo/* packages and the
 # atlas-client tag in Cargo.toml; deps:update moves them together). ATLAS_IMAGE overrides it:
 #   docker build -f docker/Dockerfile --build-arg ATLAS_IMAGE=ghcr.io/atlastodo/atlas:dev <context>
-ARG ATLAS_IMAGE=ghcr.io/atlastodo/atlas:0.1.20
+ARG ATLAS_IMAGE=ghcr.io/atlastodo/atlas:0.1.21
 
 # The tarball, unpacked by ADD (no RUN, so no emulation for other architectures). It holds one
 # directory, atlas-todo-web-X.Y.Z/, whose contents are the static files.
