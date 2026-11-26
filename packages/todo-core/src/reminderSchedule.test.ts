@@ -1,5 +1,5 @@
 import { type Task } from "./types";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "bun:test";
 
 import {
   adoptBooked,

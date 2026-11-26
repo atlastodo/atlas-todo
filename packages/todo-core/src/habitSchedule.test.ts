@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { habitReminderId, habitReminders } from "./habitSchedule";
 import type { CheckinState, Habit } from "./habits";
 

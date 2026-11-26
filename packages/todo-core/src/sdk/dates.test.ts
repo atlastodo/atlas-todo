@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { parseDue } from "./dates";
 
 /** `test-vectors/parse_due_vectors.json`, which the Rust CLI's date reader asserts too. */
@@ -25,7 +25,7 @@ describe("parseDue vectors", () => {
       if (c.error !== undefined) {
         expect(() => parseDue(c.value, c.tz, c.now)).toThrow(c.error);
       } else {
-        expect(parseDue(c.value, c.tz, c.now)).toBe(c.expected);
+        expect<unknown>(parseDue(c.value, c.tz, c.now)).toBe(c.expected);
       }
     });
   }

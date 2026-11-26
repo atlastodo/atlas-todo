@@ -1,5 +1,5 @@
 import { type Section, type Task } from "./types";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 
 import { planSectionDuplicate } from "./duplicateSection";
 

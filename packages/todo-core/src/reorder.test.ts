@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { rankMoveWrites, reorderRank, type RankWrite } from "./reorder";
 
 type Item = { id: string; sort_order: number };

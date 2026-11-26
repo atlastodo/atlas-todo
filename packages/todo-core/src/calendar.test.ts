@@ -1,5 +1,5 @@
 import { type Task } from "./types";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 
 import {
   isAllDayTask,

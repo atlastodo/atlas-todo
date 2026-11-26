@@ -172,16 +172,16 @@ in
   scripts."test:all".exec = ''
     set -euo pipefail
     cd "$DEVENV_ROOT"
-    # `--bun` runs vitest itself under Bun's runtime (supported since Bun 1.4), matching CI.
     cargo nextest run --workspace
-    (cd packages/todo-core && bunx --bun vitest run)
-    (cd apps/electron && bunx --bun vitest run)
+    # Each package's `test` script (`bun test`), as in CI.
+    (cd packages/todo-core && bun run test)
+    (cd apps/electron && bun run test)
     # jest-expo must run under real Node (`bun run` only starts it).
     (cd apps/mobile && bun run test)
   '';
-  # rustfmt and clippy (the CLI, as CI's `Lint (Rust)`), every workspace's typecheck (todo-core,
-  # mobile and electron, as CI's `Lint (TypeScript)`), oxlint
-  # (`.oxlintrc.json`), `prettier --check` and the shipped licences.
+  # rustfmt and clippy (the CLI, as CI's `Lint (Rust)`), every workspace's typecheck (`bun check`:
+  # todo-core, mobile and electron, as CI's `Lint (TypeScript)`), oxlint (`.oxlintrc.json`),
+  # `bun fmt --check` and the shipped licences.
   # One command per line: under `set -e` a failure on the left of `&&` would not stop the script.
   scripts.lint.exec = ''
     set -euo pipefail
@@ -192,7 +192,7 @@ in
     (cd apps/mobile && bun run typecheck)
     (cd apps/electron && bun run typecheck)
     bunx oxlint .
-    bunx prettier --check .
+    bun fmt --check
     node scripts/third-party-licenses.mjs --check
     # devenv.yaml follows the flake's nixpkgs; devenv.lock holds a copy of it.
     node scripts/check-devenv-lock.mjs
@@ -207,7 +207,7 @@ in
   scripts.fmt.exec = ''
     cd "$DEVENV_ROOT"
     cargo fmt --all
-    bunx prettier --write .
+    bun fmt
   '';
   scripts."build:ios".exec = "cd \"$DEVENV_ROOT/apps/mobile\" && bunx eas-cli build --profile preview --platform ios \"$@\"";
   scripts."build:ios:local".exec = "cd \"$DEVENV_ROOT/apps/mobile\" && bunx eas-cli build --profile preview --platform ios --local \"$@\"";

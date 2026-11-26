@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { makeFormatters, resolveLocale } from "./format";
 
 // A fixed instant: 2026-07-15 17:05 UTC.

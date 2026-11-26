@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { formatDuration, toFocusSession, trackedMsForTask, type FocusSession } from "./focus";
 
 describe("toFocusSession", () => {

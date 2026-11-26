@@ -205,8 +205,8 @@ Electron, and the Android SDK on request. The app talks to a server from the cor
 devenv shell           # enter the environment
 bun install
 web:dev                # the web app with live reload, against EXPO_PUBLIC_API_URL
-test:all               # the electron (vitest) and mobile (jest) suites
-lint                   # typecheck, oxlint, Prettier, licences
+test:all               # the CLI (cargo), todo-core and electron (bun test) and mobile (jest) suites
+lint                   # typecheck, oxlint, bun fmt, licences
 ```
 
 [CONTRIBUTING.md](./CONTRIBUTING.md) covers the setup (including one without Nix), the test

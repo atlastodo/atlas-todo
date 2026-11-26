@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach } from "bun:test";
 import { COMMON_TIME_ZONES, REGION_OPTIONS, timeZoneOptions } from "./regions";
 
 /** Swap `Intl.supportedValuesOf` to stand in for an engine that lacks or breaks it (e.g. Hermes). */

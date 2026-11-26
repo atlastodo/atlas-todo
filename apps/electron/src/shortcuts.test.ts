@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { isQuitShortcut, type KeyInput } from "./shortcuts";
 
 const key = (overrides: Partial<KeyInput> = {}): KeyInput => ({

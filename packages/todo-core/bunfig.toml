@@ -1,0 +1,3 @@
+[test]
+# Atlas Todo's app definition, which core's scope engine reads (src/app.ts).
+preload = ["./src/register.ts"]

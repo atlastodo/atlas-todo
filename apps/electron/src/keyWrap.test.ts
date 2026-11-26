@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "bun:test";
 import {
   decryptBytes,
   encryptBytes,
@@ -136,13 +136,13 @@ describe("encryptBytes / decryptBytes", () => {
       plain: BYTES,
       reseal: false,
     });
-    expect(wait.mock.calls).toEqual([[5], [10]]);
+    expect<unknown>(wait.mock.calls).toEqual([[5], [10]]);
 
     wait.mockClear();
     const gone = fakeSafeStorage({ unavailableFor: 99 });
     expect(await decryptBytes(gone, "darwin", sealed, [5, 10], wait)).toBeNull();
     expect(gone.decryptStringAsync).toHaveBeenCalledTimes(3);
-    expect(wait.mock.calls).toEqual([[5], [10]]);
+    expect<unknown>(wait.mock.calls).toEqual([[5], [10]]);
   });
 
   it("waits about two seconds in all by default", () => {

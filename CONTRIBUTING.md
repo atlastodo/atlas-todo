@@ -82,13 +82,14 @@ The devenv scripts are short shell in `devenv.nix`. Without devenv, `test:all` a
 
 ```sh
 # test:all
-(cd apps/electron && bunx --bun vitest run)
+(cd packages/todo-core && bun run test)
+(cd apps/electron && bun run test)
 (cd apps/mobile && bun run test)
 
 # lint
 bun run --parallel --filter '*' typecheck
 bunx oxlint .
-bunx prettier --check .
+bun fmt --check
 node scripts/third-party-licenses.mjs --check
 ```
 
@@ -125,8 +126,8 @@ All of these run inside `devenv shell` (without it, see [Without Nix](#without-n
 | `nix:bun-lock`                     | regenerate `nix/bun.nix` after a `bun.lock` change                         |
 | `deps:update`                      | refresh what Dependabot can't (locks, Bun, Expo SDK packages, core pin)    |
 | `test:all`                         | every test suite (see below)                                               |
-| `lint`                             | typecheck, oxlint, Prettier check, licences, `nix/bun.nix` freshness       |
-| `fmt`                              | prettier                                                                   |
+| `lint`                             | typecheck, oxlint, `bun fmt --check`, licences, `nix/bun.nix` freshness    |
+| `fmt`                              | `bun fmt`                                                                  |
 | `screenshots`                      | regenerate `docs/screenshots` (needs Docker: a throwaway server and DB)    |
 | `emulator:start`, `mobile:android` | Android emulator and native dev build (needs the SDK)                      |
 | `build:android:*`                  | Android builds through EAS, locally or in the cloud                        |
@@ -140,15 +141,15 @@ builtin.
 
 `test:all` runs, in order and stopping at the first failure:
 
-1. vitest in `apps/electron`
+1. `bun test` in `packages/todo-core` and `apps/electron` (each package's `test` script)
 2. jest (jest-expo) in `apps/mobile`
 
-`lint` typechecks `apps/mobile` and `apps/electron` and runs `oxlint .`, `prettier --check .`, the
+`lint` typechecks (`bun check`) `packages/todo-core`, `apps/mobile` and `apps/electron` and runs `oxlint .`, `bun fmt --check`, the
 licence check and the `nix/bun.nix` freshness check. `fmt` fixes the formatting.
 
 To run one test:
 
-- `apps/electron`: `cd apps/electron && bunx --bun vitest run src/foo.test.ts`
+- `packages/todo-core`, `apps/electron`: `cd apps/electron && bun run test src/foo.test.ts`
 - `apps/mobile`: `bun run test -- <pattern>`. This must run under Node, not Bun's runtime, or it
   fails at load with `Attempted to assign to readonly property`.
 
@@ -174,7 +175,7 @@ Brazilian Portuguese (`pt.json`).
    each other catalog has its own language's plural forms (Polish `_one`/`_few`/`_many`/`_other`).
    If you can't write a language, add the English text to its catalog and say so in the PR.
 2. Use it with `t("section.key")`.
-3. Run `cd packages/todo-core && bunx --bun vitest run src/i18n.test.ts`: every locale must have
+3. Run `cd packages/todo-core && bun run test src/i18n.test.ts`: every locale must have
    exactly the English keys, in its own plural forms.
 
 A new language also needs an entry in `packages/todo-core/src/i18n.ts` and a quick-add lexicon in
@@ -216,12 +217,12 @@ GitHub Actions (`.github/workflows/ci.yml`) runs on every pull request and on pu
 `main`, for the jobs whose files changed; a tag runs the full suite. Pull requests from forks need
 no secrets, so they get the same checks:
 
-| Check             | What it runs                                                       |
-| ----------------- | ------------------------------------------------------------------ |
-| Lint (TypeScript) | typecheck of mobile and electron; oxlint; Prettier check; licences |
-| Test (TypeScript) | vitest in apps/electron                                            |
-| Test (mobile)     | jest in apps/mobile                                                |
-| Audit (JS)        | `bun audit` (allowed to fail)                                      |
+| Check             | What it runs                                                             |
+| ----------------- | ------------------------------------------------------------------------ |
+| Lint (TypeScript) | typecheck of todo-core, mobile and electron; oxlint; `bun fmt`; licences |
+| Test (TypeScript) | `bun test` in packages/todo-core and apps/electron                       |
+| Test (mobile)     | jest in apps/mobile                                                      |
+| Audit (JS)        | `bun audit` (allowed to fail)                                            |
 
 The audit is informational, so a red audit check on a pull request does not block it. A known,
 unfixable advisory is explained under `//audit-known` in the root `package.json`. Fixable

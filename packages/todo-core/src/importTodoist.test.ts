@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { strToU8, zipSync } from "fflate";
 import { LocalStore } from "@atlastodo/client-core";
 import { importBundle } from "./dataTransfer";

@@ -1,5 +1,5 @@
 import { type Task } from "./types";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 
 import { completedBucket, groupTasks, sortTasks, type GroupContext } from "./grouping";
 
