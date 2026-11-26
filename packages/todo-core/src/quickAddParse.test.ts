@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { parseQuickAdd } from "./quickAddParse";
 
 // Mon 2 Jan 2023, 10:00 local. Using local Date components keeps the test timezone-independent:

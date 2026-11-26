@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { avatarColor, avatarColorFor, SELF_AVATAR_COLOR } from "./avatarColor";
 
 describe("avatarColor", () => {

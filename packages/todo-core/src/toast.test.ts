@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { toastReducer, type ToastState } from "./toast";
 
 describe("toastReducer", () => {

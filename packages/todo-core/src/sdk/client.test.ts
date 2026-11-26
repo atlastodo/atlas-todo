@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { type FetchLike } from "@atlastodo/client-core";
 import { createTask as appCreateTask } from "../taskOps";
 import { projectCreateFields } from "../projectMapper";

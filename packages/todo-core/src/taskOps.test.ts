@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "bun:test";
 import { LocalStore } from "@atlastodo/client-core";
 import {
   allTasks,

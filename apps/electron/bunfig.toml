@@ -1,0 +1,3 @@
+[test]
+# Stand-ins for the `electron` module, which only Electron's runtime provides.
+preload = ["./src/electron.testutil.ts"]

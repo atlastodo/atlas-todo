@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import type { BugReportBreadcrumb } from "@atlastodo/client-core";
 import {
   buildBugReport,

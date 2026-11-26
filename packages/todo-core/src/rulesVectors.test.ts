@@ -1,7 +1,7 @@
 import { type Task } from "./types";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, setSystemTime } from "bun:test";
 import { LocalStore } from "@atlastodo/client-core";
 import { parseQuickAdd } from "./quickAddParse";
 import { evaluate, parse } from "./filterQuery";
@@ -46,7 +46,7 @@ describe("quick add vectors", () => {
           ? (name) => labels.some((l) => l.toLowerCase() === name.toLowerCase())
           : undefined,
       });
-      expect({
+      expect<unknown>({
         title: r.title,
         priority: r.input.priority ?? null,
         due_at: r.input.due_at ?? null,
@@ -107,7 +107,7 @@ describe("filter vectors", () => {
     it(`${JSON.stringify(c.query)} at ${c.now} in ${c.tz}`, () => {
       const r = parse(c.query);
       if (!r.ok) {
-        expect({ error: r.error, at: r.at }).toEqual({ error: c.error, at: c.at });
+        expect<unknown>({ error: r.error, at: r.at }).toEqual({ error: c.error, at: c.at });
         return;
       }
       const ctx = {
@@ -116,9 +116,9 @@ describe("filter vectors", () => {
         labelsOf: (t: Task) => tasks.find((x) => x.id === t.id)!.labels,
         projectNameOf: (t: Task) => tasks.find((x) => x.id === t.id)!.project,
       };
-      expect(tasks.filter((t) => evaluate(r.ast, asTask(t), ctx)).map((t) => t.id)).toEqual(
-        c.expected,
-      );
+      expect<unknown>(
+        tasks.filter((t) => evaluate(r.ast, asTask(t), ctx)).map((t) => t.id),
+      ).toEqual(c.expected);
     });
   }
 });
@@ -161,7 +161,8 @@ function runRuleScenario(s: RuleScenario): { result: unknown; expected: unknown 
     for (const [k, v] of Object.entries(a)) store.set("activity", id, k, v);
   });
   const before = new Set(store.unsyncedOps().map((o) => o.id));
-  vi.useFakeTimers({ now: s.now, toFake: ["Date"] });
+  // Only the clock: timers stay real.
+  setSystemTime(s.now);
   let result: unknown = null;
   let subject = RULE_TASK_ID;
   try {
@@ -183,7 +184,7 @@ function runRuleScenario(s: RuleScenario): { result: unknown; expected: unknown 
         break;
     }
   } finally {
-    vi.useRealTimers();
+    setSystemTime();
   }
   const ops = store.unsyncedOps().filter((o) => !before.has(o.id));
   const written = (entity: string) => {

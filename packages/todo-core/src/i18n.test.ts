@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { resources } from "./i18n";
 import en from "./locales/en.json";

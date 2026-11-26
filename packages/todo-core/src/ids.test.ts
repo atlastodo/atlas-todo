@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { derivedUuidV1 as derivedUuid, derivedUuidV2, PREFERENCES_ID } from "./ids";
 import { ticktickUuid } from "./importTicktick";
 

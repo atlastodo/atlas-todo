@@ -216,14 +216,14 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      # Every workspace that defines `typecheck`: todo-core, mobile and electron.
+      # Every workspace that defines `typecheck` (`bun check`): todo-core, mobile and electron.
       - run: bun run --parallel --filter '*' typecheck
       # The licences of the JS packages the builds ship, against an allow-list.
       - run: node scripts/third-party-licenses.mjs --check
       # devenv.lock's copy of the flake's nixpkgs must match flake.lock.
       - run: node scripts/check-devenv-lock.mjs
       - run: bunx oxlint .
-      - run: bunx prettier --check .
+      - run: bun fmt --check
 
   test-ts:
     name: Test (TypeScript)
@@ -247,13 +247,13 @@ jobs:
           key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
-      # `--bun` runs vitest itself under Bun's runtime; these suites are runtime-agnostic pure TS.
+      # Each package's `test` script: `bun test`, every file in a fresh global (`--parallel`).
       - name: todo-core
         working-directory: packages/todo-core
-        run: bunx --bun vitest run
+        run: bun run test
       - name: electron
         working-directory: apps/electron
-        run: bunx --bun vitest run
+        run: bun run test
 
   test-mobile:
     name: Test (mobile)

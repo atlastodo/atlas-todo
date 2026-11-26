@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import fixture from "../../../test-vectors/recurrence_vectors.json";
 import da from "./locales/da.json";
 import {
@@ -235,7 +235,7 @@ describe("pinMonthDay", () => {
     const jan31 = Date.parse("2023-01-31T09:00:00Z");
     const pinned = pinMonthDay("FREQ=MONTHLY", jan31, "UTC");
     const feb = nextOccurrence(pinned, jan31, jan31, "UTC")!;
-    expect(feb).toBe(nextOccurrence("FREQ=MONTHLY", jan31, jan31, "UTC"));
+    expect<number | null>(feb).toBe(nextOccurrence("FREQ=MONTHLY", jan31, jan31, "UTC"));
     expect(new Date(feb).toISOString()).toBe("2023-02-28T09:00:00.000Z");
     expect(new Date(nextOccurrence(pinned, feb, feb, "UTC")!).toISOString()).toBe(
       "2023-03-31T09:00:00.000Z",
@@ -372,7 +372,7 @@ describe("nextOccurrence bounds", () => {
   });
 
   // ~10,500 nextOccurrence calls: on a loaded CI runner (all test jobs share it) this crossed
-  // vitest's 5s default and timed out, so give the brute force room to breathe.
+  // the 5s default timeout, so give the brute force room to breathe.
   it("BYDAY matches a day-by-day scan for every weekday set, interval and starting day", () => {
     // The reference is the obvious day-by-day scan.
     const DAY = 86_400_000;

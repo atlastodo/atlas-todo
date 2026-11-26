@@ -22,7 +22,7 @@
     "build:ios:local": "bunx eas-cli build --profile preview --platform ios --local",
     "update:preview": "bunx eas-cli update --channel preview",
     "export:web": "expo export --platform web && node scripts/postexport-favicon.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check",
     "test": "jest",
     "clean": "rm -f build-*.apk build-*.aab && rm -rf .expo dist && (rm -rf android/app/build android/build 2>/dev/null || true)"
   },

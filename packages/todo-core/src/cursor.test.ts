@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { cursorStep } from "./cursor";
 
 const IDS = ["a", "b", "c"];
